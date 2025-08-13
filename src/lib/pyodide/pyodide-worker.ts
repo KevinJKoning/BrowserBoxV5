@@ -504,9 +504,28 @@ sys.stderr = stderr_collector
         
         sendStatus("Executing Python script...");
         
-        // Execute the Python code
+        // Execute the Python code with enhanced error handling
         console.log('Starting Python script execution...');
-        const result = await self.pyodide.runPythonAsync(python);
+        let result;
+        try {
+            // Wrap user code in try-except for better error reporting
+            // Indent each line of user code to be inside the try block
+            const indentedPython = python.split('\\n').map(line => '    ' + line).join('\\n');
+            const wrappedPython = \`
+try:
+\${indentedPython}
+except Exception as e:
+    import traceback
+    error_msg = "Python Error: " + type(e).__name__ + ": " + str(e) + "\\\\n"
+    error_msg += "Traceback:\\\\n" + traceback.format_exc()
+    print(error_msg, file=sys.stderr)
+    raise e
+            \`;
+            result = await self.pyodide.runPythonAsync(wrappedPython);
+        } catch (pythonError) {
+            console.log('Python script execution failed with error:', pythonError);
+            // Don't re-throw yet, let's capture stderr first
+        }
         console.log('Python script execution completed.');
         
         // Get captured output
@@ -547,17 +566,32 @@ sys.stderr = old_stderr
             console.error("Error reading filesystem:", fsError);
         }
         
-        // Send results
-        self.postMessage({
-            type: 'complete',
-            id,
-            data: {
-                result,
-                stdout,
-                stderr,
-                modifiedFiles
-            }
-        });
+        // Send results - check if we have errors in stderr
+        if (stderr && stderr.trim()) {
+            // Python error occurred - send as error but include output
+            self.postMessage({
+                type: 'error',
+                id,
+                data: {
+                    error: stderr,
+                    stdout: stdout || '',
+                    stderr: stderr,
+                    modifiedFiles: modifiedFiles
+                }
+            });
+        } else {
+            // Successful execution
+            self.postMessage({
+                type: 'complete',
+                id,
+                data: {
+                    result,
+                    stdout,
+                    stderr,
+                    modifiedFiles
+                }
+            });
+        }
         
     } catch (error) {
         // Send error

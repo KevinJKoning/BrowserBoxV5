@@ -180,6 +180,20 @@ export const scriptActions = {
 					if (currentExecution && currentExecution.status === "running") {
 						currentExecution.output += `[${new Date().toLocaleTimeString()}] ${status}\n`;
 					}
+				},
+				onStdout: (output) => {
+					// Capture and display stdout in real-time
+					const currentExecution = scriptManagerState.executions[scriptId];
+					if (currentExecution && currentExecution.status === "running") {
+						currentExecution.output += output;
+					}
+				},
+				onStderr: (error) => {
+					// Capture and display stderr in real-time as part of output
+					const currentExecution = scriptManagerState.executions[scriptId];
+					if (currentExecution && currentExecution.status === "running") {
+						currentExecution.output += `ERROR: ${error}`;
+					}
 				}
 			});
 			

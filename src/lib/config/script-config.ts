@@ -40,6 +40,7 @@ import { dataCleaningScript } from './scripts/data-cleaning';
 import { advancedAnalysisScript } from './scripts/advanced-analysis';
 import { linearRegressionScript } from './scripts/linear-regression';
 import { geopandasTestScript } from './scripts/geopandas-test';
+import { errorTestScript } from './scripts/error-test';
 
 // Sample Python scripts for the application
 export const scripts: Script[] = [
@@ -48,5 +49,6 @@ export const scripts: Script[] = [
 	dataCleaningScript,
 	advancedAnalysisScript,
 	linearRegressionScript,
-	geopandasTestScript
+	geopandasTestScript,
+	errorTestScript
 ];

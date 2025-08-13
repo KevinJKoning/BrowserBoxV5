@@ -143,9 +143,10 @@ export class ScriptExecutor {
             const errorExecutionTime = Date.now() - startTime;
             resolve({
               success: false,
-              output: stdout,
+              output: data.stdout || stdout, // Use captured stdout from worker if available
               error: data.error || 'Unknown error',
-              executionTime: errorExecutionTime
+              executionTime: errorExecutionTime,
+              modifiedFiles: data.modifiedFiles || [] // Include any files that were created before error
             });
             break;
         }

@@ -3,11 +3,11 @@
 	import { Button } from "./ui/button/index.js";
 	import { Card, CardContent, CardHeader, CardTitle } from "./ui/card/index.js";
 	import { Separator } from "./ui/separator/index.js";
+	import { CopyButton } from "./ui/copy-button/index.js";
 	import ShieldCheckIcon from "@lucide/svelte/icons/shield-check";
 	import FileTextIcon from "@lucide/svelte/icons/file-text";
 	import LoaderIcon from "@lucide/svelte/icons/loader";
 	import AlertCircleIcon from "@lucide/svelte/icons/alert-circle";
-	import CopyIcon from "@lucide/svelte/icons/copy";
 	import CheckCircleIcon from "@lucide/svelte/icons/check-circle";
 	import XCircleIcon from "@lucide/svelte/icons/x-circle";
 	import AlertTriangleIcon from "@lucide/svelte/icons/alert-triangle";
@@ -18,7 +18,7 @@
 	import type { SchemaExpectation, SchemaValidationResult, SchemaColumnValidation } from "../config/schema-config.js";
 	import { schemaValidations } from "../config/schema-config.js";
 	import { fileRequirements } from "../config/file-config.js";
-	import { checkSchemaDependencies, previewStatusConfig, copyToClipboard, getPyodideInitializationMessage, getValidationStatusIcon, getValidationStatusClass } from "../utils.js";
+	import { checkSchemaDependencies, previewStatusConfig, getPyodideInitializationMessage, getValidationStatusIcon, getValidationStatusClass } from "../utils.js";
 
 	interface Props {
 		/** Schema validation ID */
@@ -67,6 +67,12 @@
 
 	// Expanded rows for detailed validation checks
 	let expandedRows = $state<Set<string>>(new Set());
+
+	// Content for validation results copy button
+	const validationCopyContent = $derived(() => {
+		return status === "error" ? error || "" : 
+			validationResults ? JSON.stringify(validationResults, null, 2) : output || "";
+	});
 
 	// Find the target file for this schema validation
 	const targetFile = $derived.by(() => {
@@ -164,9 +170,7 @@
 						<FileTextIcon class="size-4 flex-shrink-0" />
 						<span class="truncate">Schema Expectations</span>
 					</div>
-					<Button variant="ghost" size="sm" onclick={() => copyToClipboard(JSON.stringify(expectations, null, 2))} class="flex-shrink-0">
-						<CopyIcon class="size-4" />
-					</Button>
+					<CopyButton content={JSON.stringify(expectations, null, 2)} class="flex-shrink-0" />
 				</CardTitle>
 			</CardHeader>
 			<CardContent class="p-0 h-[calc(100%-4rem)] overflow-hidden">
@@ -404,12 +408,7 @@
 						{/if}
 					</span>
 					{#if (status === "error" && error) || output || validationResults}
-						<Button variant="ghost" size="sm" onclick={() => copyToClipboard(
-							status === "error" ? error : 
-							validationResults ? JSON.stringify(validationResults, null, 2) : output
-						)} class="flex-shrink-0">
-							<CopyIcon class="size-4" />
-						</Button>
+						<CopyButton content={validationCopyContent} class="flex-shrink-0" />
 					{/if}
 				</CardTitle>
 			</CardHeader>

@@ -3,18 +3,18 @@
 	import { Button } from "./ui/button/index.js";
 	import { Card, CardContent, CardHeader, CardTitle } from "./ui/card/index.js";
 	import { Separator } from "./ui/separator/index.js";
+	import { CopyButton } from "./ui/copy-button/index.js";
 	import PlayIcon from "@lucide/svelte/icons/play";
 	import FileTextIcon from "@lucide/svelte/icons/file-text";
 	import LoaderIcon from "@lucide/svelte/icons/loader";
 	import AlertCircleIcon from "@lucide/svelte/icons/alert-circle";
-	import CopyIcon from "@lucide/svelte/icons/copy";
 	import { PyodideManager, type PyodideInitializationStatus } from "../pyodide/pyodide-manager.js";
 	import { onMount } from 'svelte';
 	import { scripts } from "../config/script-config.js";
 	import { fileRequirements } from "../config/file-config.js";
 	import { fileManagerState, fileSelectors } from "../stores/file-store.svelte.js";
 	import { resultsManagerState, resultsSelectors } from "../stores/results-store.svelte.js";
-	import { checkScriptDependencies, previewStatusConfig, formatFileSize, copyToClipboard, getPyodideInitializationMessage } from "../utils.js";
+	import { checkScriptDependencies, previewStatusConfig, formatFileSize, getPyodideInitializationMessage } from "../utils.js";
 
 	interface Props {
 		/** Script ID for looking up dependencies */
@@ -110,12 +110,17 @@
 		}));
 	});
 
-
+	// Content for Live Output copy button
+	const liveOutputCopyContent = $derived(() => {
+		return status === "error" 
+			? (output && output.trim() ? `Output:\n${output}\n\nError:\n${error}` : error || "")
+			: output || "";
+	});
 </script>
 
-<div class="flex gap-6 h-full w-full min-w-0 overflow-hidden max-w-full">
+<div class="flex gap-6 h-full">
 	<!-- Script Content View (1/2 width) -->
-	<div class="flex-1 min-w-0 max-w-[50%] w-0">
+	<div class="flex-1 min-w-0 max-w-[50%]">
 		<Card class="h-full">
 			<CardHeader>
 				<CardTitle class="flex items-center justify-between gap-2 min-w-0">
@@ -123,9 +128,7 @@
 						<FileTextIcon class="size-4 flex-shrink-0" />
 						<span class="truncate">{filename}</span>
 					</div>
-					<Button variant="ghost" size="sm" onclick={() => copyToClipboard(scriptContent)} class="flex-shrink-0">
-						<CopyIcon class="size-4" />
-					</Button>
+					<CopyButton content={scriptContent} class="flex-shrink-0" />
 				</CardTitle>
 			</CardHeader>
 			<CardContent class="p-0 h-[calc(100%-4rem)] overflow-hidden">
@@ -137,7 +140,7 @@
 	</div>
 
 	<!-- Metrics & Output View (1/2 width) -->
-	<div class="flex-1 min-w-0 max-w-[50%] w-0 flex flex-col space-y-4">
+	<div class="flex-1 min-w-0 max-w-[50%] flex flex-col space-y-4">
 		<!-- Script Metrics -->
 		<Card class="h-80 flex-shrink-0 overflow-hidden">
 			<CardHeader>
@@ -238,7 +241,7 @@
 							{#each Object.entries(metrics) as [key, value]}
 								{#if !['executionTime', 'lastRun', 'outputLines', 'errorCount'].includes(key)}
 									<div class="flex justify-between min-w-0">
-										<span class="text-muted-foreground capitalize flex-shrink-0">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+										<span class="text-muted-foreground capitalize flex-shrink-0 truncate">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
 										<span class="truncate text-right">{value}</span>
 									</div>
 								{/if}
@@ -263,16 +266,27 @@
 						{/if}
 					</span>
 					{#if (status === "error" && error) || output}
-						<Button variant="ghost" size="sm" onclick={() => copyToClipboard(status === "error" ? error : output)} class="flex-shrink-0">
-							<CopyIcon class="size-4" />
-						</Button>
+						<CopyButton content={liveOutputCopyContent} class="flex-shrink-0" />
 					{/if}
 				</CardTitle>
 			</CardHeader>
 			<CardContent class="h-[calc(100%-4rem)] overflow-hidden">
 				<div class="overflow-auto h-full">
 					{#if status === "error" && error}
-						<pre class="text-xs font-mono whitespace-pre-wrap text-destructive bg-destructive/5 p-3 rounded w-full overflow-auto">{error}</pre>
+						<div class="space-y-3">
+							{#if output && output.trim()}
+								<!-- Show output that was captured before the error -->
+								<div>
+									<h4 class="text-xs font-medium text-muted-foreground mb-2">Output before error:</h4>
+									<pre class="text-xs font-mono whitespace-pre-wrap bg-muted/20 p-3 rounded w-full overflow-auto">{output}</pre>
+								</div>
+							{/if}
+							<!-- Show the error -->
+							<div>
+								<h4 class="text-xs font-medium text-destructive mb-2">Error:</h4>
+								<pre class="text-xs font-mono whitespace-pre-wrap text-destructive bg-destructive/5 p-3 rounded w-full overflow-auto">{error}</pre>
+							</div>
+						</div>
 					{:else if output}
 						<pre class="text-xs font-mono whitespace-pre-wrap bg-muted/20 p-3 rounded w-full overflow-auto">{output}</pre>
 					{:else if status === "running"}
