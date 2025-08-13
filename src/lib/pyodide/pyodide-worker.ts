@@ -205,6 +205,23 @@ self.onmessage = async function(event) {
             'geopandas-1.0.1-py3-none-any.whl'
         ];
         
+        // Matplotlib dependencies that need to be installed first
+        const matplotlibDeps = [
+            'cycler-0.12.1-py3-none-any.whl',
+            'fonttools-4.51.0-py3-none-any.whl',
+            'kiwisolver-1.4.5-cp312-cp312-pyodide_2024_0_wasm32.whl',
+            'pillow-10.2.0-cp312-cp312-pyodide_2024_0_wasm32.whl',
+            'pyparsing-3.1.2-py3-none-any.whl',
+            'contourpy-1.3.0-cp312-cp312-pyodide_2024_0_wasm32.whl'
+            // packaging and python-dateutil already available in base pyodide
+            // numpy already installed in basicPackages
+        ];
+        
+        // Matplotlib itself
+        const matplotlibPackages = [
+            'matplotlib-3.8.4-cp312-cp312-pyodide_2024_0_wasm32.whl'
+        ];
+        
         // Install basic packages first
         if (embeddedAssets) {
             // Single-file build mode - use embedded wheels directly
@@ -416,7 +433,87 @@ print("GeoPandas wheel extracted manually")
             }
         }
         
-        console.log('GeoPandas installation phase completed, moving to filesystem setup...');
+        // Install matplotlib dependencies
+        console.log('Installing matplotlib dependencies...');
+        if (embeddedAssets) {
+            for (const filename of matplotlibDeps) {
+                if (embeddedAssets[filename]) {
+                    try {
+                        // Convert embedded asset directly to binary data
+                        const base64Data = embeddedAssets[filename].split(',')[1];
+                        const binaryData = atob(base64Data);
+                        const data = new Uint8Array(binaryData.length);
+                        for (let i = 0; i < binaryData.length; i++) {
+                            data[i] = binaryData.charCodeAt(i);
+                        }
+                        
+                        const wheelPath = \`/wheels/\${filename}\`;
+                        self.pyodide.FS.writeFile(wheelPath, data);
+                        await micropip.install(\`emfs:\${wheelPath}\`);
+                        console.log(\`Installed matplotlib dependency: \${filename}\`);
+                    } catch (error) {
+                        console.error(\`Failed to install matplotlib dependency \${filename}:\`, error);
+                    }
+                }
+            }
+        } else {
+            for (const filename of matplotlibDeps) {
+                try {
+                    const response = await fetch(\`\${baseUrl}/pyodide/\${filename}\`);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const data = new Uint8Array(arrayBuffer);
+                    
+                    const wheelPath = \`/wheels/\${filename}\`;
+                    self.pyodide.FS.writeFile(wheelPath, data);
+                    await micropip.install(\`emfs:\${wheelPath}\`);
+                    console.log(\`Installed matplotlib dependency: \${filename}\`);
+                } catch (error) {
+                    console.error(\`Failed to install matplotlib dependency \${filename} from local files:\`, error);
+                }
+            }
+        }
+        
+        // Install matplotlib itself
+        console.log('Installing matplotlib...');
+        if (embeddedAssets) {
+            for (const filename of matplotlibPackages) {
+                if (embeddedAssets[filename]) {
+                    try {
+                        // Convert embedded asset directly to binary data
+                        const base64Data = embeddedAssets[filename].split(',')[1];
+                        const binaryData = atob(base64Data);
+                        const data = new Uint8Array(binaryData.length);
+                        for (let i = 0; i < binaryData.length; i++) {
+                            data[i] = binaryData.charCodeAt(i);
+                        }
+                        
+                        const wheelPath = \`/wheels/\${filename}\`;
+                        self.pyodide.FS.writeFile(wheelPath, data);
+                        await micropip.install(\`emfs:\${wheelPath}\`);
+                        console.log(\`Installed matplotlib: \${filename}\`);
+                    } catch (error) {
+                        console.error(\`Failed to install matplotlib \${filename}:\`, error);
+                    }
+                }
+            }
+        } else {
+            for (const filename of matplotlibPackages) {
+                try {
+                    const response = await fetch(\`\${baseUrl}/pyodide/\${filename}\`);
+                    const arrayBuffer = await response.arrayBuffer();
+                    const data = new Uint8Array(arrayBuffer);
+                    
+                    const wheelPath = \`/wheels/\${filename}\`;
+                    self.pyodide.FS.writeFile(wheelPath, data);
+                    await micropip.install(\`emfs:\${wheelPath}\`);
+                    console.log(\`Installed matplotlib: \${filename}\`);
+                } catch (error) {
+                    console.error(\`Failed to install matplotlib \${filename} from local files:\`, error);
+                }
+            }
+        }
+        
+        console.log('GeoPandas and matplotlib installation phase completed, moving to filesystem setup...');
         sendStatus("Setting up filesystem...");
         
         // Create data directory

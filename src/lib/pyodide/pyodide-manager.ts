@@ -267,9 +267,26 @@ export class PyodideManager {
       const geopandasPackages = [
         'geopandas-1.0.1-py3-none-any.whl'
       ];
+      
+      // Matplotlib dependencies that need to be installed first
+      const matplotlibDeps = [
+        'cycler-0.12.1-py3-none-any.whl',
+        'fonttools-4.51.0-py3-none-any.whl',
+        'kiwisolver-1.4.5-cp312-cp312-pyodide_2024_0_wasm32.whl',
+        'pillow-10.2.0-cp312-cp312-pyodide_2024_0_wasm32.whl',
+        'pyparsing-3.1.2-py3-none-any.whl',
+        'contourpy-1.3.0-cp312-cp312-pyodide_2024_0_wasm32.whl'
+        // packaging and python-dateutil already available in base pyodide
+        // numpy already installed in basicPackages
+      ];
+      
+      // Matplotlib itself
+      const matplotlibPackages = [
+        'matplotlib-3.8.4-cp312-cp312-pyodide_2024_0_wasm32.whl'
+      ];
 
-      const allPackageArrays = [basicPackages, fionaDeps, geopandasDeps, geopandasPackages];
-      const wheelFilenames = [...basicPackages, ...fionaDeps, ...geopandasDeps, ...geopandasPackages];
+      const allPackageArrays = [basicPackages, fionaDeps, geopandasDeps, geopandasPackages, matplotlibDeps, matplotlibPackages];
+      const wheelFilenames = [...basicPackages, ...fionaDeps, ...geopandasDeps, ...geopandasPackages, ...matplotlibDeps, ...matplotlibPackages];
       
       // Create wheels directory if it doesn't exist
       try {

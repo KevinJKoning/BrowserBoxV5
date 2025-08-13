@@ -41,6 +41,7 @@ import { advancedAnalysisScript } from './scripts/advanced-analysis';
 import { linearRegressionScript } from './scripts/linear-regression';
 import { geopandasTestScript } from './scripts/geopandas-test';
 import { errorTestScript } from './scripts/error-test';
+import { matplotlibDemoScript } from './scripts/matplotlib-demo';
 
 // Sample Python scripts for the application
 export const scripts: Script[] = [
@@ -50,5 +51,6 @@ export const scripts: Script[] = [
 	advancedAnalysisScript,
 	linearRegressionScript,
 	geopandasTestScript,
-	errorTestScript
+	errorTestScript,
+	matplotlibDemoScript
 ];
