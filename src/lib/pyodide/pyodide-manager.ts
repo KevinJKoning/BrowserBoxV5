@@ -135,26 +135,25 @@ export class PyodideManager {
 
       this.setStatus('loading-packages');
 
-      // First load standard Pyodide packages
-      console.log('Loading standard packages...');
-      
-      const standardPackages = [
-        'micropip',
-        'numpy', 
-        'pandas',
-        'matplotlib',
-        'scikit-learn'
-      ];
+      // Load micropip from our pyodide_0-27-7 distribution
+      console.log('Loading micropip from local pyodide_0-27-7...');
       
       try {
-        await this.pyodide.loadPackage(standardPackages);
-        console.log('Standard packages loaded successfully');
+        await this.pyodide.loadPackage(['micropip']);
+        console.log('Micropip 0.9.0 loaded successfully');
         
         // Get micropip for installing local wheel files
         const micropip = this.pyodide.pyimport("micropip");
         
-        // Now install GeoPandas and its dependencies from our local wheel files
-        console.log('Installing GeoPandas dependencies from local wheels...');
+        // Configure micropip to only use our local wheels
+        await this.pyodide.runPython(`
+import micropip
+# Disable PyPI index to use only our local wheels
+micropip.set_index_urls([])
+        `);
+        
+        // Install ALL packages from our pyodide_0-27-7 wheel files
+        console.log('Installing all packages from pyodide_0-27-7 wheels...');
         
         // Install in dependency order using our local wheel files
         const geoPackages = [

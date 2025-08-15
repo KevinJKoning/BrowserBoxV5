@@ -14,11 +14,11 @@ const PYODIDE_EXCLUDE = [
 ];
 
 export function viteStaticCopyPyodide() {
-	const pyodideDir = dirname(fileURLToPath(import.meta.resolve("pyodide")));
+	// Use our local pyodide_0-27-7 directory instead of npm package
 	return viteStaticCopy({
 		targets: [
 			{
-				src: [join(pyodideDir, "*")].concat(PYODIDE_EXCLUDE),
+				src: ['pyodide_0-27-7/pyodide.js', 'pyodide_0-27-7/pyodide.asm.js', 'pyodide_0-27-7/pyodide.asm.wasm', 'pyodide_0-27-7/pyodide-lock.json', 'pyodide_0-27-7/python_stdlib.zip'],
 				dest: "assets",
 			},
 		],
