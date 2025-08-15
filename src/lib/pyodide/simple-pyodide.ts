@@ -159,9 +159,36 @@ export class SimplePyodideExecutor {
         const pyodideUrl = \`\${baseUrl}/assets/pyodide.js\`;
         importScripts(pyodideUrl);
         
-        // Initialize with error handling for GitHub Pages
+        // Check if cross-origin isolation is available
+        const hasSharedArrayBuffer = typeof SharedArrayBuffer !== 'undefined';
+        const isCrossOriginIsolated = self.crossOriginIsolated === true;
+        
+        console.log('Environment check:', {
+          hasSharedArrayBuffer,
+          isCrossOriginIsolated,
+          location: self.location.hostname
+        });
+        
+        if (!hasSharedArrayBuffer || !isCrossOriginIsolated) {
+          console.warn('Cross-origin isolation not available - Pyodide may not work on GitHub Pages');
+          // For now, throw an informative error rather than trying to load
+          throw new Error(\`Pyodide requires cross-origin isolation (COOP/COEP headers) which is not available on GitHub Pages.
+          
+Environment details:
+- SharedArrayBuffer available: \${hasSharedArrayBuffer}
+- Cross-origin isolated: \${isCrossOriginIsolated}
+- Host: \${self.location.hostname}
+
+This is a known limitation of GitHub Pages. Consider using:
+- Netlify (supports _headers file)
+- Vercel (supports headers in vercel.json)  
+- Self-hosted with proper CORS headers
+- Or running locally with 'npm run dev'\`);
+        }
+        
+        // Initialize Pyodide (only if cross-origin isolated)
         try {
-          console.log('Attempting to load Pyodide...');
+          console.log('Loading Pyodide with cross-origin isolation...');
           pyodide = await loadPyodide({
             indexURL: \`\${baseUrl}/assets/\`,
             stdout: (text) => {
@@ -176,26 +203,7 @@ export class SimplePyodideExecutor {
           console.log('Pyodide loaded successfully');
         } catch (error) {
           console.error('Failed to load Pyodide:', error);
-          // If standard loading fails, try with fallback configuration
-          console.log('Trying fallback Pyodide configuration...');
-          try {
-            pyodide = await loadPyodide({
-              indexURL: \`\${baseUrl}/assets/\`,
-              fullStdLib: false, // Reduce memory usage
-              stdout: (text) => {
-                stdout += text;
-                self.postMessage({ type: 'stdout', data: text });
-              },
-              stderr: (text) => {
-                stderr += text;
-                self.postMessage({ type: 'stderr', data: text });
-              }
-            });
-            console.log('Pyodide loaded with fallback configuration');
-          } catch (fallbackError) {
-            console.error('Fallback Pyodide loading also failed:', fallbackError);
-            throw new Error('Cannot initialize Pyodide in this environment: ' + fallbackError.message);
-          }
+          throw new Error('Pyodide initialization failed: ' + error.message);
         }
 
         // Load basic scientific packages with error handling
@@ -334,13 +342,24 @@ sys.stderr = _stderr_capture
             }
           }
         } catch (error) {
-          self.postMessage({
-            type: 'error',
-            data: {
-              error: error.message,
-              output: stdout
-            }
-          });
+          // Check if this is the cross-origin isolation error
+          if (error.message && error.message.includes('cross-origin isolation')) {
+            self.postMessage({
+              type: 'error',
+              data: {
+                error: 'GitHub Pages Limitation: ' + error.message,
+                output: 'Pyodide requires cross-origin isolation headers (COOP/COEP) which GitHub Pages does not support.\\n\\nSuggested alternatives:\\n- Use Netlify or Vercel for deployment\\n- Run locally with \\'npm run dev\\'\\n- Deploy to a server with proper CORS configuration'
+              }
+            });
+          } else {
+            self.postMessage({
+              type: 'error',
+              data: {
+                error: error.message,
+                output: stdout
+              }
+            });
+          }
         }
       };
     `;
