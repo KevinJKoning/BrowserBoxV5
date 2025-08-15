@@ -186,6 +186,20 @@ export class ScriptExecutor {
       };
       
       // Send execution request to worker
+      if (typeof script.content !== 'string' || script.content.length === 0) {
+        console.error('Script content is empty or invalid for script id:', script.id);
+        if (timeoutId) clearTimeout(timeoutId);
+        worker.terminate();
+        this.activeWorkers.delete(executionId);
+        const executionTime = Date.now() - startTime;
+        resolve({
+          success: false,
+          output: stdout,
+            error: 'Script content is empty',
+          executionTime
+        });
+        return;
+      }
       const request: ScriptExecutionRequest = {
         id: executionId,
         python: script.content,
@@ -267,7 +281,12 @@ export class ScriptExecutor {
       this.pyodideManager.clearBuffers();
       
       // Execute the script
-      const result = await this.pyodideManager.runPython(script.python);
+      // Use the Script.content field (script.python does not exist on Script interface)
+      const pythonSource = script.content ?? '';
+      if (typeof pythonSource !== 'string' || pythonSource.length === 0) {
+        throw new Error('Script content is empty or not a string');
+      }
+      const result = await this.pyodideManager.runPython(pythonSource);
       
       // Get output
       const stdout = this.pyodideManager.getStdoutBuffer();
