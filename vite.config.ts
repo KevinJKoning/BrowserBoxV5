@@ -15,11 +15,16 @@ const PYODIDE_EXCLUDE = [
 
 export function viteStaticCopyPyodide() {
 	// Use our local pyodide_0-27-7 directory instead of npm package
+	// We must copy ALL wheels and support files or SRI (integrity) checks will fail when
+	// Pyodide attempts to fetch packages listed in pyodide-lock.json. Previously only a
+	// subset was copied which caused fetch() to retrieve a 404 fallback (HTML) and thus
+	// mismatch the expected SHA-256 digest -> integrity errors & missing packages (e.g. numpy).
 	return viteStaticCopy({
 		targets: [
 			{
-				src: ['pyodide_0-27-7/pyodide.js', 'pyodide_0-27-7/pyodide.asm.js', 'pyodide_0-27-7/pyodide.asm.wasm', 'pyodide_0-27-7/pyodide-lock.json', 'pyodide_0-27-7/python_stdlib.zip'],
-				dest: "assets",
+				// Copy everything in the local build directory (wheels, wasm, lock file, stdlib, etc.)
+				src: 'pyodide_0-27-7/**',
+				dest: 'assets',
 			},
 		],
 	});
@@ -34,27 +39,16 @@ export default defineConfig(({ command, mode }) => ({
 		VitePWA({
 			registerType: 'autoUpdate',
 			workbox: {
-				globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
 				maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15MB
 				runtimeCaching: [
 					{
-						urlPattern: /^.*\/assets\/(.*\.(wasm|zip|json|js)).*$/,
+						// Core Pyodide assets plus wheels now all live under /assets
+						urlPattern: /^.*\/assets\/(.*\.(wasm|zip|json|js|whl|data)).*$/,
 						handler: 'CacheFirst',
 						options: {
 							cacheName: 'pyodide-core-assets',
 							expiration: {
 								maxEntries: 20,
-								maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
-							}
-						}
-					},
-					{
-						urlPattern: /^.*\/pyodide\/(.*\.whl).*$/,
-						handler: 'CacheFirst',
-						options: {
-							cacheName: 'pyodide-wheel-packages',
-							expiration: {
-								maxEntries: 100,
 								maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
 							}
 						}

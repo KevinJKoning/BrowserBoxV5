@@ -4,6 +4,7 @@
  */
 
 import { createPyodideWorker, type WorkerMessage, type ScriptExecutionRequest, type ScriptExecutionResult as WorkerResult } from './pyodide-worker.js';
+import { PyodideManager } from './pyodide-manager.js';
 import type { Script } from '../config/script-config.js';
 import { fileRequirements } from '../config/file-config.js';
 
@@ -33,9 +34,12 @@ export interface ScriptExecutionOptions {
 export class ScriptExecutor {
   private activeWorkers: Map<string, Worker> = new Map();
   private executionCounter: number = 0;
+  private pyodideManager: PyodideManager;
+  private useMainThread: boolean = true; // Use main thread approach for now
 
   constructor() {
-    // No shared state - each execution creates a fresh worker
+    // Initialize PyodideManager for main thread execution
+    this.pyodideManager = PyodideManager.getInstance();
   }
 
   public async executeScript(
@@ -44,6 +48,11 @@ export class ScriptExecutor {
   ): Promise<ScriptExecutionResult> {
     const startTime = Date.now();
     const executionId = `exec_${++this.executionCounter}_${Date.now()}`;
+
+    // Use main thread approach for now to avoid worker baseUrl issues
+    if (this.useMainThread) {
+      return this.executeScriptMainThread(script, options, startTime);
+    }
     
     // Prepare files for worker using defaultFilenames from file requirements
     const files: Array<{ name: string; originalName: string; requirementId: string; data: ArrayBuffer }> = [];
@@ -65,8 +74,19 @@ export class ScriptExecutor {
     // No embedded assets in PWA mode - use standard file serving
     const embeddedAssets = undefined;
     
-    // Get base URL for development mode
-    const baseUrl = `${window.location.protocol}//${window.location.host}`;
+    // Get base URL for development mode - use import.meta.env for Vite compatibility
+    const baseUrl = import.meta.env.DEV ? 
+      `${window.location.protocol}//${window.location.hostname}:${window.location.port}` :
+      window.location.origin;
+    
+    console.log('Main thread baseUrl:', baseUrl);
+    console.log('Location details:', {
+      origin: window.location.origin,
+      protocol: window.location.protocol,
+      hostname: window.location.hostname,
+      port: window.location.port,
+      host: window.location.host
+    });
     
     return new Promise((resolve) => {
       // Create a fresh worker for this execution
@@ -206,5 +226,83 @@ export class ScriptExecutor {
   // Cleanup method
   public dispose(): void {
     this.cancelExecution(); // Cancel all active executions
+  }
+
+  private async executeScriptMainThread(
+    script: Script,
+    options: ScriptExecutionOptions,
+    startTime: number
+  ): Promise<ScriptExecutionResult> {
+    try {
+      // Setup status callback
+      const updateStatus = options.onStatusUpdate || (() => {});
+      
+      updateStatus("Initializing Python environment...");
+      
+      // Get Pyodide instance (will initialize if needed)
+      const pyodide = await this.pyodideManager.getPyodide();
+      
+      updateStatus("Loading data files...");
+      
+      // Handle file uploads
+      if (options.dataFiles && options.dataFiles.length > 0) {
+        await this.pyodideManager.createDataDirectory();
+        
+        for (const { file, requirementId } of options.dataFiles) {
+          const requirement = fileRequirements[requirementId];
+          const filename = requirement?.defaultFilename || file.name;
+          
+          const arrayBuffer = await file.arrayBuffer();
+          const data = new Uint8Array(arrayBuffer);
+          
+          await this.pyodideManager.writeFile(`/data/${filename}`, data);
+          
+          console.log(`File loaded: ${file.name} -> ${filename}`);
+        }
+      }
+      
+      updateStatus("Executing Python script...");
+      
+      // Clear output buffers
+      this.pyodideManager.clearBuffers();
+      
+      // Execute the script
+      const result = await this.pyodideManager.runPython(script.python);
+      
+      // Get output
+      const stdout = this.pyodideManager.getStdoutBuffer();
+      const stderr = this.pyodideManager.getStderrBuffer();
+      
+      const executionTime = Date.now() - startTime;
+      
+      updateStatus("Execution completed");
+      
+      // Call output callbacks if provided
+      if (options.onStdout && stdout) {
+        options.onStdout(stdout);
+      }
+      if (options.onStderr && stderr) {
+        options.onStderr(stderr);
+      }
+      
+      return {
+        success: !stderr,
+        output: stdout || '',
+        error: stderr || undefined,
+        executionTime,
+        modifiedFiles: [] // TODO: implement file collection if needed
+      };
+      
+    } catch (error) {
+      const executionTime = Date.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      return {
+        success: false,
+        output: '',
+        error: errorMessage,
+        executionTime
+      };
+    }
   }
 }

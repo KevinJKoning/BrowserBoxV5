@@ -135,14 +135,21 @@ export class PyodideManager {
 
       this.setStatus('loading-packages');
 
-      // Load micropip from our pyodide_0-27-7 distribution
-      console.log('Loading micropip from local pyodide_0-27-7...');
+      // First load standard Pyodide packages using the built-in method
+      console.log('Loading standard Pyodide packages...');
+      const standardPackages = [
+        'micropip',
+        'numpy', 
+        'pandas',
+        'matplotlib',
+        'scikit-learn'
+      ];
+      
+      await this.pyodide.loadPackage(standardPackages);
+      console.log('Standard Pyodide packages loaded successfully');
       
       try {
-        await this.pyodide.loadPackage(['micropip']);
-        console.log('Micropip 0.9.0 loaded successfully');
-        
-        // Get micropip for installing local wheel files
+        // Get micropip for installing additional local wheel files
         const micropip = this.pyodide.pyimport("micropip");
         
         // Configure micropip to only use our local wheels
@@ -152,40 +159,19 @@ import micropip
 micropip.set_index_urls([])
         `);
         
-        // Install ALL packages from our pyodide_0-27-7 wheel files
-        console.log('Installing all packages from pyodide_0-27-7 wheels...');
+        // Install additional packages from our pyodide_0-27-7 wheel files
+        console.log('Installing additional packages from pyodide_0-27-7 wheels...');
         
-        // Install in dependency order using our local wheel files
-        const geoPackages = [
-          // Basic dependencies (some may already be available)
-          'attrs-23.2.0-py3-none-any.whl',
-          'certifi-2024.12.14-py3-none-any.whl', 
-          'setuptools-69.5.1-py3-none-any.whl',
-          'click-8.1.7-py3-none-any.whl',
-          'cligj-0.7.2-py3-none-any.whl',
-          'python_dateutil-2.9.0.post0-py2.py3-none-any.whl',
-          'pytz-2024.1-py2.py3-none-any.whl',
-          'six-1.16.0-py2.py3-none-any.whl',
-          'packaging-24.2-py3-none-any.whl',
-          'tzdata-2024.1-py2.py3-none-any.whl',
-          // Enhanced data processing
-          'fastparquet-2024.5.0-cp312-cp312-pyodide_2024_0_wasm32.whl',
-          // Matplotlib dependencies
-          'cycler-0.12.1-py3-none-any.whl',
-          'fonttools-4.51.0-py3-none-any.whl',
-          'kiwisolver-1.4.5-cp312-cp312-pyodide_2024_0_wasm32.whl',
-          'pillow-10.2.0-cp312-cp312-pyodide_2024_0_wasm32.whl',
-          'pyparsing-3.1.2-py3-none-any.whl',
-          'contourpy-1.3.0-cp312-cp312-pyodide_2024_0_wasm32.whl',
-          // Core geospatial packages
+        // Install core geospatial packages (avoid packages with missing dependencies for now)
+        const additionalPackages = [
+          // Core geospatial packages that should work
           'shapely-2.0.6-cp312-cp312-pyodide_2024_0_wasm32.whl',
-          'fiona-1.9.5-cp312-cp312-pyodide_2024_0_wasm32.whl',
           'pyproj-3.6.1-cp312-cp312-pyodide_2024_0_wasm32.whl',
-          // GeoPandas itself
-          'geopandas-1.0.1-py3-none-any.whl'
+          // Enhanced data processing 
+          'fastparquet-2024.5.0-cp312-cp312-pyodide_2024_0_wasm32.whl',
         ];
         
-        for (const wheelFile of geoPackages) {
+        for (const wheelFile of additionalPackages) {
           try {
             const wheelUrl = `${basePath}/pyodide/${wheelFile}`;
             console.log(`Installing ${wheelFile}...`);
@@ -197,7 +183,7 @@ micropip.set_index_urls([])
           }
         }
         
-        // Test all functionality
+        // Test functionality of installed packages
         await this.pyodide.runPython(`
 import numpy as np
 import pandas as pd
@@ -217,15 +203,16 @@ except ImportError as e:
     print(f"⚠ FastParquet not available: {e}")
 
 try:
-    import geopandas as gpd
-    import fiona
     import shapely
-    print("✓ Geospatial packages loaded successfully!")
-    print(f"GeoPandas version: {gpd.__version__}")
-    print(f"Fiona version: {fiona.__version__}")
-    print(f"Shapely version: {shapely.__version__}")
+    print(f"✓ Shapely version: {shapely.__version__}")
 except ImportError as e:
-    print(f"⚠ Some geospatial packages not available: {e}")
+    print(f"⚠ Shapely not available: {e}")
+
+try:
+    import pyproj
+    print(f"✓ PyProj version: {pyproj.__version__}")
+except ImportError as e:
+    print(f"⚠ PyProj not available: {e}")
         `);
         
       } catch (error) {

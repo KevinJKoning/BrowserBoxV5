@@ -121,9 +121,9 @@ async function loadPyodideAndPackages(embeddedAssets, baseUrl) {
                 throw new Error('Base URL not provided');
             }
             
-            // Detect GitHub Pages deployment
-            const isGitHubPages = baseUrl.includes('github.io');
-            const basePath = isGitHubPages ? '/BrowserBoxV5' : '';
+            // Detect production vs development
+            const isProduction = baseUrl.includes('github.io') || baseUrl.includes('/BrowserBoxV5/');
+            const basePath = isProduction ? '/BrowserBoxV5' : '';
             
             // Import from assets directory (where Vite places core Pyodide files)
             importScripts(\`\${baseUrl}\${basePath}/assets/pyodide.js\`);
@@ -167,6 +167,8 @@ let pyodideReadyPromise = null;
 self.onmessage = async function(event) {
     try {
         const { id, python, files, embeddedAssets, baseUrl } = event.data;
+        
+        console.log('Worker received baseUrl:', baseUrl);
         
         // Initialize Pyodide on first message with embedded assets
         if (!pyodideReadyPromise) {

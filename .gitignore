@@ -9,6 +9,10 @@ node_modules
 /build-inline
 /build
 /pyodide*
+dist/
+
+# If you later choose GitHub Pages "docs/" deployment, remove this line and use docs/
+#docs/
 
 # OS
 .DS_Store
