@@ -275,7 +275,7 @@ print(f"Scikit-learn version: {sklearn.__version__}")
             // Standard mode - use pyodide directory for wheel files
             for (const filename of basicPackages) {
                 try {
-                    const response = await fetch(\`\${baseUrl}\${basePath}/pyodide/\${filename}\`);
+                    const response = await fetch(\`\${baseUrl}\${basePath}/assets/\${filename}\`);
                     const arrayBuffer = await response.arrayBuffer();
                     const data = new Uint8Array(arrayBuffer);
                     
@@ -322,7 +322,7 @@ print(f"Scikit-learn version: {sklearn.__version__}")
         } else {
             for (const filename of fionaDeps) {
                 try {
-                    const response = await fetch(\`\${baseUrl}/pyodide/\${filename}\`);
+                    const response = await fetch(\`\${baseUrl}/assets/\${filename}\`);
                     const arrayBuffer = await response.arrayBuffer();
                     const data = new Uint8Array(arrayBuffer);
                     
@@ -362,7 +362,7 @@ print(f"Scikit-learn version: {sklearn.__version__}")
         } else {
             for (const filename of geopandasDeps) {
                 try {
-                    const response = await fetch(\`\${baseUrl}/pyodide/\${filename}\`);
+                    const response = await fetch(\`\${baseUrl}/assets/\${filename}\`);
                     const arrayBuffer = await response.arrayBuffer();
                     const data = new Uint8Array(arrayBuffer);
                     
@@ -420,7 +420,7 @@ print("GeoPandas wheel extracted manually")
         } else {
             for (const filename of geopandasPackages) {
                 try {
-                    const response = await fetch(\`\${baseUrl}/pyodide/\${filename}\`);
+                    const response = await fetch(\`\${baseUrl}/assets/\${filename}\`);
                     const arrayBuffer = await response.arrayBuffer();
                     const data = new Uint8Array(arrayBuffer);
                     
@@ -478,7 +478,7 @@ print("GeoPandas wheel extracted manually")
         } else {
             for (const filename of matplotlibDeps) {
                 try {
-                    const response = await fetch(\`\${baseUrl}/pyodide/\${filename}\`);
+                    const response = await fetch(\`\${baseUrl}/assets/\${filename}\`);
                     const arrayBuffer = await response.arrayBuffer();
                     const data = new Uint8Array(arrayBuffer);
                     
@@ -518,7 +518,7 @@ print("GeoPandas wheel extracted manually")
         } else {
             for (const filename of matplotlibPackages) {
                 try {
-                    const response = await fetch(\`\${baseUrl}/pyodide/\${filename}\`);
+                    const response = await fetch(\`\${baseUrl}/assets/\${filename}\`);
                     const arrayBuffer = await response.arrayBuffer();
                     const data = new Uint8Array(arrayBuffer);
                     

@@ -23,7 +23,7 @@ export function viteStaticCopyPyodide() {
 		targets: [
 			{
 				// Copy everything in the local build directory (wheels, wasm, lock file, stdlib, etc.)
-				src: 'pyodide_0-27-7/**',
+				src: 'pyodide_0-27-7/*',
 				dest: 'assets',
 			},
 		],

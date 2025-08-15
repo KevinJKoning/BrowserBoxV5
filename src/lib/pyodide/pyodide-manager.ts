@@ -173,7 +173,7 @@ micropip.set_index_urls([])
         
         for (const wheelFile of additionalPackages) {
           try {
-            const wheelUrl = `${basePath}/pyodide/${wheelFile}`;
+            const wheelUrl = `${basePath}/assets/${wheelFile}`;
             console.log(`Installing ${wheelFile}...`);
             await micropip.install(wheelUrl);
             console.log(`✓ Installed ${wheelFile}`);
