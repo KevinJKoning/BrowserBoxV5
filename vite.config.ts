@@ -19,7 +19,7 @@ export function viteStaticCopyPyodide() {
 }
 
 export default defineConfig(({ command, mode }) => ({
-	base: mode === 'production' ? '/BrowserBoxV5/' : '/',
+	base: '/',
 	plugins: [
 		tailwindcss(), 
 		svelte(),
@@ -50,8 +50,8 @@ export default defineConfig(({ command, mode }) => ({
 				theme_color: '#ffffff',
 				background_color: '#ffffff',
 				display: 'standalone',
-				start_url: mode === 'production' ? '/BrowserBoxV5/' : '/',
-				scope: mode === 'production' ? '/BrowserBoxV5/' : '/',
+				start_url: '/',
+				scope: '/',
 				icons: [
 					{
 						src: 'icon.svg',
