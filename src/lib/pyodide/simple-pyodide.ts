@@ -159,18 +159,44 @@ export class SimplePyodideExecutor {
         const pyodideUrl = \`\${baseUrl}/assets/pyodide.js\`;
         importScripts(pyodideUrl);
         
-        // Initialize with standard configuration
-        pyodide = await loadPyodide({
-          indexURL: \`\${baseUrl}/assets/\`,
-          stdout: (text) => {
-            stdout += text;
-            self.postMessage({ type: 'stdout', data: text });
-          },
-          stderr: (text) => {
-            stderr += text;
-            self.postMessage({ type: 'stderr', data: text });
+        // Initialize with error handling for GitHub Pages
+        try {
+          console.log('Attempting to load Pyodide...');
+          pyodide = await loadPyodide({
+            indexURL: \`\${baseUrl}/assets/\`,
+            stdout: (text) => {
+              stdout += text;
+              self.postMessage({ type: 'stdout', data: text });
+            },
+            stderr: (text) => {
+              stderr += text;
+              self.postMessage({ type: 'stderr', data: text });
+            }
+          });
+          console.log('Pyodide loaded successfully');
+        } catch (error) {
+          console.error('Failed to load Pyodide:', error);
+          // If standard loading fails, try with fallback configuration
+          console.log('Trying fallback Pyodide configuration...');
+          try {
+            pyodide = await loadPyodide({
+              indexURL: \`\${baseUrl}/assets/\`,
+              fullStdLib: false, // Reduce memory usage
+              stdout: (text) => {
+                stdout += text;
+                self.postMessage({ type: 'stdout', data: text });
+              },
+              stderr: (text) => {
+                stderr += text;
+                self.postMessage({ type: 'stderr', data: text });
+              }
+            });
+            console.log('Pyodide loaded with fallback configuration');
+          } catch (fallbackError) {
+            console.error('Fallback Pyodide loading also failed:', fallbackError);
+            throw new Error('Cannot initialize Pyodide in this environment: ' + fallbackError.message);
           }
-        });
+        }
 
         // Load basic scientific packages with error handling
         try {
