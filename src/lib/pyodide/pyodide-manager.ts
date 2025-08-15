@@ -135,129 +135,39 @@ export class PyodideManager {
 
       this.setStatus('loading-packages');
 
-      // Load micropip first (as per Pyodide documentation)
-      await this.pyodide.loadPackage("micropip");
+      // Use standard Pyodide package loading (no custom wheels for now)
+      console.log('Loading basic packages...');
       
-      // Get micropip reference in JavaScript
-      const micropip = this.pyodide.pyimport("micropip");
-      
-      // Configure micropip for offline mode - disable PyPI index to prevent CDN access
-      micropip.set_index_urls([]);
-
-      // Install packages in dependency order
-      const basicPackages = [
-        'numpy-2.0.2-cp312-cp312-pyodide_2024_0_wasm32.whl',
-        'pandas-2.2.3-cp312-cp312-pyodide_2024_0_wasm32.whl',
-        'fastparquet-2024.5.0-cp312-cp312-pyodide_2024_0_wasm32.whl',
-        'scikit_learn-1.6.1-cp312-cp312-pyodide_2024_0_wasm32.whl'
+      // Load packages that are available in standard Pyodide distribution
+      const standardPackages = [
+        'micropip',
+        'numpy', 
+        'pandas',
+        'matplotlib',
+        'scikit-learn'
       ];
       
-      const fionaDeps = [
-        'attrs-23.2.0-py3-none-any.whl',
-        'certifi-2024.12.14-py3-none-any.whl',
-        'setuptools-69.5.1-py3-none-any.whl',
-        'click-8.1.7-py3-none-any.whl',
-        'cligj-0.7.2-py3-none-any.whl'
-      ];
-      
-      const geopandasDeps = [
-        'shapely-2.0.6-cp312-cp312-pyodide_2024_0_wasm32.whl',
-        'fiona-1.9.5-cp312-cp312-pyodide_2024_0_wasm32.whl', 
-        'pyproj-3.6.1-cp312-cp312-pyodide_2024_0_wasm32.whl'
-      ];
-      
-      const geopandasPackages = [
-        'geopandas-1.0.1-py3-none-any.whl'
-      ];
-      
-      const matplotlibDeps = [
-        'cycler-0.12.1-py3-none-any.whl',
-        'fonttools-4.51.0-py3-none-any.whl',
-        'kiwisolver-1.4.5-cp312-cp312-pyodide_2024_0_wasm32.whl',
-        'pillow-10.2.0-cp312-cp312-pyodide_2024_0_wasm32.whl',
-        'pyparsing-3.1.2-py3-none-any.whl',
-        'contourpy-1.3.0-cp312-cp312-pyodide_2024_0_wasm32.whl'
-      ];
-      
-      const matplotlibPackages = [
-        'matplotlib-3.8.4-cp312-cp312-pyodide_2024_0_wasm32.whl'
-      ];
-
-      const allPackageArrays = [basicPackages, fionaDeps, geopandasDeps, geopandasPackages, matplotlibDeps, matplotlibPackages];
-      
-      // Create wheels directory if it doesn't exist
       try {
-        this.pyodide.FS.mkdir('/wheels');
-      } catch (e) {
-        // Directory might already exist
-      }
-      
-      // Install each package group in dependency order
-      for (let i = 0; i < allPackageArrays.length; i++) {
-        const packageArray = allPackageArrays[i];
-        const groupName = ['basic packages', 'fiona dependencies', 'geopandas dependencies', 'geopandas', 'matplotlib dependencies', 'matplotlib'][i];
+        await this.pyodide.loadPackage(standardPackages);
+        console.log('Standard packages loaded successfully');
         
-        console.log(`Installing ${groupName}...`);
+        // Test basic functionality
+        await this.pyodide.runPython(`
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import sklearn
+print("✓ Basic scientific computing packages loaded successfully!")
+print(f"NumPy version: {np.__version__}")
+print(f"Pandas version: {pd.__version__}")
+print(f"Matplotlib version: {plt.matplotlib.__version__}")
+print(f"Scikit-learn version: {sklearn.__version__}")
+        `);
         
-        for (const filename of packageArray) {
-          try {
-            // Use pyodide path for wheel files (they're copied to public/pyodide)
-            const packageUrl = `${basePath}/pyodide/${filename}`;
-            
-            // Install geopandas manually by extracting the wheel to bypass micropip dependency checking
-            if (filename === 'geopandas-1.0.1-py3-none-any.whl') {
-              // Fetch and write to filesystem first
-              const response = await fetch(packageUrl);
-              const arrayBuffer = await response.arrayBuffer();
-              const data = new Uint8Array(arrayBuffer);
-              const wheelPath = `/wheels/${filename}`;
-              this.pyodide.FS.writeFile(wheelPath, data);
-              
-              await this.pyodide.runPythonAsync(`
-import zipfile
-import sys
-import os
-
-# Extract geopandas wheel manually
-with zipfile.ZipFile('/wheels/${filename}', 'r') as zip_file:
-    # Extract to site-packages
-    zip_file.extractall('/lib/python3.12/site-packages/')
-
-# Refresh module cache to recognize new packages
-import importlib
-if hasattr(importlib, 'invalidate_caches'):
-    importlib.invalidate_caches()
-
-print("GeoPandas wheel extracted manually")
-              `);
-            } else {
-              await micropip.install(packageUrl);
-            }
-            
-            console.log(`Installed: ${filename}`);
-          } catch (error) {
-            console.error(`Failed to install ${filename}:`, error);
-          }
-        }
+      } catch (error) {
+        console.error('Failed to load standard packages:', error);
+        throw error;
       }
-
-      // Verify installations
-      await this.pyodide.runPython(`
-        try:
-          import numpy as np
-          import pandas as pd
-          import fastparquet
-          import sklearn
-          import fiona
-          import geopandas as gpd
-          import matplotlib.pyplot as plt
-          print("All packages successfully imported!")
-          print(f"GeoPandas version: {gpd.__version__}")
-          print(f"Fiona version: {fiona.__version__}")
-          print(f"Matplotlib version: {plt.matplotlib.__version__}")
-        except ImportError as e:
-          print(f"Import error: {e}")
-      `);
 
       this.setStatus('ready');
       return this.pyodide;

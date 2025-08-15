@@ -184,33 +184,29 @@ self.onmessage = async function(event) {
         
         sendStatus("Loading packages...");
         
-        // Load micropip first
-        await self.pyodide.loadPackage("micropip");
-        const micropip = self.pyodide.pyimport("micropip");
-        
-        // Configure micropip for offline mode - disable PyPI index to prevent CDN access
-        // This allows graceful failures for missing packages instead of hard blocks
-        micropip.set_index_urls([]);
-        
-        // Install packages in dependency order
-        // First install basic packages
-        const basicPackages = [
-            'numpy-2.0.2-cp312-cp312-pyodide_2024_0_wasm32.whl',
-            'pandas-2.2.3-cp312-cp312-pyodide_2024_0_wasm32.whl',
-            'fastparquet-2024.5.0-cp312-cp312-pyodide_2024_0_wasm32.whl',
-            'scikit_learn-1.6.1-cp312-cp312-pyodide_2024_0_wasm32.whl'
+        // Use standard Pyodide package loading (no custom wheels for now)
+        const standardPackages = [
+            'micropip',
+            'numpy', 
+            'pandas',
+            'matplotlib',
+            'scikit-learn'
         ];
         
-        // Fiona dependencies that need to be installed first
-        const fionaDeps = [
-            'attrs-23.2.0-py3-none-any.whl',
-            'certifi-2024.12.14-py3-none-any.whl',
-            'setuptools-69.5.1-py3-none-any.whl',
-            'click-8.1.7-py3-none-any.whl',
-            'click_plugins-1.1.1-py2.py3-none-any.whl',
-            'cligj-0.7.2-py3-none-any.whl'
-            // six is already available in base pyodide
-        ];
+        await self.pyodide.loadPackage(standardPackages);
+        
+        // Verify package loading
+        await self.pyodide.runPython(\`
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import sklearn
+print("✓ Basic scientific computing packages loaded successfully!")
+print(f"NumPy version: {np.__version__}")
+print(f"Pandas version: {pd.__version__}")
+print(f"Matplotlib version: {plt.matplotlib.__version__}")
+print(f"Scikit-learn version: {sklearn.__version__}")
+        \`);
         
         // GeoPandas dependencies as wheel files  
         const geopandasDeps = [
