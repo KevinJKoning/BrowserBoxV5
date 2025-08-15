@@ -62,10 +62,8 @@ export class ScriptExecutor {
       }
     }
     
-    // Get embedded assets if we're in a single-file build
-    const embeddedAssets = typeof (globalThis as any).__PYODIDE_ASSETS__ !== 'undefined' 
-      ? (globalThis as any).__PYODIDE_ASSETS__ 
-      : undefined;
+    // No embedded assets in PWA mode - use standard file serving
+    const embeddedAssets = undefined;
     
     // Get base URL for development mode
     const baseUrl = `${window.location.protocol}//${window.location.host}`;

@@ -114,19 +114,23 @@ async function loadPyodideAndPackages(embeddedAssets, baseUrl) {
             throw error;
         }
     } else {
-        // Development mode - load from local files
+        // Standard mode - load from Vite-generated paths
         try {
             // Use base URL passed from main thread
             if (!baseUrl) {
-                throw new Error('Base URL not provided for development mode');
+                throw new Error('Base URL not provided');
             }
             
-            // Import from local pyodide directory
-            importScripts(\`\${baseUrl}/pyodide/pyodide.js\`);
+            // Detect GitHub Pages deployment
+            const isGitHubPages = baseUrl.includes('github.io');
+            const basePath = isGitHubPages ? '/BrowserBoxV5' : '';
             
-            // Load Pyodide with local assets
+            // Import from assets directory (where Vite places core Pyodide files)
+            importScripts(\`\${baseUrl}\${basePath}/assets/pyodide.js\`);
+            
+            // Load Pyodide with assets path for core files
             self.pyodide = await loadPyodide({
-                indexURL: \`\${baseUrl}/pyodide/\`,
+                indexURL: \`\${baseUrl}\${basePath}/assets/\`,
                 stdout: (text) => {
                     self.postMessage({ type: 'stdout', data: text });
                 },
@@ -270,10 +274,10 @@ self.onmessage = async function(event) {
                 }
             }
         } else {
-            // Development mode - use local wheel files
+            // Standard mode - use pyodide directory for wheel files
             for (const filename of basicPackages) {
                 try {
-                    const response = await fetch(\`\${baseUrl}/pyodide/\${filename}\`);
+                    const response = await fetch(\`\${baseUrl}\${basePath}/pyodide/\${filename}\`);
                     const arrayBuffer = await response.arrayBuffer();
                     const data = new Uint8Array(arrayBuffer);
                     
@@ -289,7 +293,7 @@ self.onmessage = async function(event) {
                     await micropip.install(\`emfs:\${wheelPath}\`);
                     console.log(\`Installed: \${filename}\`);
                 } catch (error) {
-                    console.error(\`Failed to install \${filename} from local files:\`, error);
+                    console.error(\`Failed to install \${filename} from pyodide directory:\`, error);
                 }
             }
         }

@@ -72,14 +72,14 @@ export default defineConfig(({ command, mode }) => ({
 				scope: mode === 'production' ? '/BrowserBoxV5/' : '/',
 				icons: [
 					{
-						src: 'icon-192.png',
+						src: 'icon.svg',
 						sizes: '192x192',
-						type: 'image/png'
+						type: 'image/svg+xml'
 					},
 					{
-						src: 'icon-512.png',
+						src: 'icon.svg',
 						sizes: '512x512',
-						type: 'image/png'
+						type: 'image/svg+xml'
 					}
 				]
 			}
