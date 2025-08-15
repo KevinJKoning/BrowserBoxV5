@@ -9,8 +9,8 @@ import {
 	type ScriptOptions,
 	type Script as SimpleScript
 } from './simple-pyodide.js';
-import type { Script } from '../config/script-config.js';
-import { fileRequirements } from '../config/file-config.js';
+import type { Script } from '../../lib/config/script-config.js';
+import { fileRequirements } from '../../lib/config/file-config.js';
 
 // Re-export the simple interfaces
 export type ScriptExecutionResult = ScriptResult;

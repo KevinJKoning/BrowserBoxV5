@@ -1,0 +1,78 @@
+<script lang="ts">
+  import * as Sidebar from "../../lib/components/ui/sidebar/index.js";
+  import { allPlugins } from "../state/plugin-registry.js";
+  import { workspace, activatePlugin, sidebarOpen } from "../state/workspace.js";
+
+  let currentPlugin = $derived(allPlugins.find(p => p.id === workspace.activePluginId));
+  let SidebarComponent = $state<any>(null);
+
+  // Load sidebar component when plugin changes
+  $effect(async () => {
+    if (currentPlugin) {
+      try {
+        const module = await currentPlugin.sidebar();
+        SidebarComponent = module.default || module;
+      } catch (error) {
+        console.error(`Failed to load sidebar for plugin ${currentPlugin.id}:`, error);
+        SidebarComponent = null;
+      }
+    } else {
+      SidebarComponent = null;
+    }
+  });
+
+  function handlePluginSelect(pluginId: string) {
+    activatePlugin(pluginId);
+  }
+</script>
+
+<Sidebar.Root
+  collapsible="icon"
+  class="overflow-hidden [&>[data-sidebar=sidebar]]:flex-row"
+>
+  <!-- Icon sidebar -->
+  <Sidebar.Root collapsible="none" class="!w-[calc(var(--sidebar-width-icon)_+_1px)] border-r">
+    <Sidebar.Content>
+      <Sidebar.Group>
+        <Sidebar.GroupContent class="px-1.5 md:px-0">
+          <Sidebar.Menu>
+            {#each allPlugins as plugin (plugin.id)}
+              <Sidebar.MenuItem>
+                <Sidebar.MenuButton
+                  tooltipContentProps={{ hidden: false }}
+                  onclick={() => handlePluginSelect(plugin.id)}
+                  isActive={workspace.activePluginId === plugin.id}
+                  class="px-2.5 md:px-2"
+                >
+                  {#snippet tooltipContent()}
+                    {plugin.title}
+                  {/snippet}
+                  {#if plugin.icon}
+                    <plugin.icon />
+                  {:else}
+                    <div class="w-4 h-4 bg-gray-400 rounded"></div>
+                  {/if}
+                  <span>{plugin.title}</span>
+                </Sidebar.MenuButton>
+              </Sidebar.MenuItem>
+            {/each}
+          </Sidebar.Menu>
+        </Sidebar.GroupContent>
+      </Sidebar.Group>
+    </Sidebar.Content>
+  </Sidebar.Root>
+
+  <!-- Content sidebar -->
+  <Sidebar.Root collapsible="none" class="hidden flex-1 md:flex min-w-0 max-w-full overflow-hidden">
+    {#if SidebarComponent}
+      <SidebarComponent />
+    {:else}
+      <Sidebar.Content class="flex items-center justify-center">
+        <div class="text-center text-muted-foreground">
+          <div class="text-4xl mb-2">⚙️</div>
+          <p>Loading plugin...</p>
+        </div>
+      </Sidebar.Content>
+    {/if}
+  </Sidebar.Root>
+</Sidebar.Root>
