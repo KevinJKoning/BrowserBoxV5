@@ -3,6 +3,8 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
+import fs from 'node:fs';
+import path from 'node:path';
 
 
 export function viteStaticCopyPyodide() {
@@ -14,8 +16,36 @@ export function viteStaticCopyPyodide() {
 				src: 'pyodide_0-27-7/*',
 				dest: 'assets',
 			},
+			// Workaround: some environments/request paths look for libopenblas-0.3.26.zip
+			// while the distribution provides openblas-0.3.26.zip. Duplicate it so both names resolve.
+			// (If the source file name already includes libopenblas, this emits a harmless extra copy.)
+			{
+				src: 'pyodide_0-27-7/openblas-0.3.26.zip',
+				dest: 'assets',
+				rename: 'libopenblas-0.3.26.zip'
+			}
 		],
 	});
+}
+
+// Fallback duplication in case vite-plugin-static-copy rename doesn't trigger (some versions require glob matches):
+function duplicateOpenBlasFallback() {
+	return {
+		name: 'duplicate-openblas-fallback',
+		apply: 'build' as const,
+		generateBundle() {
+			const srcPath = path.resolve(process.cwd(), 'pyodide_0-27-7/openblas-0.3.26.zip');
+			if (fs.existsSync(srcPath)) {
+				const content = fs.readFileSync(srcPath);
+				// Always emit (will just overwrite in memory if already there)
+				this.emitFile({
+					type: 'asset',
+					fileName: 'assets/libopenblas-0.3.26.zip',
+					source: content
+				});
+			}
+		}
+	};
 }
 
 export default defineConfig(({ command, mode }) => ({
@@ -24,6 +54,7 @@ export default defineConfig(({ command, mode }) => ({
 		tailwindcss(), 
 		svelte(),
 		viteStaticCopyPyodide(),
+		duplicateOpenBlasFallback(),
 		VitePWA({
 			registerType: 'autoUpdate',
 			workbox: {
