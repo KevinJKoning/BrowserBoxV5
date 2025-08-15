@@ -1,5 +1,6 @@
-import { PyodideManager } from '../pyodide/pyodide-manager.js';
-import { DataBridge } from '../pyodide/data-bridge.js';
+// Removed old complex Pyodide imports - using simplified system
+// import { PyodideManager } from '../pyodide/pyodide-manager.js';
+// import { DataBridge } from '../pyodide/data-bridge.js';
 import { fileManagerState } from './file-store.svelte.js';
 import { 
 	schemaValidations, 
@@ -20,8 +21,8 @@ export const schemaManagerState = $state<SchemaManagerState>({
 	selectedSchemaId: null
 });
 
-// Create DataBridge instance for file handling
-const dataBridge = new DataBridge();
+// DataBridge removed - using simplified Pyodide system
+// const dataBridge = new DataBridge();
 
 export const schemaSelectors = {
 	getSchema: (schemaId: string): SchemaValidation | undefined => {
@@ -85,11 +86,10 @@ export const schemaActions = {
 		try {
 			console.log(`Starting schema validation: ${schema.title}`);
 
-			// Get PyodideManager instance
-			const pyodideManager = PyodideManager.getInstance();
-
-			// Sync files from file store to DataBridge/Pyodide
-			await dataBridge.syncFromFileStore();
+			// Schema validation disabled - using simplified Pyodide system
+			// TODO: Implement schema validation with simplified system
+			console.warn('Schema validation not implemented in simplified system yet');
+			return;
 
 			// Check schema dependencies
 			if (schema.dependencies) {

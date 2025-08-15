@@ -5,7 +5,7 @@
 
 import { scripts, type Script, type ScriptExecution } from '../config/script-config.js';
 import { ScriptExecutor } from '../pyodide/script-executor.js';
-import { DataBridge } from '../pyodide/data-bridge.js';
+// DataBridge removed - using simplified Pyodide system
 import { fileManagerState } from './file-store.svelte.js';
 import { resultsManagerState, resultsActions, resultsSelectors } from './results-store.svelte.js';
 
@@ -47,7 +47,7 @@ export const scriptManagerState = $state({
 
 // Pyodide integration instances (not reactive state)
 const scriptExecutor = new ScriptExecutor();
-const dataBridge = new DataBridge();
+// const dataBridge = new DataBridge();
 
 // Initialize execution states for all scripts
 scripts.forEach(script => {
@@ -319,9 +319,10 @@ export const scriptActions = {
 		};
 	},
 
-	// Get data bridge instance for file operations
+	// Get data bridge instance for file operations (disabled in simplified system)
 	getDataBridge() {
-		return dataBridge;
+		// return dataBridge;
+		return null;
 	},
 
 	// Get script executor instance

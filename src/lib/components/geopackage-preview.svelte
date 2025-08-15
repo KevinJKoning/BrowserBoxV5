@@ -3,7 +3,8 @@
 	import { Card, CardContent, CardHeader, CardTitle } from "./ui/card/index.js";
 	import { Separator } from "./ui/separator/index.js";
 	import { formatFileSize } from "../utils.js";
-	import { createPyodideWorker, type WorkerMessage, type ScriptExecutionResult } from "../pyodide/pyodide-worker.js";
+	// Old worker system removed - using simplified Pyodide
+	// import { createPyodideWorker, type WorkerMessage, type ScriptExecutionResult } from "../pyodide/pyodide-worker.js";
 
 	interface Props {
 		file: File;
@@ -53,7 +54,10 @@
 	});
 
 	async function loadGeoPackageInfo() {
-		const worker = createPyodideWorker();
+		// GeoPackage functionality disabled - old worker system removed
+		console.warn('GeoPackage preview not available in simplified system');
+		return;
+		// const worker = createPyodideWorker();
 		let executionId = `geopackage-preview-${Date.now()}`;
 
 		try {
@@ -167,7 +171,7 @@ except Exception as e:
 `;
 
 			return new Promise<void>((resolve, reject) => {
-				const messageHandler = (event: MessageEvent<WorkerMessage>) => {
+				const messageHandler = (event: MessageEvent<any>) => {
 					const { type, id, data } = event.data;
 					
 					if (id !== executionId) return;
@@ -263,7 +267,10 @@ except Exception as e:
 	}
 
 	async function loadLayerDetails(layerName: string) {
-		const worker = createPyodideWorker();
+		// Layer details disabled - old worker system removed
+		console.warn('Layer details not available in simplified system');
+		return;
+		// const worker = createPyodideWorker();
 		let executionId = `layer-details-${Date.now()}`;
 
 		const detailScript = `
@@ -330,7 +337,7 @@ except Exception as e:
 `;
 
 		return new Promise<void>((resolve, reject) => {
-			const messageHandler = (event: MessageEvent<WorkerMessage>) => {
+			const messageHandler = (event: MessageEvent<any>) => {
 				const { type, id, data } = event.data;
 				
 				if (id !== executionId) return;

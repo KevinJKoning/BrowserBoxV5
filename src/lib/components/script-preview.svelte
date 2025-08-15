@@ -8,7 +8,8 @@
 	import FileTextIcon from "@lucide/svelte/icons/file-text";
 	import LoaderIcon from "@lucide/svelte/icons/loader";
 	import AlertCircleIcon from "@lucide/svelte/icons/alert-circle";
-	import { PyodideManager, type PyodideInitializationStatus } from "../pyodide/pyodide-manager.js";
+	// PyodideManager removed - using simplified system
+	// import { PyodideManager, type PyodideInitializationStatus } from "../pyodide/pyodide-manager.js";
 	import { onMount } from 'svelte';
 	import { scripts } from "../config/script-config.js";
 	import { fileRequirements } from "../config/file-config.js";
@@ -52,37 +53,37 @@
 		onRun
 	}: Props = $props();
 
-	// Pyodide initialization state
-	let pyodideStatus: PyodideInitializationStatus = $state('not-initialized');
+	// Pyodide functionality disabled in simplified system
+	let pyodideStatus = $state('not-initialized');
 	let initializationMessage = $state('');
 	
-	const pyodideManager = PyodideManager.getInstance();
+	// const pyodideManager = PyodideManager.getInstance();
 
 	onMount(() => {
 		// Monitor Pyodide initialization status only when it's actually initializing
 		const outputHandler = {
-			onStatusChange: (newStatus: PyodideInitializationStatus) => {
+			onStatusChange: (newStatus: any) => {
 				pyodideStatus = newStatus;
 				updateInitializationMessage(newStatus);
 			}
 		};
 		
-		pyodideManager.addOutputHandler(outputHandler);
+		// pyodideManager.addOutputHandler(outputHandler);
 		
 		// Only update status if Pyodide is already initializing/ready
 		// Don't show "not-initialized" as a loading state
-		const currentStatus = pyodideManager.getStatus();
-		if (currentStatus !== 'not-initialized') {
-			pyodideStatus = currentStatus;
-			updateInitializationMessage(currentStatus);
-		}
+		// const currentStatus = pyodideManager.getStatus();
+		// if (currentStatus !== 'not-initialized') {
+		// 	pyodideStatus = currentStatus;
+		// 	updateInitializationMessage(currentStatus);
+		// }
 		
 		return () => {
-			pyodideManager.removeOutputHandler(outputHandler);
+			// pyodideManager.removeOutputHandler(outputHandler);
 		};
 	});
 
-	function updateInitializationMessage(status: PyodideInitializationStatus) {
+	function updateInitializationMessage(status: any) {
 		initializationMessage = getPyodideInitializationMessage(status);
 	}
 
