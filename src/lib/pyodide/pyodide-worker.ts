@@ -10,93 +10,105 @@ let pyodide;
 async function loadPyodideAndPackages(embeddedAssets, baseUrl) {
     // Check if we have embedded assets (single-file build)
     if (embeddedAssets && embeddedAssets['pyodide.js']) {
-        // Load Pyodide from embedded assets
+        // Load Pyodide from embedded assets with improved approach
         try {
-            // Pre-execute pyodide.asm.js content to avoid loading issues
-            if (embeddedAssets['pyodide.asm.js']) {
-                try {
-                    const base64Data = embeddedAssets['pyodide.asm.js'].split(',')[1];
-                    const jsCode = atob(base64Data);
-                    eval(jsCode);
-                } catch (error) {
-                    console.error('Failed to pre-execute pyodide.asm.js in worker:', error);
-                }
-            }
+            // Create blob URLs for all embedded assets first
+            const assetBlobUrls = {};
+            const cleanupUrls = [];
             
-            // Load and execute the main Pyodide JavaScript
-            const base64Data = embeddedAssets['pyodide.js'].split(',')[1];
-            const jsCode = atob(base64Data);
-            eval(jsCode);
-            
-            // Create blob URLs inside the worker from embedded assets
-            const workerBlobUrls = {};
             for (const [filename, dataUri] of Object.entries(embeddedAssets)) {
                 try {
                     const base64Data = dataUri.split(',')[1];
                     if (base64Data) {
-                        const binaryData = atob(base64Data);
-                        const arrayBuffer = new Uint8Array(binaryData.length);
-                        for (let i = 0; i < binaryData.length; i++) {
-                            arrayBuffer[i] = binaryData.charCodeAt(i);
-                        }
+                        const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
                         const mimeType = getMimeTypeFromFilename(filename);
-                        const blob = new Blob([arrayBuffer], { type: mimeType });
-                        workerBlobUrls[filename] = URL.createObjectURL(blob);
+                        const blob = new Blob([binaryData], { type: mimeType });
+                        const blobUrl = URL.createObjectURL(blob);
+                        assetBlobUrls[filename] = blobUrl;
+                        cleanupUrls.push(blobUrl);
                     }
                 } catch (error) {
-                    console.error(\`Failed to create blob URL for \${filename} in worker:\`, error);
+                    console.error(\`Failed to create blob URL for \${filename}:\`, error);
                 }
             }
             
-            // Set up fetch interception for embedded assets using worker-created blob URLs
+            // Set up both fetch and importScripts interception for CSP compliance
             const originalFetch = globalThis.fetch;
+            const originalImportScripts = globalThis.importScripts;
+            
             globalThis.fetch = function(url, options) {
-                try {
-                    // Handle different URL input types safely
-                    let urlString;
-                    if (typeof url === 'string') {
-                        urlString = url;
-                    } else if (url && typeof url === 'object' && 'url' in url) {
-                        urlString = url.url;
-                    } else {
-                        urlString = String(url);
+                const urlString = String(url);
+                console.log(\`Fetch intercepted: \${urlString}\`);
+                if (urlString.startsWith('https://pyodide-embedded/')) {
+                    const filename = urlString.replace('https://pyodide-embedded/', '');
+                    console.log(\`Looking for embedded file: \${filename}\`);
+                    if (assetBlobUrls[filename]) {
+                        console.log(\`Redirecting \${filename} to blob URL\`);
+                        return originalFetch.call(this, assetBlobUrls[filename], options);
                     }
-                    
-                    // Check if this is a Pyodide asset request
-                    if (urlString && urlString.startsWith('https://pyodide-embedded/')) {
-                        const filename = urlString.replace('https://pyodide-embedded/', '');
-                        console.log(\`Worker fetching embedded asset: \${filename}\`);
-                        
-                        // Use worker-created blob URLs
-                        if (workerBlobUrls[filename]) {
-                            console.log(\`Found worker blob URL for \${filename}\`);
-                            return originalFetch.call(this, workerBlobUrls[filename], options);
-                        }
-                        
-                        // If we get here, the asset wasn't found
-                        console.error(\`Embedded asset not found: \${filename}\`);
-                        console.error('Available worker blob URLs:', Object.keys(workerBlobUrls));
-                        return Promise.reject(new Error(\`Embedded asset not found: \${filename}\`));
-                    }
-                    
-                    // Fall back to original fetch for non-Pyodide requests
-                    return originalFetch.call(this, url, options);
-                } catch (error) {
-                    console.error('Error in fetch interception:', error);
-                    return originalFetch.call(this, url, options);
+                    console.error(\`Embedded asset not found: \${filename}\`);
+                    console.error('Available assets:', Object.keys(assetBlobUrls));
+                    return Promise.reject(new Error(\`Embedded asset not found: \${filename}\`));
                 }
+                return originalFetch.call(this, url, options);
             };
             
-            // Load Pyodide with embedded assets
-            self.pyodide = await loadPyodide({
-                indexURL: 'https://pyodide-embedded/',
-                stdout: (text) => {
-                    self.postMessage({ type: 'stdout', data: text });
-                },
-                stderr: (text) => {
-                    self.postMessage({ type: 'stderr', data: text });
-                }
-            });
+            // Intercept importScripts for CSP compliance
+            globalThis.importScripts = function(...urls) {
+                const mappedUrls = urls.map(url => {
+                    const urlString = String(url);
+                    if (urlString.startsWith('https://pyodide-embedded/')) {
+                        const filename = urlString.replace('https://pyodide-embedded/', '');
+                        if (assetBlobUrls[filename]) {
+                            console.log(\`Redirecting importScripts for \${filename} to blob URL\`);
+                            return assetBlobUrls[filename];
+                        }
+                        throw new Error(\`Embedded asset not found for importScripts: \${filename}\`);
+                    }
+                    return url;
+                });
+                return originalImportScripts.apply(this, mappedUrls);
+            };
+            
+            // Load pyodide.js using importScripts with proper cleanup
+            const pyodideJsUrl = assetBlobUrls['pyodide.js'];
+            if (!pyodideJsUrl) {
+                throw new Error('pyodide.js not found in embedded assets');
+            }
+            
+            try {
+                importScripts(pyodideJsUrl);
+                
+                // Load Pyodide with embedded assets - keep fetch interception active
+                self.pyodide = await loadPyodide({
+                    indexURL: 'https://pyodide-embedded/',
+                    stdout: (text) => {
+                        self.postMessage({ type: 'stdout', data: text });
+                    },
+                    stderr: (text) => {
+                        self.postMessage({ type: 'stderr', data: text });
+                    }
+                });
+                
+                // Load micropip first with our fetch interception still active
+                await self.pyodide.loadPackage("micropip");
+                await self.pyodide.loadPackage("packaging");
+                
+                // Keep fetch interception active for the entire worker session
+                // Only restore importScripts since it's not needed after initial loading
+                globalThis.importScripts = originalImportScripts;
+                
+                // Store the asset URLs globally so they persist for the worker lifetime
+                self.pyodideAssetUrls = assetBlobUrls;
+                
+            } catch (error) {
+                // On error, restore everything
+                globalThis.fetch = originalFetch;
+                globalThis.importScripts = originalImportScripts;
+                cleanupUrls.forEach(url => URL.revokeObjectURL(url));
+                throw error;
+            }
+            
         } catch (error) {
             console.error('Failed to load Pyodide from embedded assets:', error);
             throw error;
@@ -137,6 +149,11 @@ function getMimeTypeFromFilename(filename) {
     if (filename.endsWith('.json')) return 'application/json';
     if (filename.endsWith('.zip')) return 'application/zip';
     if (filename.endsWith('.whl')) return 'application/zip';
+    if (filename.endsWith('.tar')) return 'application/x-tar';
+    if (filename.endsWith('.tar.gz')) return 'application/gzip';
+    if (filename.endsWith('.data')) return 'application/octet-stream';
+    if (filename.endsWith('.txt')) return 'text/plain';
+    if (filename.endsWith('.map')) return 'application/json';
     return 'application/octet-stream';
 }
 

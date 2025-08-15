@@ -35,8 +35,13 @@ def create_matplotlib_visualizations(file_path):
             df = pd.read_parquet(file_path)
         elif file_path.endswith('.csv'):
             df = pd.read_csv(file_path)
+        elif file_path.endswith('.gpkg'):
+            import geopandas as gpd
+            gdf = gpd.read_file(file_path)
+            # Convert to regular DataFrame for analysis (drop geometry)
+            df = gdf.drop(columns=['geometry']) if 'geometry' in gdf.columns else gdf
         else:
-            raise ValueError("Unsupported file format")
+            raise ValueError("Unsupported file format. Please use .parquet, .csv, or .gpkg files.")
         
         print(f"Creating matplotlib visualizations for: {os.path.basename(file_path)}")
         print("="*60)
@@ -397,7 +402,7 @@ print("Looking for data files to visualize...")
 
 data_dir = "/data"
 if os.path.exists(data_dir):
-    files = [f for f in os.listdir(data_dir) if f.endswith(('.parquet', '.csv'))]
+    files = [f for f in os.listdir(data_dir) if f.endswith(('.parquet', '.csv', '.gpkg'))]
     if files:
         print(f"Found {len(files)} data file(s): {files}")
         
@@ -416,7 +421,7 @@ if os.path.exists(data_dir):
         else:
             print("\\n❌ Failed to create matplotlib visualization report")
     else:
-        print("No .parquet or .csv files found in /data directory")
+        print("No .parquet, .csv, or .gpkg files found in /data directory")
         print("Please upload a data file first to see matplotlib in action!")
         print("\\n🎨 Creating sample matplotlib demo instead...")
         

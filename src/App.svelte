@@ -1,6 +1,8 @@
 <script lang="ts">
 	import AppSidebar from "./lib/components/app-sidebar.svelte";
 	import ParquetPreview from "./lib/components/parquet-preview.svelte";
+	import CsvPreview from "./lib/components/csv-preview.svelte";
+	import GeopackagePreview from "./lib/components/geopackage-preview.svelte";
 	import SchemaPreview from "./lib/components/schema-preview.svelte";
 	import ScriptPreview from "./lib/components/script-preview.svelte";
 	import HtmlPreview from "./lib/components/html-preview.svelte";
@@ -11,6 +13,7 @@
 	import { schemaManagerState, schemaSelectors, schemaActions } from "./lib/stores/schema-store.svelte.js";
 	import { scriptManagerState, scriptSelectors, scriptActions } from "./lib/stores/script-store.svelte.js";
 	import { resultsManagerState, resultsSelectors } from "./lib/stores/results-store.svelte.js";
+	import { getFileExtension } from "./lib/utils.js";
 	
 	// Create reactive selectors directly in the component
 	const selectedFile = $derived.by(() => {
@@ -137,7 +140,7 @@
 				<div class="h-full min-h-0 overflow-hidden">
 					{#if selectedResult.fileType === 'html' || selectedResult.fileType === 'htm'}
 						<HtmlPreview
-							htmlContent={selectedResult.content ? new TextDecoder().decode(selectedResult.content) : ''}
+							htmlContent={selectedResult.content ? (typeof selectedResult.content === 'string' ? selectedResult.content : new TextDecoder().decode(selectedResult.content)) : ''}
 							filename={selectedResult.filename}
 							fileSize={selectedResult.fileSize}
 							createdAt={selectedResult.createdAt}
@@ -146,6 +149,18 @@
 								console.log('Download result:', selectedResult.filename);
 							}}
 						/>
+					{:else if selectedResult.fileType === 'csv'}
+						<!-- Convert result to File object for CSV preview -->
+						{#if selectedResult.content}
+							{@const resultFile = new File([selectedResult.content], selectedResult.filename, { 
+								type: 'text/csv',
+								lastModified: new Date(selectedResult.createdAt).getTime()
+							})}
+							<CsvPreview 
+								file={resultFile} 
+								filename={selectedResult.filename} 
+							/>
+						{/if}
 					{:else if selectedResult.fileType === 'parquet' || selectedResult.fileType === 'pq'}
 						<!-- Convert result to File object for parquet preview -->
 						{#if selectedResult.content}
@@ -154,6 +169,18 @@
 								lastModified: new Date(selectedResult.createdAt).getTime()
 							})}
 							<ParquetPreview 
+								file={resultFile} 
+								filename={selectedResult.filename} 
+							/>
+						{/if}
+					{:else if selectedResult.fileType === 'gpkg'}
+						<!-- Convert result to File object for GeoPackage preview -->
+						{#if selectedResult.content}
+							{@const resultFile = new File([selectedResult.content], selectedResult.filename, { 
+								type: 'application/geopackage+sqlite3',
+								lastModified: new Date(selectedResult.createdAt).getTime()
+							})}
+							<GeopackagePreview 
 								file={resultFile} 
 								filename={selectedResult.filename} 
 							/>
@@ -177,10 +204,36 @@
 			{:else if selectedFile?.file}
 				<!-- File Preview Mode (Priority 4) -->
 				<div class="h-full min-h-0 overflow-hidden">
-					<ParquetPreview 
-						file={selectedFile.file} 
-						filename={selectedFile.originalName} 
-					/>
+					{#if getFileExtension(selectedFile.originalName) === '.csv'}
+						<CsvPreview 
+							file={selectedFile.file} 
+							filename={selectedFile.originalName} 
+						/>
+					{:else if getFileExtension(selectedFile.originalName) === '.parquet'}
+						<ParquetPreview 
+							file={selectedFile.file} 
+							filename={selectedFile.originalName} 
+						/>
+					{:else if getFileExtension(selectedFile.originalName) === '.gpkg'}
+						<GeopackagePreview 
+							file={selectedFile.file} 
+							filename={selectedFile.originalName} 
+						/>
+					{:else}
+						<!-- Generic file preview for other types -->
+						<div class="flex items-center justify-center h-full">
+							<div class="text-center">
+								<div class="text-6xl mb-4">📄</div>
+								<h3 class="text-lg font-medium mb-2">{selectedFile.originalName}</h3>
+								<p class="text-muted-foreground mb-4">
+									{getFileExtension(selectedFile.originalName).toUpperCase().slice(1)} file • {selectedFile.size}
+								</p>
+								<p class="text-sm text-muted-foreground">
+									Preview not available for this file type
+								</p>
+							</div>
+						</div>
+					{/if}
 				</div>
 			{:else}
 				<!-- Dashboard Mode -->

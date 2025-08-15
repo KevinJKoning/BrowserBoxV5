@@ -293,6 +293,14 @@ export async function copyToClipboard(text: string): Promise<void> {
 	}
 }
 
+/**
+ * Extract file extension from filename (including the dot, lowercased)
+ */
+export function getFileExtension(filename: string): string {
+	const lastDot = filename.lastIndexOf('.');
+	return lastDot > 0 ? filename.substring(lastDot).toLowerCase() : '';
+}
+
 // Validation status helpers
 export type ValidationStatus = "pass" | "fail" | "warning";
 

@@ -25,6 +25,22 @@ const getFile = (id: string) => fileManagerState.files[id];
 const getUploadState = (id: string) => fileManagerState.uploadStates[id] ?? "waiting";
 const isFileSelected = (id: string) => fileManagerState.selectedFileId === id;
 
+// Helper function to validate file type against requirement
+const isFileTypeAccepted = (fileName: string, requirement: FileRequirement): boolean => {
+	if (!requirement.acceptedTypes || requirement.acceptedTypes.length === 0) {
+		return true; // No restrictions
+	}
+	
+	const lowerFileName = fileName.toLowerCase();
+	return requirement.acceptedTypes.some(type => lowerFileName.endsWith(type.toLowerCase()));
+};
+
+// Helper function to get file extension
+const getFileExtension = (fileName: string): string => {
+	const lastDot = fileName.lastIndexOf('.');
+	return lastDot > 0 ? fileName.substring(lastDot).toLowerCase() : '';
+};
+
 // Export only function-based selectors to avoid reactivity warnings
 // Complex selectors should be defined in components using $derived.by()
 export const fileSelectors = {
@@ -95,14 +111,20 @@ export const fileActions = {
 		fileActions.startUpload(fileId);
 		
 		try {
-			// Validate file type
-			if (!file.name.toLowerCase().endsWith('.parquet')) {
-				throw new Error("Please select a .parquet file");
+			// Get the file requirement for validation
+			const requirement = fileRequirements.find(req => req.id === fileId);
+			if (!requirement) {
+				throw new Error(`Invalid file ID: ${fileId}`);
+			}
+			
+			// Validate file type against accepted types
+			if (!isFileTypeAccepted(file.name, requirement)) {
+				const acceptedTypes = requirement.acceptedTypes || [];
+				throw new Error(`File type not supported. Please select one of: ${acceptedTypes.join(', ')}`);
 			}
 			
 			// Get the expected filename for this file requirement
-			const requirement = fileRequirements.find(req => req.id === fileId);
-			const expectedFilename = requirement?.defaultFilename || file.name;
+			const expectedFilename = requirement.defaultFilename || file.name;
 			
 			// Check if file needs to be renamed
 			const wasRenamed = file.name !== expectedFilename;
@@ -133,11 +155,15 @@ export const fileActions = {
 			filenameToRequirement.set(req.defaultFilename.toLowerCase(), req.id);
 		});
 		
-		// Filter to only .parquet files
-		const parquetFiles = files.filter(file => file.name.toLowerCase().endsWith('.parquet'));
+		// Filter to only supported data files (csv, parquet, gpkg)
+		const supportedExtensions = ['.csv', '.parquet', '.gpkg'];
+		const dataFiles = files.filter(file => {
+			const extension = getFileExtension(file.name);
+			return supportedExtensions.includes(extension);
+		});
 		
-		// Try to match each parquet file to a requirement
-		for (const file of parquetFiles) {
+		// Try to match each data file to a requirement
+		for (const file of dataFiles) {
 			const lowerFilename = file.name.toLowerCase();
 			const requirementId = filenameToRequirement.get(lowerFilename);
 			
@@ -148,12 +174,27 @@ export const fileActions = {
 				} catch (error) {
 					errors.push(`Failed to load ${file.name}: ${error}`);
 				}
+			} else {
+				// Try to match by file type to any requirement that accepts this type
+				const extension = getFileExtension(file.name);
+				const compatibleRequirement = fileRequirements.find(req => 
+					req.acceptedTypes?.some(type => type.toLowerCase() === extension)
+				);
+				
+				if (compatibleRequirement) {
+					try {
+						await fileActions.loadFile(compatibleRequirement.id, file);
+						matchedCount++;
+					} catch (error) {
+						errors.push(`Failed to load ${file.name}: ${error}`);
+					}
+				}
 			}
 		}
 		
 		return {
 			matched: matchedCount,
-			total: parquetFiles.length,
+			total: dataFiles.length,
 			errors
 		};
 	}

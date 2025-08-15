@@ -152,7 +152,10 @@
 	const handleUpload = async (fileId: string) => {
 		const input = document.createElement('input');
 		input.type = 'file';
-		input.accept = '.parquet';
+		
+		// Get accepted types for this specific file requirement
+		const requirement = fileRequirements.find(req => req.id === fileId);
+		input.accept = requirement?.acceptedTypes?.join(',') || '.parquet,.csv,.gpkg';
 		
 		input.onchange = async (e) => {
 			const file = (e.target as HTMLInputElement).files?.[0];
@@ -174,7 +177,7 @@
 		input.type = 'file';
 		input.webkitdirectory = true; // Enable folder selection
 		input.multiple = true;
-		input.accept = '.parquet';
+		input.accept = '.parquet,.csv,.gpkg'; // Accept all supported data file types
 		
 		input.onchange = async (e) => {
 			const files = Array.from((e.target as HTMLInputElement).files || []);

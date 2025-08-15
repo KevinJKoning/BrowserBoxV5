@@ -21,7 +21,7 @@
 	let displayRows = $state(100); // Limit display for performance
 
 	// Use $effect to react to file changes instead of onMount
-	$effect(async () => {
+	$effect(() => {
 		// Reset state when file changes
 		loading = true;
 		error = null;
@@ -30,12 +30,11 @@
 		columns = [];
 		rowCount = 0;
 		
-		try {
-			await loadParquetFile();
-		} catch (err) {
+		// Load parquet file asynchronously
+		loadParquetFile().catch(err => {
 			error = `Failed to load parquet file: ${err instanceof Error ? err.message : 'Unknown error'}`;
 			loading = false;
-		}
+		});
 	});
 
 	async function loadParquetFile() {

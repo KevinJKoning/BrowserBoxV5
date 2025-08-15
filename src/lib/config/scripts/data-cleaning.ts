@@ -24,12 +24,22 @@ def clean_data(file_path, output_path=None):
             return None
             
         # Read the data
+        is_geopackage = False
+        original_gdf = None
+        
         if file_path.endswith('.parquet'):
             df = pd.read_parquet(file_path)
         elif file_path.endswith('.csv'):
             df = pd.read_csv(file_path)
+        elif file_path.endswith('.gpkg'):
+            import geopandas as gpd
+            gdf = gpd.read_file(file_path)
+            is_geopackage = True
+            original_gdf = gdf.copy()  # Keep original for geometry restoration
+            # Convert to regular DataFrame for cleaning (drop geometry temporarily)
+            df = gdf.drop(columns=['geometry']) if 'geometry' in gdf.columns else gdf
         else:
-            raise ValueError("Unsupported file format")
+            raise ValueError("Unsupported file format. Please use .parquet, .csv, or .gpkg files.")
         
         print(f"Original dataset shape: {df.shape}")
         original_rows = len(df)
@@ -92,8 +102,29 @@ def clean_data(file_path, output_path=None):
         
         # Save cleaned data if output path provided
         if output_path:
-            df.to_parquet(output_path, index=False)
-            print(f"\\nCleaned data saved to: {output_path}")
+            if is_geopackage and original_gdf is not None:
+                # Restore geometry to cleaned data
+                import geopandas as gpd
+                # Get the cleaned indices
+                cleaned_indices = df.index
+                # Get corresponding geometries from original
+                geometries = original_gdf.loc[cleaned_indices, 'geometry'] if 'geometry' in original_gdf.columns else None
+                
+                if geometries is not None:
+                    # Create new GeoDataFrame with cleaned data and original geometries
+                    cleaned_gdf = gpd.GeoDataFrame(df, geometry=geometries, crs=original_gdf.crs)
+                    # Save as GeoPackage
+                    output_path = output_path.replace('.parquet', '.gpkg')
+                    cleaned_gdf.to_file(output_path, driver='GPKG')
+                    print(f"\\nCleaned GeoPackage saved to: {output_path}")
+                else:
+                    # No geometry, save as regular parquet
+                    df.to_parquet(output_path, index=False)
+                    print(f"\\nCleaned data saved to: {output_path}")
+            else:
+                # Regular DataFrame
+                df.to_parquet(output_path, index=False)
+                print(f"\\nCleaned data saved to: {output_path}")
         
         return {
             'original_rows': original_rows,
@@ -114,7 +145,7 @@ def clean_data(file_path, output_path=None):
 print("Looking for data files to clean...")
 data_dir = "/data"
 if os.path.exists(data_dir):
-    files = [f for f in os.listdir(data_dir) if f.endswith(('.parquet', '.csv'))]
+    files = [f for f in os.listdir(data_dir) if f.endswith(('.parquet', '.csv', '.gpkg'))]
     if files:
         print(f"Found {len(files)} data file(s): {files}")
         
@@ -135,7 +166,7 @@ if os.path.exists(data_dir):
             print(f"✓ Removed {result['duplicates_removed']} duplicates")
             print(f"✓ Capped {result['outliers_capped']} outliers")
     else:
-        print("No .parquet or .csv files found in /data directory")
+        print("No .parquet, .csv, or .gpkg files found in /data directory")
 else:
     print("No /data directory found. Please upload some data files first!")
     print("Tip: Upload parquet files using the file upload feature")`,
