@@ -167,28 +167,3 @@ When upgrading to a future Pyodide version (e.g., 0.28.x with geopandas support)
 4. **Update Asset Copying**: Verify that the Vite plugin correctly embeds all necessary wheel files from the new Pyodide distribution.
 
 The key lesson is that Pyodide version changes require careful synchronization between the distribution assets and the hardcoded package references in the codebase.
-
-### OpenBLAS Asset Alias (libopenblas-0.3.26.zip)
-
-Some Pyodide package resolution paths (or integrity metadata) expect an asset named `libopenblas-0.3.26.zip`, while the 0.27.7 distribution actually ships `openblas-0.3.26.zip`.
-
-To prevent 404 + Subresource Integrity failures, the build pipeline duplicates the file so both names exist:
-
-- Implemented in `vite.config.ts` via `vite-plugin-static-copy` rename plus a small fallback plugin that emits `assets/libopenblas-0.3.26.zip`.
-- This ensures any internal reference to either filename succeeds and avoids integrity mismatches caused by hashing a 404 HTML response.
-
-When upgrading Pyodide or OpenBLAS:
-1. Check the actual filename present in the new distribution (e.g. `openblas-<ver>.zip`).
-2. If Pyodide begins shipping the `libopenblas-*` variant natively, remove the manual duplication to save space.
-3. If the version changes, update both occurrences (source and alias) in `vite.config.ts`.
-
-### Deployment & Caching Notes
-
-Because this is a PWA with a Workbox service worker caching large Pyodide assets:
-
-1. After changing Pyodide assets or the OpenBLAS alias, run `npm run build` and redeploy `dist/` to GitHub Pages.
-2. Bump something in the service worker precache footprint (any hashed asset changes automatically) or increment a custom `cacheVersion` if you add one later.
-3. In the browser, force refresh (Shift+Reload) or unregister the existing service worker to purge stale cached 404 responses.
-4. Verify `https://<user>.github.io/BrowserBoxV5/assets/libopenblas-0.3.26.zip` returns HTTP 200 (not a HTML 404) and that console shows Pyodide initialization without SRI errors.
-
-If integrity errors reappear, inspect the Network panel for the exact requested filename and confirm it exists in `dist/assets/`.
