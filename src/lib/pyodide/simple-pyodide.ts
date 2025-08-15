@@ -175,12 +175,21 @@ export class SimplePyodideExecutor {
         // Load basic scientific packages with error handling
         try {
           console.log('Loading Pyodide packages...');
-          await pyodide.loadPackage(['numpy', 'pandas', 'matplotlib', 'scikit-learn']);
+          const packages = [
+            'numpy', 'pandas', 'matplotlib', 'scikit-learn',
+            'fastparquet', 'shapely', 'pyproj', 'micropip',
+            'requests', 'geopandas'
+          ];
+          await pyodide.loadPackage(packages);
           console.log('All packages loaded successfully');
         } catch (error) {
           console.error('Error loading packages:', error);
           // Try loading packages individually
-          const packages = ['numpy', 'pandas', 'matplotlib', 'scikit-learn'];
+          const packages = [
+            'numpy', 'pandas', 'matplotlib', 'scikit-learn',
+            'fastparquet', 'shapely', 'pyproj', 'micropip',
+            'requests', 'geopandas'
+          ];
           for (const pkg of packages) {
             try {
               await pyodide.loadPackage(pkg);
