@@ -51,6 +51,9 @@
 		"vitest-browser-svelte": "^0.1.0"
 	},
 	"dependencies": {
-		"hyparquet": "^1.17.1"
+		"hyparquet": "^1.17.1",
+		"pyodide": "^0.28.1",
+		"vite-plugin-pwa": "^1.0.2",
+		"vite-plugin-static-copy": "^3.1.1"
 	}
 }
