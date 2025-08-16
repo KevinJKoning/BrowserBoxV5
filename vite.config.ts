@@ -22,7 +22,10 @@ export default defineConfig(({ command, mode }) => ({
 	base: '/',
 	plugins: [
 		tailwindcss(), 
-		svelte(),
+		svelte({
+			// Only process real .svelte files; .svelte.ts legacy hybrids removed
+			extensions: ['.svelte']
+		}),
 		viteStaticCopyPyodide(),
 		VitePWA({
 			registerType: 'autoUpdate',

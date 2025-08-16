@@ -1,6 +1,6 @@
 <script lang="ts">
   import { PreviewRenderer, initializeBuiltinPreviews } from "../../../core/services/preview/index.js";
-  import { getSelection } from "../../../core/state/workspace.svelte.js";
+  import { getSelection } from "../../../core/state/workspace.svelte";
   import { getResultFile } from "../store.svelte.js";
   import { onMount } from "svelte";
 

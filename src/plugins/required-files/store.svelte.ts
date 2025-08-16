@@ -5,7 +5,7 @@
 
 import { fileRequirements, type FileRequirement, type UploadedFile } from '../../lib/config/file-config.js';
 import { formatFileSize } from '../../lib/utils.js';
-import { select, clearOtherSelections } from '../../core/state/workspace.svelte.js';
+import { select, clearOtherSelections } from '../../core/state/workspace.svelte';
 
 // Plugin state using Svelte 5 runes
 export const files = $state<Record<string, UploadedFile>>({});

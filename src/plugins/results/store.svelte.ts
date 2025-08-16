@@ -3,7 +3,7 @@
  * Manages script output files and results state using Svelte 5 runes
  */
 
-import { select, clearOtherSelections, getSelection } from '../../core/state/workspace.svelte.js';
+import { select, clearOtherSelections, getSelection } from '../../core/state/workspace.svelte';
 
 // Result file interface
 export interface ResultFile {

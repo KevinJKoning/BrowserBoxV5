@@ -1,6 +1,6 @@
 <script lang="ts">
   import ScriptPreview from "./ScriptPreview.svelte";
-  import { getSelection } from "../../../core/state/workspace.svelte.js";
+  import { getSelection } from "../../../core/state/workspace.svelte";
   import { getScript, getExecution, startExecution } from "../store.svelte.js";
 
   // Get selected script

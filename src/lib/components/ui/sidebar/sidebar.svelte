@@ -2,8 +2,7 @@
 	import * as Sheet from "../sheet/index.js";
 	import { cn, type WithElementRef } from "../../../utils.js";
 	import type { HTMLAttributes } from "svelte/elements";
-	import { SIDEBAR_WIDTH_MOBILE } from "./constants.js";
-	import { useSidebar } from "./context.svelte.js";
+	import { useSidebar } from "./context.svelte";
 
 	let {
 		ref = $bindable(null),
@@ -33,28 +32,6 @@
 	>
 		{@render children?.()}
 	</div>
-{:else if sidebar.isMobile}
-	<Sheet.Root
-		bind:open={() => sidebar.openMobile, (v) => sidebar.setOpenMobile(v)}
-		{...restProps}
-	>
-		<Sheet.Content
-			data-sidebar="sidebar"
-			data-slot="sidebar"
-			data-mobile="true"
-			class="bg-sidebar text-sidebar-foreground w-(--sidebar-width) p-0 [&>button]:hidden"
-			style="--sidebar-width: {SIDEBAR_WIDTH_MOBILE};"
-			{side}
-		>
-			<Sheet.Header class="sr-only">
-				<Sheet.Title>Sidebar</Sheet.Title>
-				<Sheet.Description>Displays the mobile sidebar.</Sheet.Description>
-			</Sheet.Header>
-			<div class="flex h-full w-full flex-col">
-				{@render children?.()}
-			</div>
-		</Sheet.Content>
-	</Sheet.Root>
 {:else}
 	<div
 		bind:this={ref}

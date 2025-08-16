@@ -1,6 +1,6 @@
 <script lang="ts">
   import SchemaPreview from "./SchemaPreview.svelte";
-  import { getSelection } from "../../../core/state/workspace.svelte.js";
+  import { getSelection } from "../../../core/state/workspace.svelte";
   import { getSchema, getExecution, getValidationResults, startExecution } from "../store.svelte.js";
 
   // Get selected schema

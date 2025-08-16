@@ -1,0 +1,31 @@
+<script module lang="ts">
+  import { pythonExecutor } from '../../core/pyodide/executor.js';
+  import { schemaValidations, type SchemaValidation, type SchemaValidationExecution, type SchemaValidationResult } from '../../lib/config/schema-config.js';
+  import { select, clearOtherSelections, getSelection } from '../../core/state/workspace.svelte';
+  export const availableSchemas = $state(schemaValidations);
+  export const executions = $state<Record<string, SchemaValidationExecution>>({});
+  export function getExecutionsList(){ return Object.values(executions); }
+  export async function startExecution(schemaId: string){
+    const schema = availableSchemas.find(s => s.id === schemaId); if (!schema) throw new Error(`Schema ${schemaId} not found`);
+    const base: SchemaValidationExecution = { id: `exec_${schemaId}_${Date.now()}`, schemaId, status: 'running', lastRun: new Date().toISOString() };
+    executions[schemaId] = base;
+    try {
+  const result = await pythonExecutor.executeScript({ id: `schema-validation-${schemaId}`, content: schema.content, title: `Schema Validation: ${schema.title}` }, { timeout:30000, onStatusUpdate: (status) => { if (executions[schemaId]) executions[schemaId].metrics = { ...executions[schemaId].metrics, status }; } });
+      const end = new Date().toISOString();
+      executions[schemaId] = { ...base, status: result.success ? 'completed':'error', executionTime: `${result.executionTime}ms`, output: result.output, error: result.error, lastRun: end, results: result.success ? parseValidationResults(result.output): undefined, metrics: { executionTime: `${result.executionTime}ms`, lastRun: end, outputLines: result.output?.split('\n').length || 0, errorCount: result.error ? 1:0 } };
+    } catch (e) {
+      executions[schemaId] = { ...base, status: 'error', error: e instanceof Error? e.message:'Unknown error', lastRun: new Date().toISOString() };
+      throw e;
+    }
+  }
+  function parseValidationResults(output: string): SchemaValidationResult | undefined {
+  try { const lines = output.split('\n'); const jsonLine = lines.find(l => l.trim().startsWith('{') && l.includes('total_checks')); if (jsonLine){ const parsed = JSON.parse(jsonLine); return { overall_status: parsed.overall_status || 'pass', column_validations: parsed.column_validations || [], summary: { total_checks: parsed.summary?.total_checks || parsed.total_checks || 0, passed: parsed.summary?.passed || parsed.passed || 0, failed: parsed.summary?.failed || parsed.failed || 0, warnings: parsed.summary?.warnings || parsed.warnings || 0 }, validation_timestamp: parsed.validation_timestamp, metadata: parsed.metadata }; } } catch(e){ console.warn('Failed to parse validation results', e); }
+    return undefined;
+  }
+  export function selectSchema(id: string | null){ clearOtherSelections('schema'); select('schema', id); }
+  export function getSchema(id: string){ return availableSchemas.find(s => s.id === id); }
+  export function getExecution(id: string){ return executions[id]; }
+  export function getExecutionStatus(id: string){ return executions[id]?.status || 'ready'; }
+  export function getValidationResults(id: string){ return executions[id]?.results; }
+  export function isSchemaSelected(id: string){ return getSelection('schema') === id; }
+</script>

@@ -2,8 +2,8 @@
   import * as Breadcrumb from "../../lib/components/ui/breadcrumb/index.js";
   import * as Sidebar from "../../lib/components/ui/sidebar/index.js";
   import { Separator } from "../../lib/components/ui/separator/index.js";
-  import { getAllPlugins } from "../state/plugin-registry.svelte.js";
-  import { workspace, getSelection } from "../state/workspace.svelte.js";
+  import { getAllPlugins } from "../state/plugin-registry.svelte";
+  import { workspace, getSelection } from "../state/workspace.svelte";
 
   let { class: className, ...restProps } = $props();
 

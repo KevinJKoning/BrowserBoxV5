@@ -5,7 +5,7 @@
 
 import { pythonExecutor } from '../../core/pyodide/executor.js';
 import { scripts, type Script, type ScriptExecution } from '../../lib/config/script-config.js';
-import { select, clearOtherSelections, getSelection } from '../../core/state/workspace.svelte.js';
+import { select, clearOtherSelections, getSelection } from '../../core/state/workspace.svelte';
 
 // Helper function to get file description based on extension
 function getFileDescription(extension: string): string {

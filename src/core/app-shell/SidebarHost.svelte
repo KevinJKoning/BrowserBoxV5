@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as Sidebar from "../../lib/components/ui/sidebar/index.js";
-  import { getAllPlugins } from "../state/plugin-registry.svelte.js";
-  import { workspace, activatePlugin } from "../state/workspace.svelte.js";
+  import { getAllPlugins } from "../state/plugin-registry.svelte";
+  import { workspace, activatePlugin } from "../state/workspace.svelte";
 
   let currentPlugin = $derived(getAllPlugins().find(p => p.id === workspace.activePluginId));
   let SidebarComponent = $state<any>(null);

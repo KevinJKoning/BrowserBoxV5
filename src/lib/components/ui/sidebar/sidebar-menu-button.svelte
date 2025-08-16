@@ -33,7 +33,7 @@
 	import { mergeProps } from "bits-ui";
 	import type { ComponentProps, Snippet } from "svelte";
 	import type { HTMLAttributes } from "svelte/elements";
-	import { useSidebar } from "./context.svelte.js";
+	import { useSidebar } from "./context.svelte";
 
 	let {
 		ref = $bindable(null),
@@ -90,7 +90,7 @@
 		<Tooltip.Content
 			side="right"
 			align="center"
-			hidden={sidebar.state !== "collapsed" || sidebar.isMobile}
+			hidden={sidebar.state !== "collapsed"}
 			{...tooltipContentProps}
 		>
 			{#if typeof tooltipContent === "string"}

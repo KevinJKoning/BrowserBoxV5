@@ -5,7 +5,7 @@
 
 import { pythonExecutor } from '../../core/pyodide/executor.js';
 import { schemaValidations, type SchemaValidation, type SchemaValidationExecution, type SchemaValidationResult } from '../../lib/config/schema-config.js';
-import { select, clearOtherSelections, getSelection } from '../../core/state/workspace.svelte.js';
+import { select, clearOtherSelections, getSelection } from '../../core/state/workspace.svelte';
 
 // Plugin state using Svelte 5 runes
 export const availableSchemas = $state(schemaValidations);
