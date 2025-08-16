@@ -27,7 +27,7 @@
 	
 	// Dynamic display rows based on container size for performance
 	let displayRows = $derived(() => {
-		if (containerSize.height === 0) return 50;
+		if (!containerSize || typeof containerSize.height !== 'number' || containerSize.height === 0) return 50;
 		// Estimate ~40px per row, show enough to fill container + buffer
 		return Math.min(100, Math.max(20, Math.floor(containerSize.height / 40) + 10));
 	});
