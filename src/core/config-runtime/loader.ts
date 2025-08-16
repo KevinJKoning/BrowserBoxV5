@@ -58,7 +58,7 @@ export class RuntimeConfigLoader implements ConfigLoader {
     if (packageSource instanceof File) {
       return this.loadPackageFromZip(packageSource);
     } else {
-      // TODO: Implement URL-based package loading
+      // Do not implement URL-based package loading
       return Promise.reject(new Error('URL-based package loading not yet implemented'));
     }
   }
