@@ -2,23 +2,32 @@
   import * as Sidebar from "../../lib/components/ui/sidebar/index.js";
   import { getAllPlugins } from "../state/plugin-registry.svelte";
   import { workspace, activatePlugin } from "../state/workspace.svelte";
+  import type { ComponentType } from 'svelte';
 
   let currentPlugin = $derived(getAllPlugins().find(p => p.id === workspace.activePluginId));
-  let SidebarComponent = $state<any>(null);
+  // Dynamic sidebar component
+  let SidebarComponent = $state<ComponentType | null>(null);
 
   // Load sidebar component when plugin changes
-  $effect(async () => {
-    if (currentPlugin) {
+  $effect(() => {
+    if (!currentPlugin) {
+      SidebarComponent = null;
+      return;
+    }
+  (async () => {
       try {
-        const module = await currentPlugin.sidebar();
-        SidebarComponent = module.default || module;
+        const mod = await currentPlugin.sidebar();
+        // Support both ESM default export objects and direct component returns
+        let comp: unknown = mod;
+        if (comp && typeof comp === 'object' && 'default' in (comp as Record<string, unknown>)) {
+          comp = (comp as { default: unknown }).default;
+        }
+        SidebarComponent = comp as ComponentType;
       } catch (error) {
         console.error(`Failed to load sidebar for plugin ${currentPlugin.id}:`, error);
         SidebarComponent = null;
       }
-    } else {
-      SidebarComponent = null;
-    }
+    })();
   });
 
   function handlePluginSelect(pluginId: string) {

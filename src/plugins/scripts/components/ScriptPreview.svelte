@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Badge } from "../../../lib/components/ui/badge/index.js";
-	import { Button } from "../../../lib/components/ui/button/index.js";
 	import { Card, CardContent, CardHeader, CardTitle } from "../../../lib/components/ui/card/index.js";
 	import { Separator } from "../../../lib/components/ui/separator/index.js";
 	import { CopyButton } from "../../../lib/components/ui/copy-button/index.js";
@@ -11,11 +10,8 @@
 	// PyodideManager removed - using simplified system
 	// import { PyodideManager, type PyodideInitializationStatus } from "../pyodide/pyodide-manager.js";
 	import { onMount } from 'svelte';
-	import { scripts } from "../../../lib/config/script-config.js";
-	import { fileRequirements } from "../../../lib/config/file-config.js";
 	import { formatFileSize } from "../../../lib/utils/formatting.js";
 	import { checkScriptDependencies } from "../../../lib/utils/dependencies.js";
-	import { previewStatusConfig, getPyodideInitializationMessage } from "../../../lib/utils/status.js";
 
 	interface Props {
 		/** Script ID for looking up dependencies */
@@ -32,14 +28,14 @@
 			lastRun?: string;
 			outputLines?: number;
 			errorCount?: number;
-			[key: string]: any;
+			[key: string]: unknown;
 		};
 		/** Script output/results */
 		output?: string;
 		/** Error message if status is error */
 		error?: string;
 		/** Click handler for run action */
-		onRun?: () => void;
+		// onRun?: () => void; // removed unused
 	}
 
 	let { 
@@ -49,8 +45,7 @@
 		status = "ready",
 		metrics = {},
 		output = "",
-		error = "",
-		onRun
+		error = ""
 	}: Props = $props();
 
 	// Pyodide functionality disabled in simplified system
@@ -59,33 +54,9 @@
 	
 	// const pyodideManager = PyodideManager.getInstance();
 
-	onMount(() => {
-		// Monitor Pyodide initialization status only when it's actually initializing
-		const outputHandler = {
-			onStatusChange: (newStatus: any) => {
-				pyodideStatus = newStatus;
-				updateInitializationMessage(newStatus);
-			}
-		};
-		
-		// pyodideManager.addOutputHandler(outputHandler);
-		
-		// Only update status if Pyodide is already initializing/ready
-		// Don't show "not-initialized" as a loading state
-		// const currentStatus = pyodideManager.getStatus();
-		// if (currentStatus !== 'not-initialized') {
-		// 	pyodideStatus = currentStatus;
-		// 	updateInitializationMessage(currentStatus);
-		// }
-		
-		return () => {
-			// pyodideManager.removeOutputHandler(outputHandler);
-		};
-	});
+	onMount(() => { /* Pyodide integration disabled */ });
 
-	function updateInitializationMessage(status: any) {
-		initializationMessage = getPyodideInitializationMessage(status);
-	}
+	// updateInitializationMessage removed (unused)
 
 	// Calculate script stats
 	const scriptStats = $derived.by(() => {
@@ -153,7 +124,7 @@
 					<div>
 						<h4 class="font-medium mb-2 text-sm">Required Files</h4>
 						<div class="space-y-2">
-							{#each requiredFiles as file}
+							{#each requiredFiles as file (file.id || file.title)}
 								<div class="border rounded-md p-2 {file.isUploaded ? 'bg-green-50/50 border-green-200' : 'bg-muted/20'}">
 									<div class="flex items-start gap-2 min-w-0">
 										<div class="min-w-0 flex-1">
@@ -239,7 +210,7 @@
 							{/if}
 							
 							<!-- Additional custom metrics -->
-							{#each Object.entries(metrics) as [key, value]}
+							{#each Object.entries(metrics) as [key, value] (key)}
 								{#if !['executionTime', 'lastRun', 'outputLines', 'errorCount'].includes(key)}
 									<div class="flex justify-between min-w-0">
 										<span class="text-muted-foreground capitalize flex-shrink-0 truncate">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
@@ -267,7 +238,7 @@
 						{/if}
 					</span>
 					{#if (status === "error" && error) || output}
-						<CopyButton content={liveOutputCopyContent} class="flex-shrink-0" />
+						<CopyButton content={liveOutputCopyContent()} class="flex-shrink-0" />
 					{/if}
 				</CardTitle>
 			</CardHeader>

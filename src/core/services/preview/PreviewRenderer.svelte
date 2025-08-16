@@ -9,7 +9,7 @@
     /** File content (optional, for content-based preview decisions) */
     content?: string | Uint8Array;
     /** Additional props to pass to the preview component */
-    previewProps?: Record<string, any>;
+  previewProps?: Record<string, unknown>;
     /** Custom fallback message */
     fallbackMessage?: string;
   }
@@ -24,24 +24,33 @@
   // Get the appropriate preview component
   const previewRegistration = $derived(getPreviewComponent(filename, content));
   
-  let PreviewComponent = $state<any>(null);
+  import type { ComponentType } from 'svelte';
+  let PreviewComponent = $state<ComponentType | null>(null);
   let loading = $state(false);
   let error = $state<string | null>(null);
 
   // Load preview component when registration changes
-  $effect(async () => {
-    if (previewRegistration) {
-      loading = true;
+  $effect(() => {
+    if (!previewRegistration) {
+      PreviewComponent = null;
+      loading = false;
       error = null;
-      
+      return;
+    }
+    loading = true;
+    error = null;
+    (async () => {
       try {
         const componentOrPromise = previewRegistration.component();
-        
         if (componentOrPromise instanceof Promise) {
-          const module = await componentOrPromise;
-          PreviewComponent = module.default || module;
+          const mod: unknown = await componentOrPromise;
+          let resolved: unknown = mod;
+          if (resolved && typeof resolved === 'object' && 'default' in (resolved as Record<string, unknown>)) {
+            resolved = (resolved as { default: unknown }).default;
+          }
+          PreviewComponent = resolved as ComponentType;
         } else {
-          PreviewComponent = componentOrPromise;
+          PreviewComponent = componentOrPromise as ComponentType;
         }
       } catch (err) {
         console.error(`Failed to load preview component for ${filename}:`, err);
@@ -50,11 +59,7 @@
       } finally {
         loading = false;
       }
-    } else {
-      PreviewComponent = null;
-      loading = false;
-      error = null;
-    }
+    })();
   });
 </script>
 

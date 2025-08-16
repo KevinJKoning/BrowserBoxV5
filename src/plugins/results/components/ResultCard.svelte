@@ -6,7 +6,6 @@
 	import FileTextIcon from "@lucide/svelte/icons/file-text";
 	import DownloadIcon from "@lucide/svelte/icons/download";
 	import DatabaseIcon from "@lucide/svelte/icons/database";
-	import type { Snippet } from "svelte";
 
 	interface Props {
 		/** Unique identifier for the result file */
@@ -71,8 +70,10 @@
 	const FileIconComponent = getFileIcon(fileType);
 </script>
 
+
 {#if onPreview}
 	<button
+		data-result-id={id}
 		class={cn(
 			"flex flex-col gap-3 rounded-lg border p-4 transition-all w-full text-left",
 			"border-border bg-background",
@@ -123,6 +124,7 @@
 	</button>
 {:else}
 	<div 
+		data-result-id={id}
 		class={cn(
 			"flex flex-col gap-3 rounded-lg border p-4 transition-all hover:shadow-sm",
 			"border-border bg-background"

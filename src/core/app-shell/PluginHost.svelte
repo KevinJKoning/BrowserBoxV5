@@ -4,29 +4,36 @@
   import { Separator } from "../../lib/components/ui/separator/index.js";
   import { getAllPlugins } from "../state/plugin-registry.svelte";
   import { workspace, getSelection } from "../state/workspace.svelte";
+  import type { ComponentType } from 'svelte';
 
   let { class: className, ...restProps } = $props();
 
   let currentPlugin = $derived(getAllPlugins().find(p => p.id === workspace.activePluginId));
-  let MainComponent = $state<any>(null);
+  // Dynamic component loaded from plugin main()
+  let MainComponent = $state<ComponentType | null>(null);
 
   // Load main component when plugin changes
-  $effect(async () => {
-    if (currentPlugin) {
+  $effect(() => {
+    if (!currentPlugin) {
+      MainComponent = null;
+      return;
+    }
+    // fire & forget async loader
+  (async () => {
       try {
-        const module = await currentPlugin.main();
-        MainComponent = module.default || module;
+    const module = await currentPlugin.main();
+        const comp = module?.default ?? module;
+        MainComponent = comp as ComponentType;
       } catch (error) {
         console.error(`Failed to load main component for plugin ${currentPlugin.id}:`, error);
         MainComponent = null;
       }
-    } else {
-      MainComponent = null;
-    }
+    })();
   });
 
   // Get current selection context for breadcrumbs
-  const currentSelection = $derived(() => {
+  type Selection = { type: string; id: string } | null;
+  const currentSelection = $derived((): Selection => {
     const fileId = getSelection('file');
     const schemaId = getSelection('schema');
     const scriptId = getSelection('script');
@@ -55,10 +62,10 @@
             {currentPlugin?.title || 'Dashboard'}
           </Breadcrumb.Link>
         </Breadcrumb.Item>
-        {#if currentSelection}
+    {#if currentSelection}
           <Breadcrumb.Separator class="hidden md:block" />
           <Breadcrumb.Item>
-            <Breadcrumb.Page>{currentSelection.type}: {currentSelection.id}</Breadcrumb.Page>
+      <Breadcrumb.Page>{currentSelection()?.type}: {currentSelection()?.id}</Breadcrumb.Page>
           </Breadcrumb.Item>
         {:else}
           <Breadcrumb.Separator class="hidden md:block" />
@@ -91,7 +98,7 @@
           <div class="space-y-4">
             <h2 class="text-xl font-semibold">Available Plugins:</h2>
             <ul class="list-disc list-inside space-y-2 text-muted-foreground">
-              {#each getAllPlugins() as plugin}
+              {#each getAllPlugins() as plugin (plugin.id)}
                 <li>{plugin.title} - Click the icon in the sidebar to get started</li>
               {/each}
             </ul>

@@ -199,7 +199,7 @@
 						<table class="w-full text-sm">
 							<thead class="sticky top-0 bg-muted">
 								<tr>
-									{#each columns as column, i}
+									{#each columns as column, i (i)}
 										<th class="text-left p-3 font-medium border-b min-w-[120px]">
 											<div class="truncate" title={column}>
 												{column || `Column ${i + 1}`}
@@ -212,9 +212,9 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each tableData as row, rowIndex}
+								{#each tableData as row, rowIndex (rowIndex)}
 									<tr class="border-b hover:bg-muted/50">
-										{#each row as cell, cellIndex}
+										{#each row as cell, cellIndex (cellIndex)}
 											<td class="p-3 max-w-[200px]">
 												<div class="truncate" title={formatValue(cell)}>
 													{formatValue(cell)}
@@ -287,7 +287,7 @@
 					<div>
 						<h4 class="font-medium mb-2">Column Schema</h4>
 						<div class="space-y-2">
-							{#each columns as column, i}
+							{#each columns as column, i (i)}
 								<div class="flex justify-between items-start p-2 rounded border text-sm">
 									<div class="min-w-0 flex-1">
 										<div class="font-medium truncate" title={column || `Column ${i + 1}`}>

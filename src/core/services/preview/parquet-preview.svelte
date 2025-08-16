@@ -12,8 +12,10 @@
 
 	let { file, filename }: Props = $props();
 
-	let metadata: any = $state(null);
-	let tableData: any[][] = $state([]);
+	interface ParquetField { name: string; repetition_type?: string; type?: string; converted_type?: string; }
+	interface ParquetMetadata { num_rows?: number | bigint; schema: ParquetField[]; version?: string | number; created_by?: string; }
+	let metadata: ParquetMetadata | null = $state(null);
+	let tableData: unknown[][] = $state([]);
 	let columns: string[] = $state([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
@@ -41,13 +43,13 @@
 		const arrayBuffer = await file.arrayBuffer();
 		
 		// Get metadata
-		metadata = parquetMetadata(arrayBuffer);
-		rowCount = Number(metadata.num_rows);
+		metadata = parquetMetadata(arrayBuffer) as unknown as ParquetMetadata;
+		rowCount = Number(typeof metadata?.num_rows === 'bigint' ? Number(metadata.num_rows) : (metadata?.num_rows ?? 0));
 		
 		// Extract column names from schema
-		const allColumns = metadata.schema
-			.filter((field: any) => field.repetition_type !== 'REPEATED' || field.name !== 'list')
-			.map((field: any) => field.name);
+		const allColumns = (metadata?.schema ?? [])
+			.filter(field => field.repetition_type !== 'REPEATED' || field.name !== 'list')
+			.map(field => field.name);
 		
 		// Skip the first column if it doesn't match the data structure
 		columns = allColumns.slice(1);
@@ -55,15 +57,15 @@
 		// Read the data
 		await parquetRead({
 			file: arrayBuffer,
-			onComplete: (data: any[]) => {
-				// Take only the rows we need for display
-				tableData = data.slice(0, displayRows);
+			onComplete: (data: unknown[]) => {
+				// Assume each element is an array of cell values
+				tableData = (data as unknown[][]).slice(0, displayRows);
 				loading = false;
 			}
 		});
 	}
 
-	function formatValue(value: any): string {
+	function formatValue(value: unknown): string {
 		if (value === null || value === undefined) return '';
 		if (typeof value === 'object') return JSON.stringify(value);
 		return String(value);
@@ -111,7 +113,7 @@
 						<table class="w-full text-sm">
 							<thead class="sticky top-0 bg-muted">
 								<tr>
-									{#each columns as column, i}
+									{#each columns as column, i (i)}
 										<th class="text-left p-3 font-medium border-b min-w-[120px]">
 											<div class="truncate" title={column}>
 												{column}
@@ -124,9 +126,9 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each tableData as row, rowIndex}
+								{#each tableData as row, rowIndex (rowIndex)}
 									<tr class="border-b hover:bg-muted/50">
-										{#each row as cell, cellIndex}
+										{#each row as cell, cellIndex (cellIndex)}
 											<td class="p-3 max-w-[200px]">
 												<div class="truncate" title={formatValue(cell)}>
 													{formatValue(cell)}
@@ -184,7 +186,7 @@
 							</div>
 							<div class="flex justify-between">
 								<span class="text-muted-foreground">Version:</span>
-								<span>{metadata.version || 'Unknown'}</span>
+								<span>{metadata.version ?? 'Unknown'}</span>
 							</div>
 						</div>
 					</div>
@@ -195,7 +197,7 @@
 					<div>
 						<h4 class="font-medium mb-2">Schema</h4>
 						<div class="space-y-2">
-							{#each columns as column, i}
+							{#each columns as column, i (i)}
 								<div class="flex justify-between items-start p-2 rounded border text-sm">
 									<div class="min-w-0 flex-1">
 										<div class="font-medium truncate" title={column}>

@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { Card, CardContent, CardHeader, CardTitle } from "../../../lib/components/ui/card/index.js";
-	import { Badge } from "../../../lib/components/ui/badge/index.js";
 	import { Button } from "../../../lib/components/ui/button/index.js";
 	import FileTextIcon from "@lucide/svelte/icons/file-text";
-	import DownloadIcon from "@lucide/svelte/icons/download";
 	import ExternalLinkIcon from "@lucide/svelte/icons/external-link";
 	import RefreshCwIcon from "@lucide/svelte/icons/refresh-cw";
 
@@ -17,7 +15,6 @@
 		/** Creation date */
 		createdAt?: string;
 		/** Click handler for download action */
-		onDownload?: () => void;
 		/** Click handler for open in new tab action */
 		onOpenNewTab?: () => void;
 	}
@@ -27,7 +24,7 @@
 		filename,
 		fileSize,
 		createdAt,
-		onDownload,
+		// onDownload, // unused currently
 		onOpenNewTab
 	}: Props = $props();
 

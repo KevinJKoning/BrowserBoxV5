@@ -1,6 +1,6 @@
 <script module lang="ts">
   import { pythonExecutor } from '../../core/pyodide/executor.js';
-  import { scripts, type Script, type ScriptExecution } from '../../lib/config/script-config.js';
+  import { scripts, type ScriptExecution } from '../../lib/config/script-config.js';
   import { select, clearOtherSelections, getSelection } from '../../core/state/workspace.svelte';
 
   export const availableScripts = $state(scripts);

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Badge } from "../../../lib/components/ui/badge/index.js";
-	import { Button } from "../../../lib/components/ui/button/index.js";
 	import { Card, CardContent, CardHeader, CardTitle } from "../../../lib/components/ui/card/index.js";
 	import { Separator } from "../../../lib/components/ui/separator/index.js";
 	import { CopyButton } from "../../../lib/components/ui/copy-button/index.js";
@@ -8,19 +7,14 @@
 	import FileTextIcon from "@lucide/svelte/icons/file-text";
 	import LoaderIcon from "@lucide/svelte/icons/loader";
 	import AlertCircleIcon from "@lucide/svelte/icons/alert-circle";
-	import CheckCircleIcon from "@lucide/svelte/icons/check-circle";
-	import XCircleIcon from "@lucide/svelte/icons/x-circle";
-	import AlertTriangleIcon from "@lucide/svelte/icons/alert-triangle";
 	import ChevronDownIcon from "@lucide/svelte/icons/chevron-down";
 	import ChevronRightIcon from "@lucide/svelte/icons/chevron-right";
 	// PyodideManager removed - using simplified system
 	// import { PyodideManager, type PyodideInitializationStatus } from "../pyodide/pyodide-manager.js";
 	import { onMount } from 'svelte';
-	import type { SchemaExpectation, SchemaValidationResult, SchemaColumnValidation } from "../../../lib/config/schema-config.js";
-	import { schemaValidations } from "../../../lib/config/schema-config.js";
-	import { fileRequirements } from "../../../lib/config/file-config.js";
+	import type { SchemaExpectation, SchemaValidationResult } from "../../../lib/config/schema-config.js";
 	import { checkSchemaDependencies } from "../../../lib/utils/dependencies.js";
-	import { previewStatusConfig, getPyodideInitializationMessage, getValidationStatusIcon, getValidationStatusClass } from "../../../lib/utils/status.js";
+	import { getValidationStatusIcon, getValidationStatusClass } from "../../../lib/utils/status.js";
 
 	interface Props {
 		/** Schema validation ID */
@@ -37,7 +31,7 @@
 			lastRun?: string;
 			outputLines?: number;
 			errorCount?: number;
-			[key: string]: any;
+			[key: string]: unknown;
 		};
 		/** Schema validation output/results */
 		output?: string;
@@ -45,8 +39,6 @@
 		validationResults?: SchemaValidationResult;
 		/** Error message if status is error */
 		error?: string;
-		/** Click handler for validate action */
-		onValidate?: () => void;
 	}
 
 	let { 
@@ -57,18 +49,18 @@
 		metrics = {},
 		output = "",
 		validationResults,
-		error = "",
-		onValidate
+		error = ""
 	}: Props = $props();
 
 	// Pyodide functionality disabled in simplified system
 	let pyodideStatus = $state('not-initialized');
-	let initializationMessage = $state('');
+	let initializationMessage = $state(''); // retained placeholder for UI states
 	
 	// const pyodideManager = PyodideManager.getInstance();
 
-	// Expanded rows for detailed validation checks
-	let expandedRows = $state<Set<string>>(new Set());
+	// Expanded rows for detailed validation checks (use SvelteSet for reactivity compliance)
+	import { SvelteSet } from 'svelte/reactivity';
+	let expandedRows = new SvelteSet<string>();
 
 	// Content for validation results copy button
 	const validationCopyContent = $derived(() => {
@@ -76,23 +68,6 @@
 			validationResults ? JSON.stringify(validationResults, null, 2) : output || "";
 	});
 
-	// Find the target file for this schema validation
-	const targetFile = $derived.by(() => {
-		if (!schemaId) return null;
-		
-		const schemaValidation = schemaValidations.find(s => s.id === schemaId);
-		if (!schemaValidation?.dependencies?.[0]) {
-			return null;
-		}
-		
-		const dependency = schemaValidation.dependencies[0];
-		if (dependency.type === 'uploaded') {
-			const fileReq = fileRequirements.find(req => req.id === dependency.sourceId);
-			return fileReq?.defaultFilename || null;
-		}
-		
-		return null;
-	});
 
 	// Get dependency status info for target file availability display
 	const targetFileInfo = $derived.by(() => {
@@ -101,33 +76,9 @@
 		return dependencyStatus.dependencies[0] || null;
 	});
 
-	onMount(() => {
-		// Monitor Pyodide initialization status only when it's actually initializing
-		const outputHandler = {
-			onStatusChange: (newStatus: any) => {
-				pyodideStatus = newStatus;
-				updateInitializationMessage(newStatus);
-			}
-		};
-		
-		// pyodideManager.addOutputHandler(outputHandler);
-		
-		// Only update status if Pyodide is already initializing/ready
-		// Don't show "not-initialized" as a loading state
-		// const currentStatus = pyodideManager.getStatus();
-		// if (currentStatus !== 'not-initialized') {
-		// 	pyodideStatus = currentStatus;
-		// 	updateInitializationMessage(currentStatus);
-		// }
-		
-		return () => {
-			// pyodideManager.removeOutputHandler(outputHandler);
-		};
-	});
+	onMount(() => { /* Pyodide integration disabled */ });
 
-	function updateInitializationMessage(status: any) {
-		initializationMessage = getPyodideInitializationMessage(status);
-	}
+	// updateInitializationMessage removed (Pyodide disabled)
 
 	// Calculate expectations stats
 	const expectationsStats = $derived.by(() => {
@@ -151,15 +102,12 @@
 		} else {
 			expandedRows.add(columnName);
 		}
-		expandedRows = new Set(expandedRows); // Trigger reactivity
+		// SvelteSet is reactive; no need to recreate
 	}
 
 
 	// Use shared preview status config but override running text for schema validation
-	const statusConfig = {
-		...previewStatusConfig,
-		running: { variant: "secondary" as const, text: "Validating..." }
-	};
+	// statusConfig retained in earlier version; removed as unused
 </script>
 
 <div class="flex gap-6 h-full w-full min-w-0 overflow-hidden max-w-full">
@@ -227,7 +175,7 @@
 										</tr>
 									</thead>
 									<tbody>
-										{#each Object.entries(expectations.columns) as [columnName, columnExp]}
+										{#each Object.entries(expectations.columns) as [columnName, columnExp] (columnName)}
 											<tr class="border-t">
 												<td class="p-2 font-medium text-xs">{columnName}</td>
 												<td class="p-2 text-xs">
@@ -410,7 +358,7 @@
 						{/if}
 					</span>
 					{#if (status === "error" && error) || output || validationResults}
-						<CopyButton content={validationCopyContent} class="flex-shrink-0" />
+						<CopyButton content={validationCopyContent()} class="flex-shrink-0" />
 					{/if}
 				</CardTitle>
 			</CardHeader>
@@ -433,7 +381,7 @@
 									</tr>
 								</thead>
 								<tbody>
-									{#each validationResults.column_validations as columnValidation}
+									{#each validationResults.column_validations as columnValidation (columnValidation.column_name)}
 										{@const StatusIcon = getValidationStatusIcon(columnValidation.status)}
 										{@const failedChecks = columnValidation.checks.filter(check => check.status === "fail")}
 										{@const warningChecks = columnValidation.checks.filter(check => check.status === "warning")}
@@ -491,7 +439,7 @@
 													<div class="p-4 space-y-2">
 														<h5 class="font-medium text-sm">Detailed Check Results</h5>
 														<div class="space-y-1">
-															{#each columnValidation.checks as check}
+															{#each columnValidation.checks as check (check.check)}
 																{@const CheckIcon = getValidationStatusIcon(check.status)}
 																<div class="flex items-start gap-2 text-xs">
 																	<CheckIcon class={`size-3 mt-0.5 flex-shrink-0 ${getValidationStatusClass(check.status)}`} />

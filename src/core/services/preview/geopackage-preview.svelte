@@ -30,7 +30,7 @@
 	let layers: LayerInfo[] = $state([]);
 	let selectedLayer: LayerInfo | null = $state(null);
 	let attributes: AttributeInfo[] = $state([]);
-	let sampleData: any[][] = $state([]);
+	let sampleData: unknown[][] = $state([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let processingStep = $state("Initializing...");
@@ -54,25 +54,12 @@
 	});
 
 	async function loadGeoPackageInfo() {
-		// GeoPackage functionality disabled - old worker system removed
+		// Simplified: mark as unsupported gracefully
 		console.warn('GeoPackage preview not available in simplified system');
+		loading = false;
 		return;
-		// const worker = createPyodideWorker();
-		let executionId = `geopackage-preview-${Date.now()}`;
-
-		try {
-			processingStep = "Starting Pyodide worker...";
-
-			// Prepare the file for the worker
-			const fileData = {
-				name: filename,
-				originalName: filename,
-				requirementId: 'temp',
-				data: await file.arrayBuffer()
-			};
-
-			// Python script to analyze GeoPackage
-			const analysisScript = `
+		/* Legacy worker-based implementation retained for reference
+		const analysisScript = `
 import os
 import geopandas as gpd
 import json
@@ -169,91 +156,8 @@ except Exception as e:
     print(json.dumps(error_result))
     print("📊 RESULT_JSON_END")
 `;
-
-			return new Promise<void>((resolve, reject) => {
-				const messageHandler = (event: MessageEvent<any>) => {
-					const { type, id, data } = event.data;
-					
-					if (id !== executionId) return;
-
-					switch (type) {
-						case 'status':
-							processingStep = data;
-							break;
-							
-						case 'stdout':
-							console.log('GeoPackage Worker stdout:', data);
-							// Parse results from stdout
-							if (data.includes('RESULT_JSON_START')) {
-								const lines = data.split('\n');
-								let jsonStartIdx = -1;
-								let jsonEndIdx = -1;
-								
-								for (let i = 0; i < lines.length; i++) {
-									if (lines[i].includes('RESULT_JSON_START')) {
-										jsonStartIdx = i + 1;
-									} else if (lines[i].includes('RESULT_JSON_END')) {
-										jsonEndIdx = i;
-										break;
-									}
-								}
-								
-								if (jsonStartIdx >= 0 && jsonEndIdx >= 0) {
-									try {
-										const jsonStr = lines.slice(jsonStartIdx, jsonEndIdx).join('\n');
-										const result = JSON.parse(jsonStr);
-										
-										if (result.success) {
-											layers = result.layers;
-											if (layers.length > 0) {
-												selectLayer(layers[0]);
-											}
-										} else {
-											throw new Error(result.error || 'Failed to analyze GeoPackage');
-										}
-									} catch (parseError) {
-										console.error('Failed to parse GeoPackage analysis result:', parseError);
-										throw new Error('Failed to parse analysis results');
-									}
-								}
-							}
-							break;
-							
-						case 'stderr':
-							console.error('GeoPackage Worker stderr:', data);
-							break;
-							
-						case 'complete':
-							worker.removeEventListener('message', messageHandler);
-							worker.terminate();
-							loading = false;
-							resolve();
-							break;
-							
-						case 'error':
-							worker.removeEventListener('message', messageHandler);
-							worker.terminate();
-							reject(new Error(data.error || 'Worker execution failed'));
-							break;
-					}
-				};
-
-				worker.addEventListener('message', messageHandler);
-
-				// Send the execution request
-				worker.postMessage({
-					id: executionId,
-					python: analysisScript,
-					files: [fileData]
-				});
-			});
-
-		} catch (err) {
-			error = `GeoPackage analysis failed: ${err instanceof Error ? err.message : 'Unknown error'}`;
-			loading = false;
-			throw err;
-		}
-	}
+	*/
+}
 
 	async function selectLayer(layer: LayerInfo) {
 		selectedLayer = layer;
@@ -266,11 +170,11 @@ except Exception as e:
 		}
 	}
 
-	async function loadLayerDetails(layerName: string) {
-		// Layer details disabled - old worker system removed
+	// Accept a layer name but currently unused (prefixed with underscore to satisfy lint config)
+	async function loadLayerDetails(_layerName: string) {
 		console.warn('Layer details not available in simplified system');
 		return;
-		// const worker = createPyodideWorker();
+		/* Legacy worker code retained for reference
 		let executionId = `layer-details-${Date.now()}`;
 
 		const detailScript = `
@@ -335,77 +239,8 @@ except Exception as e:
     print(json.dumps(error_result))
     print("📊 DETAILS_JSON_END")
 `;
-
-		return new Promise<void>((resolve, reject) => {
-			const messageHandler = (event: MessageEvent<any>) => {
-				const { type, id, data } = event.data;
-				
-				if (id !== executionId) return;
-
-				switch (type) {
-					case 'stdout':
-						if (data.includes('DETAILS_JSON_START')) {
-							const lines = data.split('\n');
-							let jsonStartIdx = -1;
-							let jsonEndIdx = -1;
-							
-							for (let i = 0; i < lines.length; i++) {
-								if (lines[i].includes('DETAILS_JSON_START')) {
-									jsonStartIdx = i + 1;
-								} else if (lines[i].includes('DETAILS_JSON_END')) {
-									jsonEndIdx = i;
-									break;
-								}
-							}
-							
-							if (jsonStartIdx >= 0 && jsonEndIdx >= 0) {
-								try {
-									const jsonStr = lines.slice(jsonStartIdx, jsonEndIdx).join('\n');
-									const result = JSON.parse(jsonStr);
-									
-									if (result.success) {
-										attributes = result.attributes;
-										sampleData = result.sampleData;
-									}
-								} catch (parseError) {
-									console.error('Failed to parse layer details:', parseError);
-								}
-							}
-						}
-						break;
-						
-					case 'complete':
-						worker.removeEventListener('message', messageHandler);
-						worker.terminate();
-						resolve();
-						break;
-						
-					case 'error':
-						worker.removeEventListener('message', messageHandler);
-						worker.terminate();
-						reject(new Error(data.error || 'Worker execution failed'));
-						break;
-				}
-			};
-
-			worker.addEventListener('message', messageHandler);
-
-			// Prepare the file for the worker
-			const fileData = {
-				name: filename,
-				originalName: filename,
-				requirementId: 'temp',
-				data: file.arrayBuffer()
-			};
-
-			// Send the execution request
-			worker.postMessage({
-				id: executionId,
-				python: detailScript,
-				files: [fileData]
-			});
-		});
-	}
+*/
+}
 
 	function formatBounds(bbox: [number, number, number, number] | null): string {
 		if (!bbox) return 'Unknown';
@@ -459,7 +294,7 @@ except Exception as e:
 						<div class="p-4 border-b">
 							<h4 class="font-medium mb-2">Layers</h4>
 							<div class="flex flex-wrap gap-2">
-								{#each layers as layer}
+								{#each layers as layer (layer.name)}
 									<button
 										class="px-3 py-1 text-sm border rounded-md transition-colors {selectedLayer?.name === layer.name ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}"
 										onclick={() => selectLayer(layer)}
@@ -480,7 +315,7 @@ except Exception as e:
 										<table class="w-full text-sm">
 											<thead class="sticky top-0 bg-muted">
 												<tr>
-													{#each attributes as attr}
+													{#each attributes as attr (attr.name)}
 														<th class="text-left p-3 font-medium border-b min-w-[120px]">
 															<div class="truncate" title={attr.name}>
 																{attr.name}
@@ -493,15 +328,21 @@ except Exception as e:
 												</tr>
 											</thead>
 											<tbody>
-												{#each sampleData as row, rowIndex}
+														{#each sampleData as row, rowIndex (rowIndex)}
 													<tr class="border-b hover:bg-muted/50">
-														{#each row as cell, cellIndex}
-															<td class="p-3 max-w-[200px]">
-																<div class="truncate" title={cell || ''}>
-																	{cell || ''}
-																</div>
-															</td>
-														{/each}
+															{#each row as cell, cellIndex (cellIndex)}
+																<td class="p-3 max-w-[200px]">
+																	{#if typeof cell === 'string'}
+																		<div class="truncate" title={cell}>
+																			{cell}
+																		</div>
+																	{:else}
+																		<div class="truncate" title={cell ? String(cell) : ''}>
+																			{cell ? String(cell) : ''}
+																		</div>
+																	{/if}
+																</td>
+															{/each}
 													</tr>
 												{/each}
 												{#if sampleData.length === 10}
@@ -603,7 +444,7 @@ except Exception as e:
 							<div>
 								<h4 class="font-medium mb-2">Attributes ({attributes.length})</h4>
 								<div class="space-y-2">
-									{#each attributes as attr}
+										{#each attributes as attr (attr.name)}
 										<div class="flex justify-between items-start p-2 rounded border text-sm">
 											<div class="min-w-0 flex-1">
 												<div class="font-medium truncate" title={attr.name}>
@@ -627,7 +468,7 @@ except Exception as e:
 						<div>
 							<h4 class="font-medium mb-2">All Layers</h4>
 							<div class="space-y-2">
-								{#each layers as layer}
+											{#each layers as layer (layer.name)}
 									<div class="p-2 rounded border text-sm">
 										<div class="font-medium">{layer.name}</div>
 										<div class="text-xs text-muted-foreground">

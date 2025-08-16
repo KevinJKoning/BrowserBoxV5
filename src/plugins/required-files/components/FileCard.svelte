@@ -7,8 +7,6 @@
 	import FileIcon from "@lucide/svelte/icons/file";
 	import UploadIcon from "@lucide/svelte/icons/upload";
 	import XCircleIcon from "@lucide/svelte/icons/x-circle";
-	import type { Snippet } from "svelte";
-	import type { ComponentType } from "svelte";
 
 	interface Props {
 		/** Unique identifier for the file requirement */
@@ -48,7 +46,7 @@
 		uploadedAt,
 		wasRenamed,
 		onUpload,
-		onRemove,
+		// onRemove (unused),
 		onPreview,
 		...restProps
 	}: Props = $props();
