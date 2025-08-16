@@ -12,7 +12,7 @@
     getExecutionStatus, 
     getValidationResults, 
     isSchemaSelected 
-  } from "../store.svelte.js";
+  } from "../store.svelte";
 
   let searchQuery = $state("");
 

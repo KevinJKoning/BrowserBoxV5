@@ -12,7 +12,7 @@
     getExecution, 
     getExecutionStatus, 
     isScriptSelected 
-  } from "../store.svelte.js";
+  } from "../store.svelte";
 
   let searchQuery = $state("");
 

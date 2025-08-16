@@ -13,6 +13,6 @@ export {
   hasPreview,
   initializeBuiltinPreviews,
   type PreviewRegistration 
-} from './registry.svelte.js';
+} from './registry.svelte';
 
 export { default as PreviewRenderer } from './PreviewRenderer.svelte';

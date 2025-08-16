@@ -6,7 +6,7 @@
 import { scripts } from "../config/script-config.js";
 import { schemaValidations } from "../config/schema-config.js";
 import { fileRequirements } from "../config/file-config.js";
-import { getUploadState } from "../../plugins/required-files/store.svelte.js";
+import { getUploadState } from "../../plugins/required-files/store.svelte";
 
 // Interface for dependency information
 export interface DependencyInfo {

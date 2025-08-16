@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { getPreviewComponent } from './registry.svelte.js';
+  import { getPreviewComponent } from './registry.svelte';
   import FileTextIcon from '@lucide/svelte/icons/file-text';
   import AlertCircleIcon from '@lucide/svelte/icons/alert-circle';
 

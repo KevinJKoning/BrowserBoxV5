@@ -10,7 +10,7 @@
     selectResult, 
     getResultFile, 
     isResultSelected 
-  } from "../store.svelte.js";
+  } from "../store.svelte";
 
   let searchQuery = $state("");
 

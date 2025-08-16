@@ -1,7 +1,7 @@
 <script lang="ts">
   import SchemaPreview from "./SchemaPreview.svelte";
   import { getSelection } from "../../../core/state/workspace.svelte";
-  import { getSchema, getExecution, getValidationResults, startExecution } from "../store.svelte.js";
+  import { getSchema, getExecution, getValidationResults, startExecution } from "../store.svelte";
 
   // Get selected schema
   const selectedSchemaId = $derived(getSelection('schema'));

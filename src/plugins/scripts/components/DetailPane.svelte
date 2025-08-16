@@ -1,7 +1,7 @@
 <script lang="ts">
   import ScriptPreview from "./ScriptPreview.svelte";
   import { getSelection } from "../../../core/state/workspace.svelte";
-  import { getScript, getExecution, startExecution } from "../store.svelte.js";
+  import { getScript, getExecution, startExecution } from "../store.svelte";
 
   // Get selected script
   const selectedScriptId = $derived(getSelection('script'));
