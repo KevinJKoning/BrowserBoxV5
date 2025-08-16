@@ -6,7 +6,7 @@
 import { scripts } from "../config/script-config.js";
 import { schemaValidations } from "../config/schema-config.js";
 import { fileRequirements } from "../config/file-config.js";
-import { getUploadState } from "../../plugins/required-files/store.svelte";
+import { getUploadStateStrict } from "../../plugins/required-files/store.svelte";
 
 // Interface for dependency information
 export interface DependencyInfo {
@@ -40,7 +40,7 @@ export function checkScriptDependencies(scriptId: string): DependencyStatus {
     if (dependency.type === 'uploaded') {
       const requirement = fileRequirements.find(r => r.id === dependency.sourceId);
       if (requirement) {
-        const uploadState = getUploadState(requirement.id);
+  const uploadState = getUploadStateStrict(requirement.id);
         dependencies.push({
           id: requirement.id,
           type: 'uploaded',
@@ -82,7 +82,7 @@ export function checkSchemaDependencies(schemaId: string): DependencyStatus {
     if (dependency.type === 'uploaded') {
       const requirement = fileRequirements.find(r => r.id === dependency.sourceId);
       if (requirement) {
-        const uploadState = getUploadState(requirement.id);
+  const uploadState = getUploadStateStrict(requirement.id);
         dependencies.push({
           id: requirement.id,
           type: 'uploaded',

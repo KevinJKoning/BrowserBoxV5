@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*.ts", "src/**/*.svelte", "src/**/*.js"],
+  "exclude": ["node_modules", "pyodide_0-27-7", "dist", "build", "build-inline"]
+}

@@ -9,6 +9,7 @@ node_modules
 /build-inline
 /build
 dist/
+pyodide_0-27-7/
 
 # If you later choose GitHub Pages "docs/" deployment, remove this line and use docs/
 #docs/

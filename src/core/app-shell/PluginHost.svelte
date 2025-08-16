@@ -18,8 +18,8 @@
       MainComponent = null;
       return;
     }
-    // fire & forget async loader
-  (async () => {
+  // fire & forget async loader (explicitly voided to satisfy no-floating-promises)
+	void (async () => {
       try {
         const loaded = await currentPlugin.main();
         // Safely extract default export if present

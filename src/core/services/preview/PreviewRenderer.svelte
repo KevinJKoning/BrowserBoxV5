@@ -39,7 +39,7 @@
     }
     loading = true;
     error = null;
-    (async () => {
+  void (async () => {
       try {
         const componentOrPromise = previewRegistration.component();
         if (componentOrPromise instanceof Promise) {

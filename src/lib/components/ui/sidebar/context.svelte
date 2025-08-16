@@ -12,5 +12,5 @@
   }
   const SYMBOL_KEY = 'scn-sidebar';
   export function setSidebar(props: SidebarStateProps){ return setContext(Symbol.for(SYMBOL_KEY), new SidebarState(props)); }
-  export function useSidebar(){ return getContext(Symbol.for(SYMBOL_KEY)) as SidebarState; }
+  export function useSidebar(){ return getContext<SidebarState>(Symbol.for(SYMBOL_KEY)); }
 </script>

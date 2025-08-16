@@ -14,7 +14,7 @@
       SidebarComponent = null;
       return;
     }
-  (async () => {
+  void (async () => {
       try {
         const mod = await currentPlugin.sidebar();
         // Support both ESM default export objects and direct component returns

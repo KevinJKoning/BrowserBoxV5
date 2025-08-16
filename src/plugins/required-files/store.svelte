@@ -35,6 +35,10 @@
   export function selectFile(requirementId: string | null) { clearOtherSelections('file'); select('file', requirementId); }
   export function getFile(id: string) { return files[id]; }
   export function getUploadState(id: string) { return uploadStates[id] ?? 'waiting'; }
+  // Narrowed type helper for external consumers expecting a union
+  export function getUploadStateStrict(id: string): 'waiting'|'uploading'|'completed'|'error' {
+    return uploadStates[id] ?? 'waiting';
+  }
   export async function loadFilesFromFolder(fileList: File[]) {
     const result = { total: fileList.length, matched: 0, errors: [] as {file:string;error:string}[]};
     for (const f of fileList) {

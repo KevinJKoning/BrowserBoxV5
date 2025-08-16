@@ -338,9 +338,17 @@ except Exception as e:
 																			{cell}
 																		</div>
 																	{:else}
-																		<div class="truncate" title={cell ? String(cell) : ''}>
-																			{cell ? String(cell) : ''}
-																		</div>
+																		{#if cell === null || cell === undefined}
+																			<div class="truncate" title=""></div>
+																		{:else if typeof cell === 'object'}
+																			<div class="truncate" title={JSON.stringify(cell)}>
+																				{JSON.stringify(cell)}
+																			</div>
+																		{:else}
+																			<div class="truncate" title={String(cell)}>
+																				{String(cell)}
+																			</div>
+																		{/if}
 																	{/if}
 																</td>
 															{/each}
