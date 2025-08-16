@@ -3,6 +3,7 @@
 	import { Button } from "../../../lib/components/ui/button/index.js";
 	import { cn } from "../../../lib/utils.js";
 	import { getSchemaCardStatus, schemaStatusConfig } from "../../../lib/utils/status.js";
+	import { checkSchemaDependencies } from "../../../lib/utils/dependencies.js";
 	import CheckCircleIcon from "@lucide/svelte/icons/check-circle";
 	import ShieldCheckIcon from "@lucide/svelte/icons/shield-check";
 	import XCircleIcon from "@lucide/svelte/icons/x-circle";
@@ -76,8 +77,9 @@
 		return baseConfig;
 	});
 
-	// Calculate effective status based on prerequisites and execution status
-	const effectiveStatus = $derived(getSchemaCardStatus(id, status));
+	// Check dependencies and calculate effective status
+	const dependencyStatus = $derived(checkSchemaDependencies(id));
+	const effectiveStatus = $derived(getSchemaCardStatus(id, status, dependencyStatus.allMet));
 	
 	// Make config reactive using $derived
 	const config = $derived(statusConfig[effectiveStatus]);

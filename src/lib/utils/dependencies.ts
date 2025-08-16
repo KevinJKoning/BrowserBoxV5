@@ -6,6 +6,7 @@
 import { scripts } from "../config/script-config.js";
 import { schemaValidations } from "../config/schema-config.js";
 import { fileRequirements } from "../config/file-config.js";
+import { getUploadState } from "../../plugins/required-files/store.svelte.js";
 
 // Interface for dependency information
 export interface DependencyInfo {
@@ -25,43 +26,38 @@ export interface DependencyStatus {
 
 /**
  * Check script dependencies
- * Note: This function needs to be updated to use plugin stores instead of legacy stores
- * TODO: Replace with plugin store integration when implementing runtime config loading
  */
 export function checkScriptDependencies(scriptId: string): DependencyStatus {
   const script = scripts.find(s => s.id === scriptId);
-  if (!script || !script.dependencies) {
+  if (!script || !script.dependencies || script.dependencies.length === 0) {
     return { allMet: true, dependencies: [] };
   }
 
   const dependencies: DependencyInfo[] = [];
   
-  // Check uploaded file dependencies
-  if (script.dependencies.uploaded) {
-    for (const uploadedDep of script.dependencies.uploaded) {
-      const requirement = fileRequirements.find(r => r.id === uploadedDep);
+  // Process each dependency in the array
+  for (const dependency of script.dependencies) {
+    if (dependency.type === 'uploaded') {
+      const requirement = fileRequirements.find(r => r.id === dependency.sourceId);
       if (requirement) {
+        const uploadState = getUploadState(requirement.id);
         dependencies.push({
           id: requirement.id,
           type: 'uploaded',
-          filename: requirement.filename,
+          filename: requirement.defaultFilename,
           title: requirement.title,
           description: requirement.description,
-          isAvailable: false // TODO: Check actual plugin store state
+          isAvailable: uploadState === 'completed'
         });
       }
-    }
-  }
-
-  // Check result file dependencies
-  if (script.dependencies.results) {
-    for (const resultDep of script.dependencies.results) {
+    } else if (dependency.type === 'result') {
+      // TODO: Check results plugin store when available
       dependencies.push({
-        id: resultDep,
+        id: dependency.sourceId,
         type: 'result',
-        filename: resultDep,
-        title: `Result: ${resultDep}`,
-        isAvailable: false // TODO: Check actual plugin store state
+        filename: dependency.sourceId,
+        title: `Result: ${dependency.sourceId}`,
+        isAvailable: false // Results plugin not implemented yet
       });
     }
   }
@@ -72,45 +68,32 @@ export function checkScriptDependencies(scriptId: string): DependencyStatus {
 
 /**
  * Check schema validation dependencies
- * Note: This function needs to be updated to use plugin stores instead of legacy stores
- * TODO: Replace with plugin store integration when implementing runtime config loading
  */
 export function checkSchemaDependencies(schemaId: string): DependencyStatus {
   const schema = schemaValidations.find(s => s.id === schemaId);
-  if (!schema || !schema.dependencies) {
+  if (!schema || !schema.dependencies || schema.dependencies.length === 0) {
     return { allMet: true, dependencies: [] };
   }
 
   const dependencies: DependencyInfo[] = [];
   
-  // Check uploaded file dependencies
-  if (schema.dependencies.uploaded) {
-    for (const uploadedDep of schema.dependencies.uploaded) {
-      const requirement = fileRequirements.find(r => r.id === uploadedDep);
+  // Process each dependency in the array
+  for (const dependency of schema.dependencies) {
+    if (dependency.type === 'uploaded') {
+      const requirement = fileRequirements.find(r => r.id === dependency.sourceId);
       if (requirement) {
+        const uploadState = getUploadState(requirement.id);
         dependencies.push({
           id: requirement.id,
           type: 'uploaded',
-          filename: requirement.filename,
+          filename: requirement.defaultFilename,
           title: requirement.title,
           description: requirement.description,
-          isAvailable: false // TODO: Check actual plugin store state
+          isAvailable: uploadState === 'completed'
         });
       }
     }
-  }
-
-  // Check result file dependencies  
-  if (schema.dependencies.results) {
-    for (const resultDep of schema.dependencies.results) {
-      dependencies.push({
-        id: resultDep,
-        type: 'result',
-        filename: resultDep,
-        title: `Result: ${resultDep}`,
-        isAvailable: false // TODO: Check actual plugin store state
-      });
-    }
+    // Note: Schema validations currently only support 'uploaded' dependencies
   }
 
   const allMet = dependencies.every(dep => dep.isAvailable);

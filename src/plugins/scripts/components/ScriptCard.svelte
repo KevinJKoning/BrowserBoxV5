@@ -3,6 +3,7 @@
 	import { Button } from "../../../lib/components/ui/button/index.js";
 	import { cn } from "../../../lib/utils.js";
 	import { getScriptCardStatus, scriptStatusConfig } from "../../../lib/utils/status.js";
+	import { checkScriptDependencies } from "../../../lib/utils/dependencies.js";
 	import PlayIcon from "@lucide/svelte/icons/play";
 
 	interface Props {
@@ -43,8 +44,9 @@
 	}: Props = $props();
 
 
-	// Calculate effective status based on prerequisites and execution status
-	const effectiveStatus = $derived(getScriptCardStatus(id, status));
+	// Check dependencies and calculate effective status
+	const dependencyStatus = $derived(checkScriptDependencies(id));
+	const effectiveStatus = $derived(getScriptCardStatus(id, status, dependencyStatus.allMet));
 	
 	// Make config reactive using $derived
 	const config = $derived(scriptStatusConfig[effectiveStatus]);
