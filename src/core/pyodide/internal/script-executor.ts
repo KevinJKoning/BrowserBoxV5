@@ -10,10 +10,7 @@ import {
 	type Script as SimpleScript
 } from './simple-pyodide.js';
 import type { Script } from '@config/script-config.js';
-// Use dynamic plugin store state instead of static config so that
-// runtime-loaded configuration packages (ZIP) are respected when
-// mapping uploaded files to their expected canonical filenames.
-import { activeFileRequirements } from '@plugins/required-files/store.svelte';
+import { fileRequirements } from '@config/file-config.js';
 
 // Re-export the simple interfaces
 export type ScriptExecutionResult = ScriptResult;
@@ -47,9 +44,12 @@ export class ScriptExecutor {
 
 		// Convert dataFiles to simple format
 		const dataFiles = options.dataFiles?.map(fileData => {
-			const requirement = activeFileRequirements.find(req => req.id === fileData.requirementId);
+			const requirement = fileRequirements.find((req: { id: string; defaultFilename?: string }) => req.id === fileData.requirementId);
 			const filename = requirement?.defaultFilename || fileData.file.name;
-			return { file: fileData.file, filename };
+			return {
+				file: fileData.file,
+				filename
+			};
 		}) || [];
 
 		// Convert to simple options format

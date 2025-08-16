@@ -1,12 +1,6 @@
 <script module lang="ts">
   import { pythonExecutor } from '@worker/executor';
   import { scripts, type Script, type ScriptExecution } from '@config/script-config.js';
-  /**
-   * RUNTIME STORE (Svelte 5 runes):
-   * `availableScripts` is dynamically replaced via loadScripts() when a configuration
-   * package is applied. Do NOT import `scripts` (static config) elsewhere for live UI
-   * state; rely on this exported $state instead to avoid stale data.
-   */
   import { select, clearOtherSelections, getSelection } from '@core/state/workspace.svelte';
 
   export const availableScripts = $state<Script[]>([...scripts]);

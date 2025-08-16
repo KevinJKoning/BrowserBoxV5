@@ -1,11 +1,5 @@
 <script module lang="ts">
   import { fileRequirements, type FileRequirement, type UploadedFile } from '@config/file-config.js';
-  /**
-   * RUNTIME STORE (Svelte 5 runes):
-   * Exported $state arrays below are the single source of truth for active file requirements.
-   * Always import from this module for live data instead of the static @config/file-config.js
-   * when you need current runtime configuration (e.g. after loading a ZIP package).
-   */
   import { formatFileSize } from '@utils/formatting.ts';
   import { select, clearOtherSelections } from '@core/state/workspace.svelte';
 
