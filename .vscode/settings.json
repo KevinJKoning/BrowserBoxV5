@@ -1,0 +1,7 @@
+{
+  // disable TS diagnostics inside .svelte via the Svelte extension
+  "svelte.plugin.typescript.diagnostics.enable": false
+
+  // (stricter alternative if you really want zero TS checks anywhere)
+  // "typescript.validate.enable": false
+}

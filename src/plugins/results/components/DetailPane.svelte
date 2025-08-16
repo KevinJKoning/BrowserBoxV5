@@ -11,33 +11,39 @@
 
   // Get selected result
   const selectedResultId = $derived(getSelection('result'));
-  const selectedResult = $derived(selectedResultId ? getResultFile(selectedResultId) : null);
+  const selectedResult = $derived(() => selectedResultId ? getResultFile(selectedResultId) : null);
   
   // Create preview props for result file
-  const previewProps = $derived(() => {
+  const previewProps = $derived((): Record<string, unknown> => {
     if (!selectedResult) return {};
-    
-    // Convert content to appropriate format
-    let content = selectedResult.content;
-    if (content && typeof content !== 'string' && content instanceof Uint8Array) {
-      // Try to decode as text for text-based formats
+
+    // Normalize content (string or Uint8Array only)
+    let content: string | Uint8Array | undefined = selectedResult.content;
+    if (content instanceof Uint8Array) {
       const textFormats = ['.csv', '.html', '.htm', '.txt', '.json'];
       const hasTextFormat = textFormats.some(ext => selectedResult.filename.toLowerCase().endsWith(ext));
       if (hasTextFormat) {
         try {
           content = new TextDecoder().decode(content);
         } catch {
-          // Keep as Uint8Array if decoding fails
+          // leave as Uint8Array if decode fails
         }
       }
     }
-    
-    return {
-      content,
-      file: content ? new File([content], selectedResult.filename, {
+
+    // Build File only if we have content
+    let file: File | undefined;
+    if (content !== undefined) {
+      const parts: BlobPart[] = [content];
+      file = new File(parts, selectedResult.filename, {
         type: getFileType(selectedResult.fileType),
         lastModified: new Date(selectedResult.createdAt).getTime()
-      }) : undefined,
+      });
+    }
+
+  return {
+      content,
+      file,
       fileSize: selectedResult.fileSize,
       createdAt: selectedResult.createdAt,
       onDownload: () => {
