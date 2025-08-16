@@ -1,7 +1,7 @@
 <script module lang="ts">
   import { fileRequirements, type FileRequirement, type UploadedFile } from '../../lib/config/file-config.js';
-  import { formatFileSize } from '../../lib/utils/formatting.ts';
-  import { select, clearOtherSelections } from '../../core/state/workspace.svelte';
+  import { formatFileSize } from '@utils/formatting.ts';
+  import { select, clearOtherSelections } from '@core/state/workspace.svelte';
 
   export const files = $state<Record<string, UploadedFile>>({});
   export const uploadStates = $state<Record<string, 'waiting'|'uploading'|'completed'|'error'>>(

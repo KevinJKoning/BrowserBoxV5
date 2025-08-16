@@ -19,11 +19,11 @@
 		"types": ["vite/client", "vitest/globals"],
 		"baseUrl": "src",
 		"paths": {
-			"@core/*": ["lib/core/*"],
+			"@core/*": ["core/*"],
 			"@utils/*": ["lib/utils/*"],
 			"@ui/*": ["lib/components/ui/*"],
 			"@plugins/*": ["plugins/*"],
-			"@worker/*": ["lib/pyodide/*"]
+			"@worker/*": ["core/pyodide/*"]
 		}
 	},
 	"include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],

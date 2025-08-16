@@ -81,6 +81,7 @@ Interaction will move toward a schema‑first message layer (TypeScript types or
 * Service worker precaches core shell + Pyodide assets while allowing long-term caching of rarely changing chunks
 * Avoids monolithic inlining—browser caching leveraged across sessions
 * Reusable UI primitives keep component code size small and compilation fast
+* Extreme micro-optimizations (e.g. aggressive manual chunk surgery, icon tree‑shaking beyond current needs) are intentionally deprioritized right now in favor of architectural clarity; we will revisit once core feature set stabilizes.
 
 #### Testing Strategy (progressive)
 * Unit tests live near pure `@core` modules.

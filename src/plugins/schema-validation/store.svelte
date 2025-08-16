@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import { pythonExecutor } from '../../core/pyodide/executor.js';
+  import { pythonExecutor } from '@worker/executor.ts';
   import { schemaValidations, type SchemaValidationExecution, type SchemaValidationResult } from '../../lib/config/schema-config.js';
   import { select, clearOtherSelections, getSelection } from '../../core/state/workspace.svelte';
   export const availableSchemas = $state(schemaValidations);

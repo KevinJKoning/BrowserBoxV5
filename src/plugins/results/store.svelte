@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import { select, clearOtherSelections, getSelection } from '../../core/state/workspace.svelte';
+  import { select, clearOtherSelections, getSelection } from '@core/state/workspace.svelte';
   export interface ResultFile { id: string; filename: string; fileType: string; fileSize: number; content?: string|Uint8Array; createdAt: string; scriptId: string; description?: string; pyodidePath: string; }
   export const resultFiles = $state<Record<string, ResultFile>>({});
   export const preExecutionFiles = $state(new Set<string>());

@@ -22,11 +22,11 @@ export default defineConfig(({ command, mode }) => ({
 	base: '/',
 	resolve: {
 		alias: {
-			'@core': '/src/lib/core',
+			'@core': '/src/core',
 			'@utils': '/src/lib/utils',
 			'@ui': '/src/lib/components/ui',
 			'@plugins': '/src/plugins',
-			'@worker': '/src/lib/pyodide'
+			'@worker': '/src/core/pyodide'
 		}
 	},
 	plugins: [

@@ -2,7 +2,7 @@
 	import { Badge } from "../../../lib/components/ui/badge/index.js";
 	import { Button } from "../../../lib/components/ui/button/index.js";
 	import { cn } from "@utils/generic.ts";
-	import { isSelected } from "../../../core/state/workspace.svelte";
+	import { isSelected } from "@core/state/workspace.svelte";
 	import CheckCircleIcon from "@lucide/svelte/icons/check-circle";
 	import FileIcon from "@lucide/svelte/icons/file";
 	import UploadIcon from "@lucide/svelte/icons/upload";
