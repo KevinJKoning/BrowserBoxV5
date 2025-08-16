@@ -5,8 +5,8 @@
 
 // Standard Pyodide types
 interface PyodideInterface {
-  runPython(code: string): any;
-  runPythonAsync(code: string): Promise<any>;
+  runPython(code: string): unknown;
+  runPythonAsync(code: string): Promise<unknown>;
   loadPackage(packages: string | string[]): Promise<void>;
   FS: {
     writeFile(path: string, data: Uint8Array): void;
@@ -65,8 +65,7 @@ export class SimplePyodideExecutor {
       const worker = this.createWorker();
       this.activeWorkers.set(executionId, worker);
 
-      let stdout = '';
-      let stderr = '';
+  let stdout = '';
 
       // Set up timeout
       const timeoutId = options.timeout ? setTimeout(() => {
@@ -94,7 +93,7 @@ export class SimplePyodideExecutor {
             break;
 
           case 'stderr':
-            stderr += data;
+            // We intentionally don't accumulate stderr separately; it's surfaced via callback
             options.onStderr?.(data);
             break;
 

@@ -33,8 +33,10 @@ export interface ConfigLoader {
 export class RuntimeConfigLoader implements ConfigLoader {
   private packages: ConfigPackage[] = [];
 
-  async loadPackage(packageUrl: string): Promise<ConfigPackage> {
-    // TODO: Implement actual package loading from external sources
+  async loadPackage(_packageUrl: string): Promise<ConfigPackage> {
+  // Mark parameter as intentionally unused for now
+  void _packageUrl;
+  // TODO: Implement actual package loading from external sources
     throw new Error('Runtime package loading not yet implemented');
   }
 

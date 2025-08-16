@@ -171,7 +171,8 @@ except Exception as e:
 	}
 
 	// Accept a layer name but currently unused (prefixed with underscore to satisfy lint config)
-	async function loadLayerDetails(_layerName: string) {
+	async function loadLayerDetails(_layerName: string) { // param intentionally unused in simplified implementation
+		void _layerName;
 		console.warn('Layer details not available in simplified system');
 		return;
 		/* Legacy worker code retained for reference

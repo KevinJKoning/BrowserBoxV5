@@ -14,8 +14,8 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 // TypeScript utility types for component props
-export type WithoutChild<T> = T extends { child?: any } ? Omit<T, "child"> : T;
-export type WithoutChildren<T> = T extends { children?: any } ? Omit<T, "children"> : T;
+export type WithoutChild<T> = T extends { child?: unknown } ? Omit<T, "child"> : T;
+export type WithoutChildren<T> = T extends { children?: unknown } ? Omit<T, "children"> : T;
 export type WithoutChildrenOrChild<T> = WithoutChildren<WithoutChild<T>>;
 export type WithElementRef<T, U extends HTMLElement = HTMLElement> = T & { ref?: U | null };
 
@@ -63,7 +63,7 @@ export const ObjectUtils = {
   /**
    * Pick specific keys from object
    */
-  pick<T, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
+  pick<T extends Record<string, unknown>, K extends keyof T>(obj: T, keys: K[]): Pick<T, K> {
     const result = {} as Pick<T, K>;
     keys.forEach(key => {
       if (key in obj) {
@@ -76,7 +76,7 @@ export const ObjectUtils = {
   /**
    * Omit specific keys from object
    */
-  omit<T, K extends keyof T>(obj: T, keys: K[]): Omit<T, K> {
+  omit<T extends Record<string, unknown>, K extends keyof T>(obj: T, keys: K[]): Omit<T, K> {
     const result = { ...obj };
     keys.forEach(key => {
       delete result[key];
@@ -87,7 +87,7 @@ export const ObjectUtils = {
   /**
    * Check if object is empty
    */
-  isEmpty(obj: Record<string, any>): boolean {
+  isEmpty(obj: Record<string, unknown>): boolean {
     return Object.keys(obj).length === 0;
   }
 };
@@ -121,7 +121,7 @@ export const StringUtils = {
 /**
  * Debounce function
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -135,7 +135,7 @@ export function debounce<T extends (...args: any[]) => any>(
 /**
  * Throttle function
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {

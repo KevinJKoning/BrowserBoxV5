@@ -18,7 +18,7 @@ export type ScriptExecutionResult = ScriptResult;
 export interface ScriptExecutionOptions {
 	timeout?: number; // in milliseconds
 	dataFiles?: Array<{ file: File; requirementId: string }>; // uploaded files with requirement mapping
-	variables?: Record<string, any>; // variables to inject into Python scope (not implemented yet)
+	variables?: Record<string, unknown>; // variables to inject into Python scope (not implemented yet)
 	onStatusUpdate?: (status: string) => void; // callback for status updates
 	onStdout?: (output: string) => void; // callback for stdout
 	onStderr?: (output: string) => void; // callback for stderr
@@ -44,7 +44,7 @@ export class ScriptExecutor {
 
 		// Convert dataFiles to simple format
 		const dataFiles = options.dataFiles?.map(fileData => {
-			const requirement = fileRequirements.find(req => req.id === fileData.requirementId);
+			const requirement = fileRequirements.find((req: { id: string; defaultFilename?: string }) => req.id === fileData.requirementId);
 			const filename = requirement?.defaultFilename || fileData.file.name;
 			return {
 				file: fileData.file,

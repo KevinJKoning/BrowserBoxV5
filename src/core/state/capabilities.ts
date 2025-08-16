@@ -50,8 +50,10 @@ export function getMissingCapabilities(required: string[]): string[] {
 /**
  * Version checking utilities (for future config packages)
  */
-export function checkVersionRange(appVersion: string, requiredRange: string): boolean {
+export function checkVersionRange(_appVersion: string, _requiredRange: string): boolean {
   // Simplified version check for now
   // TODO: Implement proper semver range checking when needed
+  void _appVersion;
+  void _requiredRange;
   return true;
 }

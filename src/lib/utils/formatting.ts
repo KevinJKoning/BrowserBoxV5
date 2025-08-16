@@ -28,7 +28,7 @@ export function getFileExtension(filename: string): string {
 export async function copyToClipboard(text: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(text);
-  } catch (err) {
+  } catch {
     // Fallback for older browsers
     const textArea = document.createElement('textarea');
     textArea.value = text;

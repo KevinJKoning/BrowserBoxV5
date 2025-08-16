@@ -34,7 +34,7 @@ export interface ScriptExecution {
 		outputLines?: number;
 		errorCount?: number;
 		memoryUsage?: string;
-		[key: string]: any;
+		[key: string]: unknown;
 	};
 }
 

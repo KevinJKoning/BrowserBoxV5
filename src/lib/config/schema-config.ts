@@ -45,9 +45,9 @@ export interface SchemaValidationCheck {
 	/** Human-readable message about the check result */
 	message?: string;
 	/** Expected value for comparison checks */
-	expected?: any;
+	expected?: unknown;
 	/** Actual value found */
-	actual?: any;
+	actual?: unknown;
 	/** List of violations for categorical/list checks */
 	violations?: string[];
 }
@@ -84,7 +84,7 @@ export interface SchemaValidationResult {
 		total_rows?: number;
 		total_columns?: number;
 		file_size?: number;
-		[key: string]: any;
+		[key: string]: unknown;
 	};
 }
 
@@ -125,7 +125,7 @@ export interface SchemaValidationExecution {
 		outputLines?: number;
 		errorCount?: number;
 		memoryUsage?: string;
-		[key: string]: any;
+		[key: string]: unknown;
 	};
 }
 
