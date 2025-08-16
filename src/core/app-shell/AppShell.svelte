@@ -7,6 +7,7 @@
   import { workspace, activatePlugin } from "../state/workspace.svelte";
   import { getAllPlugins, initializePlugins } from "../state/plugin-registry.svelte";
   import { initializeBuiltinPreviews } from "../services/preview/registry.svelte";
+  import { loadLegacyConfig } from "../config-runtime/loader";
 
   // Provide shared services to the component tree
   setContext("executor", pythonExecutor);
@@ -14,8 +15,11 @@
 
   // Initialize plugins on mount
   onMount(async () => {
-  await initializePlugins();
-  initializeBuiltinPreviews();
+    await initializePlugins();
+    initializeBuiltinPreviews();
+    
+    // Load legacy configuration into dynamic stores
+    await loadLegacyConfig();
     
     // Activate first plugin if none selected
     if (!workspace.activePluginId && getAllPlugins().length > 0) {

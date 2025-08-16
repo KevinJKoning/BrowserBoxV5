@@ -1,8 +1,8 @@
 <script module lang="ts">
   import { pythonExecutor } from '@worker/executor';
-  import { schemaValidations, type SchemaValidationExecution, type SchemaValidationResult } from '@config/schema-config.js';
+  import { schemaValidations, type SchemaValidation, type SchemaValidationExecution, type SchemaValidationResult } from '@config/schema-config.js';
   import { select, clearOtherSelections, getSelection } from '@core/state/workspace.svelte';
-  export const availableSchemas = $state(schemaValidations);
+  export const availableSchemas = $state<SchemaValidation[]>([...schemaValidations]);
   export const executions = $state<Record<string, SchemaValidationExecution>>({});
   export function getExecutionsList(){ return Object.values(executions); }
   export async function startExecution(schemaId: string){
@@ -28,4 +28,28 @@
   export function getExecutionStatus(id: string){ return executions[id]?.status || 'ready'; }
   export function getValidationResults(id: string){ return executions[id]?.results; }
   export function isSchemaSelected(id: string){ return getSelection('schema') === id; }
+
+  // Configuration management functions
+  export function clearSchemas() {
+    // Clear all schemas and executions
+    availableSchemas.length = 0;
+    Object.keys(executions).forEach(key => delete executions[key]);
+    // Clear any schema selections
+    clearOtherSelections('schema');
+  }
+
+  export function loadSchemas(newSchemas: SchemaValidation[]) {
+    // Clear existing state
+    clearSchemas();
+    
+    // Update available schemas
+    availableSchemas.push(...newSchemas);
+    
+    // Note: We don't pre-initialize executions for schemas like we do for scripts,
+    // as they're created on-demand when validation is triggered
+  }
+
+  export function getAvailableSchemas() {
+    return availableSchemas;
+  }
 </script>

@@ -4,14 +4,13 @@
   import FileCard from "./FileCard.svelte";
   import FolderUpIcon from "@lucide/svelte/icons/folder-up";
   import XIcon from "@lucide/svelte/icons/x";
-  import { fileRequirements } from "@config/file-config.js";
-  import { loadFile, loadFilesFromFolder, removeFile, selectFile, getFile, getUploadState } from "../store.svelte";
+  import { loadFile, loadFilesFromFolder, removeFile, selectFile, getFile, getUploadState, getActiveRequirements } from "../store.svelte";
 
   let searchQuery = $state("");
 
   // Filter files based on search
   const filteredFiles = $derived.by(() => {
-    let files = fileRequirements;
+    let files = getActiveRequirements();
     
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
@@ -30,7 +29,7 @@
     const input = document.createElement('input');
     input.type = 'file';
     
-    const requirement = fileRequirements.find(req => req.id === fileId);
+    const requirement = getActiveRequirements().find(req => req.id === fileId);
     input.accept = requirement?.acceptedTypes?.join(',') || '.parquet,.csv,.gpkg';
     
     input.onchange = async (e) => {

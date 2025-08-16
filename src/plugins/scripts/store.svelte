@@ -1,9 +1,9 @@
 <script module lang="ts">
   import { pythonExecutor } from '@worker/executor';
-  import { scripts, type ScriptExecution } from '@config/script-config.js';
+  import { scripts, type Script, type ScriptExecution } from '@config/script-config.js';
   import { select, clearOtherSelections, getSelection } from '@core/state/workspace.svelte';
 
-  export const availableScripts = $state(scripts);
+  export const availableScripts = $state<Script[]>([...scripts]);
   export const executions = $state<Record<string, ScriptExecution>>({});
   scripts.forEach(s => { executions[s.id] = { id: `exec_${s.id}`, scriptId: s.id, status: 'ready' }; });
 
@@ -26,4 +26,34 @@
   export function getExecution(id: string) { return executions[id]; }
   export function getExecutionStatus(id: string) { return executions[id]?.status || 'ready'; }
   export function isScriptSelected(id: string) { return getSelection('script') === id; }
+
+  // Configuration management functions
+  export function clearScripts() {
+    // Clear all scripts and executions
+    availableScripts.length = 0;
+    Object.keys(executions).forEach(key => delete executions[key]);
+    // Clear any script selections
+    clearOtherSelections('script');
+  }
+
+  export function loadScripts(newScripts: Script[]) {
+    // Clear existing state
+    clearScripts();
+    
+    // Update available scripts
+    availableScripts.push(...newScripts);
+    
+    // Initialize executions for new scripts
+    for (const script of newScripts) {
+      executions[script.id] = { 
+        id: `exec_${script.id}`, 
+        scriptId: script.id, 
+        status: 'ready' 
+      };
+    }
+  }
+
+  export function getAvailableScripts() {
+    return availableScripts;
+  }
 </script>

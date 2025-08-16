@@ -3,6 +3,8 @@
   import { formatFileSize } from '@utils/formatting.ts';
   import { select, clearOtherSelections } from '@core/state/workspace.svelte';
 
+  // Current active file requirements (can be updated dynamically)
+  export const activeFileRequirements = $state<FileRequirement[]>([...fileRequirements]);
   export const files = $state<Record<string, UploadedFile>>({});
   export const uploadStates = $state<Record<string, 'waiting'|'uploading'|'completed'|'error'>>(
     Object.fromEntries(fileRequirements.map(r => [r.id, 'waiting' as const]))
@@ -19,7 +21,7 @@
   function generateUniqueId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 
   export async function loadFile(requirementId: string, file: File) {
-    const requirement = fileRequirements.find(r => r.id === requirementId);
+    const requirement = activeFileRequirements.find(r => r.id === requirementId);
     if (!requirement) throw new Error(`File requirement ${requirementId} not found`);
     if (!isFileTypeAccepted(file.name, requirement)) throw new Error(`File type not accepted. Expected: ${requirement.acceptedTypes?.join(', ')}`);
     uploadStates[requirementId] = 'uploading';
@@ -42,9 +44,36 @@
   export async function loadFilesFromFolder(fileList: File[]) {
     const result = { total: fileList.length, matched: 0, errors: [] as {file:string;error:string}[]};
     for (const f of fileList) {
-      const req = fileRequirements.find(r => f.name.toLowerCase() === r.defaultFilename.toLowerCase() || isFileTypeAccepted(f.name, r));
+      const req = activeFileRequirements.find(r => f.name.toLowerCase() === r.defaultFilename.toLowerCase() || isFileTypeAccepted(f.name, r));
       if (req && !files[req.id]) { try { await loadFile(req.id, f); result.matched++; } catch (e) { result.errors.push({ file: f.name, error: e instanceof Error ? e.message : 'Unknown error' }); } }
     }
     return result;
+  }
+
+  // Configuration management functions
+  export function clearFiles() {
+    // Clear all uploaded files and reset states
+    Object.keys(files).forEach(key => delete files[key]);
+    Object.keys(uploadStates).forEach(key => delete uploadStates[key]);
+    // Clear any file selections
+    clearOtherSelections('file');
+  }
+
+  export function loadFileRequirements(newRequirements: FileRequirement[]) {
+    // Clear existing state
+    clearFiles();
+    
+    // Update active requirements
+    activeFileRequirements.length = 0;
+    activeFileRequirements.push(...newRequirements);
+    
+    // Initialize upload states for new requirements
+    for (const req of newRequirements) {
+      uploadStates[req.id] = 'waiting';
+    }
+  }
+
+  export function getActiveRequirements() {
+    return activeFileRequirements;
   }
 </script>
