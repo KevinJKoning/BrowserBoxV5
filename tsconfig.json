@@ -16,7 +16,15 @@
 		"allowImportingTsExtensions": true,
 		"isolatedModules": true,
 		"noEmit": true,
-		"types": ["vite/client", "vitest/globals"]
+		"types": ["vite/client", "vitest/globals"],
+		"baseUrl": "src",
+		"paths": {
+			"@core/*": ["lib/core/*"],
+			"@utils/*": ["lib/utils/*"],
+			"@ui/*": ["lib/components/ui/*"],
+			"@plugins/*": ["plugins/*"],
+			"@worker/*": ["lib/pyodide/*"]
+		}
 	},
 	"include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],
 	"exclude": ["node_modules"]

@@ -1,169 +1,166 @@
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Install dependencies (`npm install`, `pnpm install`, or `yarn`) then start a dev server:
 
 ```sh
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
 ## Building
 
-To create a production version of your app:
+Produce an optimized multi-file PWA bundle:
 
 ```sh
 npm run build
 ```
 
-This creates a **completely self-contained single HTML file** in the `dist/` directory. The file includes:
-- All JavaScript code inlined
-- All CSS styles inlined  
-- No external dependencies
-- Ready for sharing or embedding
+Outputs `dist/` with:
+* Code-split ES modules & CSS
+* `sw.js` + Workbox runtime for offline caching
+* Pyodide assets (wheels, wasm, data)
 
-You can preview the production build with `npm run preview`.
+Preview locally:
+
+```sh
+npm run preview
+```
+
+Or serve the built PWA (ensures service worker scope) via the included Python script:
+
+```sh
+cd dist
+python3 serve.py
+```
+
+We intentionally dropped the previous “single inlined HTML” target in favor of browser caching, smaller first-load JS, and clearer architectural boundaries.
 
 ### Architecture
 
-This application uses **vanilla Vite + Svelte** (not SvelteKit) for optimal single-file output:
-- **Vite** for fast development and building
-- **vite-plugin-singlefile** for complete inlining
-- **Svelte 5** with Runes for reactive state management
-- **No server-side rendering** - pure client-side application
+The project uses **vanilla Vite + Svelte 5 (Runes)** (not SvelteKit) to keep control over the output, support offline Pyodide execution, and progressively evolve toward a robust **local-first PWA** deployable to any static host (GitHub Pages, S3, etc.). We explicitly **dropped the former single-file build requirement** to gain better caching, faster cold starts for large dependencies, and clearer architectural boundaries.
+
+Core architectural goals:
+1. Stable public surfaces (domains) with clear ownership
+2. Zero fragile deep `../../../` import chains
+3. Fast, testable core logic isolated from UI
+4. Pluggable analysis/preview features (Pyodide, file previews, validations)
+5. Efficient, cache-friendly multi-file PWA bundle with offline capability
+
+#### Domain Boundaries (planned / rolling out)
+We are introducing path aliases & barrels to formalize domains:
+
+Alias -> Path | Purpose
+- `@core/*` -> `src/lib/core/*` (pure logic, types, schemas, state factories)
+- `@utils/*` -> `src/lib/utils/*` (generic + formatting helpers)
+- `@ui/*` -> `src/lib/components/ui/*` (reusable design‑system primitives)
+- `@plugins/*` -> `src/plugins/*` (feature / extension modules)
+- `@worker/*` -> `src/lib/pyodide/*` (Pyodide & worker boundary code)
+
+Barrels will re‑export only intentional public APIs; internal implementation files should not be imported directly across domains.
+
+#### Why this matters
+Removing the legacy `src/lib/utils.ts` barrel exposed brittle deep import paths. Introducing aliases + curated barrels prevents future breakage, improves IDE DX, and enables safer code splitting (e.g. plugin / heavy preview chunks) because boundaries become explicit.
+
+#### Layering Rules (conceptual)
+`@core` (pure) ← consumed by `@plugins` & `@ui` ← composed into screens/routes. Workers use `@core` types via `@worker` message handlers. No UI imports inside `@core`.
+
+#### Coding Standards (in progress enforcement)
+* No deep relative imports that cross domain roots (>= 3 `..` segments) — replace with alias.
+* Barrels stay side‑effect free (pure re‑exports) to keep tree‑shaking effective.
+* Utilities remain pure (no DOM access) except explicitly side‑effect helpers (e.g. clipboard) which reside in dedicated modules.
+* Worker communication: plain data (structured clone); never pass component or store instances.
+
+#### Plugin Architecture (roadmap)
+Plugins declare a manifest (id, human name, capabilities) and register views or analysis actions. They depend only on public APIs (`@core`, `@utils`, UI primitives) and never reach into internal file structures. Versioned manifest typing will allow evolution without breaking existing plugins.
+
+#### Worker / Pyodide Boundary
+Interaction will move toward a schema‑first message layer (TypeScript types or zod schemas) with a central router. This isolates computational code and keeps the UI responsive.
+
+#### Performance & Bundling Strategy
+* Dynamic `import()` for rarely used preview/analysis modules
+* Clear alias boundaries allow targeted code splitting
+* Service worker precaches core shell + Pyodide assets while allowing long-term caching of rarely changing chunks
+* Avoids monolithic inlining—browser caching leveraged across sessions
+* Reusable UI primitives keep component code size small and compilation fast
+
+#### Testing Strategy (progressive)
+* Unit tests live near pure `@core` modules.
+* Contract tests validate worker message schemas & plugin manifests.
+* Component tests cover critical UI primitives (breadcrumb, sidebar, buttons) using their public barrels.
+
+#### Roadmap Snapshot
+| Phase | Focus |
+| ----- | ----- |
+| 1 | (Current) Introduce path aliases + replace deep relatives |
+| 2 | Enforce layering & restricted imports via ESLint |
+| 3 | Formal plugin manifest + versioned API surface |
+| 4 | Worker message schema router |
+| 5 | Consolidated core store layer & derived selectors |
+| 6 | Error/logging bus + analytics hooks |
+| 7 | Strategic code splitting & performance tuning |
+
+---
 
 ## Application State Management
 
-This application uses **Svelte 5 Runes** for reactive state management. Here are the key patterns and best practices implemented:
+We use **Svelte 5 Runes** with a pragmatic pattern that balances global coherence and local clarity.
 
-### State Architecture
+### Principles
+* Keep state **close to where it’s used** unless truly global.
+* Global/core state lives under `@core/state` (planned) as factory modules exporting `$state()` objects + action objects.
+* Complex derivations stay inside the consuming component via `$derived.by()` to avoid accidental stale dependencies.
+* Pure helper logic (sorting, formatting) is never embedded inside derivations—lives in `@utils`.
 
-The application follows a centralized state pattern with the following structure:
+### Recommended Store Shape
+```ts
+// Example future core store (files)
+export const filesState = $state<{
+  byId: Record<string, FileEntry>;
+  selectedId: string | null;
+  uploads: Record<string, "waiting"|"uploading"|"completed"|"error">;
+}>({ byId: {}, selectedId: null, uploads: {} });
 
-- **`fileManagerState`** - Core reactive state using `$state()`
-- **`fileActions`** - Action functions that modify state
-- **Component-level selectors** - Reactive selectors using `$derived.by()` defined in components
-
-### Key Files
-
-- `src/lib/stores/file-store.svelte.ts` - Main state store with actions
-- `src/routes/+page.svelte` - Example of component-level reactive selectors
-- `src/lib/components/app-sidebar.svelte` - State consumption and user interactions
-
-### Best Practices for Svelte 5 Runes
-
-#### ✅ Do: Define Complex Selectors in Components
-
-```typescript
-// In your component (.svelte file)
-import { fileManagerState } from "$lib/stores/file-store.svelte.js";
-
-const selectedFile = $derived.by(() => {
-  const selectedId = fileManagerState.selectedFileId;
-  return selectedId ? fileManagerState.files[selectedId] ?? null : null;
-});
-```
-
-#### ❌ Avoid: Module-level $derived.by() with Complex Dependencies
-
-```typescript
-// In store module (.svelte.ts file) - CAN CAUSE REACTIVITY ISSUES
-export const fileSelectors = {
-  selectedFile: $derived.by(() => { // May not update properly
-    return fileManagerState.selectedFileId 
-      ? fileManagerState.files[fileManagerState.selectedFileId] ?? null 
-      : null;
-  })
+export const filesActions = {
+  select(id: string | null) { filesState.selectedId = id; },
+  upsert(entry: FileEntry) { filesState.byId[entry.id] = entry; },
+  remove(id: string) { delete filesState.byId[id]; if (filesState.selectedId===id) filesState.selectedId=null; }
 };
 ```
 
-#### ✅ Do: Use Simple State Objects
-
-```typescript
-export const fileManagerState = $state({
-  files: {} as Record<string, UploadedFile>,
-  selectedFileId: null as string | null,
-  uploadStates: {} as Record<string, "waiting" | "uploading" | "completed" | "error">
-});
+### Component-Level Derivation
+```svelte
+<script lang="ts">
+  import { filesState } from '@core/state/files';
+  const selectedFile = $derived.by(() => filesState.selectedId ? filesState.byId[filesState.selectedId] ?? null : null);
+  const fileCount = $derived.by(() => Object.keys(filesState.byId).length);
+</script>
 ```
 
-#### ✅ Do: Use Plain Functions for Actions
+### Do / Avoid
+| Do | Avoid |
+|----|-------|
+| Co-locate complex `$derived.by()` with usage | Exporting many heavy derived values from store modules |
+| Use plain action objects for mutations | Hiding mutations inside derived callbacks |
+| Snapshot for debugging (`$state.snapshot(obj)`) | Logging proxied state directly (noisy) |
+| Keep stores framework-pure (no DOM) | Mixing UI side effects into stores |
 
-```typescript
-export const fileActions = {
-  selectFile(fileId: string | null) {
-    fileManagerState.selectedFileId = fileId;
-  },
-  // ... other actions
-};
-```
+### Debugging Tips
+1. Add temporary `$effect()` in components, not in core stores, for tracing.
+2. If a derivation doesn’t re-run, ensure all accessed properties are directly read inside the callback.
+3. Prefer splitting overly broad stores before adding complex invalidation logic.
 
-### Common Pitfalls and Solutions
+### Migration Path (Current → Target)
+1. Introduce aliases (`@core/state`) and move existing `file-store` there.
+2. Replace deep relative imports to utils with `@utils/*`.
+3. Gradually extract other global concerns (preview registry, plugin registry) into discrete state modules.
+4. Add contract tests around action objects once stabilized.
 
-1. **Issue**: `$derived.by()` not updating when state changes
-   - **Solution**: Move complex selectors to component level instead of store module level
-
-2. **Issue**: Circular dependencies between state and selectors
-   - **Solution**: Keep selectors simple or define them where they're consumed
-
-3. **Issue**: State proxy warnings in console logs
-   - **Solution**: Use `$state.snapshot()` for logging or avoid logging state objects directly
-
-### Debugging State Issues
-
-If you encounter reactivity issues:
-
-1. Add `$effect()` blocks to track state changes:
-```typescript
-$effect(() => {
-  console.log('State changed:', fileManagerState.selectedFileId);
-});
-```
-
-2. Check that `$derived.by()` selectors are re-running when expected
-3. Consider moving complex selectors from store modules to components
-4. Verify that state mutations are direct assignments, not through intermediate variables
+---
 
 ## Pyodide Version Management
 
-This application includes a complete Pyodide distribution for offline Python execution. The Pyodide assets are copied from `/pyodide_0-27-7/` to `/public/pyodide/` and then embedded into the single-file build.
+This application includes a complete Pyodide distribution for offline Python execution. The Pyodide assets are copied from `/pyodide_0-27-7/` into the build output (`dist/assets/...`) via the static copy plugin and are precached by the service worker for offline use (no single-file embedding required anymore).
 
 ### Current Version: Pyodide 0.27.7
 
 We recently downgraded from Pyodide 0.28.0 to 0.27.7 to ensure compatibility with geopandas and other geospatial packages.
 
-### Complications During Downgrade
-
-**Root Issue**: Version mismatch between hardcoded wheel filenames and actual distribution
-
-When downgrading from 0.28.0 to 0.27.7, we encountered the following complications:
-
-1. **Hardcoded Wheel Versions**: The `pyodide-worker.ts` had hardcoded wheel filenames using `cp313-cp313-pyodide_2025_0_wasm32` (Python 3.13, 2025.0 ABI) but the 0.27.7 distribution uses `cp312-cp312-pyodide_2024_0_wasm32` (Python 3.12, 2024.0 ABI).
-
-2. **CDN Fallback Behavior**: When the worker couldn't find the expected wheel files in embedded assets, micropip would fall back to fetching packages from PyPI CDN, attempting to download `pyogrio` which isn't available in the 0.27.7 distribution.
-
-3. **Package Availability Differences**: Some packages available in 0.28.0 are not available in 0.27.7, requiring careful dependency management.
-
-**Fixed Files:**
-- `src/lib/pyodide/pyodide-worker.ts` - Updated wheel filenames to match 0.27.7 versions
-- Package list updated to use correct versions:
-  - `numpy-2.0.2-cp312-cp312-pyodide_2024_0_wasm32.whl`
-  - `pandas-2.2.3-cp312-cp312-pyodide_2024_0_wasm32.whl`
-  - `fastparquet-2024.5.0-cp312-cp312-pyodide_2024_0_wasm32.whl`
-  - `scikit_learn-1.6.1-cp312-cp312-pyodide_2024_0_wasm32.whl`
-  - `geopandas-1.0.1-py3-none-any.whl`
-
-### Future Upgrade Considerations
-
-When upgrading to a future Pyodide version (e.g., 0.28.x with geopandas support):
-
-1. **Check Wheel Versions**: Update hardcoded wheel filenames in both `pyodide-manager.ts` and `pyodide-worker.ts` to match the new distribution's ABI version and Python version.
-
-2. **Verify Package Availability**: Check the new `pyodide-lock.json` to ensure all required packages (especially geopandas and its dependencies) are available in the target version.
-
-3. **Test Offline Functionality**: Ensure that all packages install from embedded assets without falling back to CDN, especially for geospatial packages that may have complex dependency chains.
-
-4. **Update Asset Copying**: Verify that the Vite plugin correctly embeds all necessary wheel files from the new Pyodide distribution.
-
-The key lesson is that Pyodide version changes require careful synchronization between the distribution assets and the hardcoded package references in the codebase.

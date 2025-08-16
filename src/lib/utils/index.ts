@@ -4,7 +4,7 @@
  */
 
 // Generic utilities (most commonly used)
-export * from './generic.js';
+export * from './generic.js'; // keep .js extension for current import style; alias users can omit
 
 // Formatting utilities
 export * from './formatting.js';

@@ -20,6 +20,15 @@ export function viteStaticCopyPyodide() {
 
 export default defineConfig(({ command, mode }) => ({
 	base: '/',
+	resolve: {
+		alias: {
+			'@core': '/src/lib/core',
+			'@utils': '/src/lib/utils',
+			'@ui': '/src/lib/components/ui',
+			'@plugins': '/src/plugins',
+			'@worker': '/src/lib/pyodide'
+		}
+	},
 	plugins: [
 		tailwindcss(), 
 		svelte({
