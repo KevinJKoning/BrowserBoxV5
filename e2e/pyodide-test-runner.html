@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pyodide Test Runner</title>
+</head>
+<body>
+    <div id="status">Initializing Pyodide...</div>
+    
+    <script>
+        // Global state
+        window.pyodideReady = false;
+        let pyodide = null;
+        
+        // Load Pyodide with the same configuration as your app
+        async function initPyodide() {
+            try {
+                console.log('Loading Pyodide...');
+                
+                // Import Pyodide from assets (same path as your app)
+                const pyodideUrl = '/assets/pyodide.js';
+                await import(pyodideUrl);
+                
+                // Initialize Pyodide with same config as your app
+                pyodide = await loadPyodide({
+                    indexURL: '/assets/',
+                    stdout: (text) => {
+                        console.log(`STDOUT:${text}`);
+                    },
+                    stderr: (text) => {
+                        console.log(`STDERR:${text}`);
+                    }
+                });
+                
+                console.log('Pyodide loaded, installing packages...');
+                
+                // Load the same packages as your app
+                const packages = [
+                    'numpy', 'pandas', 'matplotlib', 'scikit-learn',
+                    'fastparquet', 'shapely', 'pyproj', 'micropip',
+                    'requests', 'geopandas'
+                ];
+                
+                try {
+                    await pyodide.loadPackage(packages);
+                    console.log('All packages loaded successfully');
+                } catch (error) {
+                    console.warn('Some packages failed to load, trying individually...');
+                    // Try loading packages individually if batch fails
+                    for (const pkg of packages) {
+                        try {
+                            await pyodide.loadPackage(pkg);
+                            console.log(`Successfully loaded ${pkg}`);
+                        } catch (err) {
+                            console.warn(`Failed to load ${pkg}:`, err);
+                        }
+                    }
+                }
+                
+                window.pyodideReady = true;
+                document.getElementById('status').textContent = 'Pyodide ready!';
+                console.log('Pyodide initialization complete');
+                
+            } catch (error) {
+                console.error('Failed to initialize Pyodide:', error);
+                document.getElementById('status').textContent = `Error: ${error.message}`;
+                throw error;
+            }
+        }
+        
+        // Main script execution function
+        window.runScript = async function(scriptContent, dataFiles = []) {
+            if (!pyodide) {
+                throw new Error('Pyodide not initialized');
+            }
+            
+            const startTime = Date.now();
+            let stdout = '';
+            let stderr = '';
+            
+            try {
+                // Create data directory
+                try {
+                    pyodide.FS.mkdir('/data');
+                } catch (e) {
+                    // Directory might already exist
+                }
+                
+                // Load data files into Pyodide filesystem
+                const initialFiles = new Set();
+                for (const fileData of dataFiles) {
+                    const content = new Uint8Array(fileData.content);
+                    pyodide.FS.writeFile(`/data/${fileData.name}`, content);
+                    initialFiles.add(fileData.name);
+                }
+                
+                // Set up environment and output capture (same as your app)
+                pyodide.runPython(`
+import os
+import sys
+os.chdir('/data')
+
+class OutputCapture:
+    def __init__(self):
+        self.output = ''
+    def write(self, text):
+        self.output += text
+    def flush(self):
+        pass
+
+_stdout_capture = OutputCapture()
+_stderr_capture = OutputCapture()
+_original_stdout = sys.stdout  
+_original_stderr = sys.stderr
+sys.stdout = _stdout_capture
+sys.stderr = _stderr_capture
+                `);
+                
+                // Execute the user script
+                try {
+                    await pyodide.runPythonAsync(scriptContent);
+                } catch (error) {
+                    // Error will be captured in stderr
+                }
+                
+                // Get captured output
+                const capturedStdout = pyodide.runPython('_stdout_capture.output');
+                const capturedStderr = pyodide.runPython('_stderr_capture.output');
+                
+                // Reset stdout/stderr
+                pyodide.runPython('sys.stdout = _original_stdout; sys.stderr = _original_stderr');
+                
+                // Collect any files that were created
+                const modifiedFiles = [];
+                try {
+                    const currentFiles = pyodide.FS.readdir('/data');
+                    for (const fileName of currentFiles) {
+                        if (fileName !== '.' && fileName !== '..' && !initialFiles.has(fileName)) {
+                            const content = pyodide.FS.readFile(`/data/${fileName}`);
+                            modifiedFiles.push({
+                                name: fileName,
+                                data: Array.from(content), // Convert to array for JSON serialization
+                                path: `/data/${fileName}`
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Error reading output files:', e);
+                }
+                
+                const executionTime = Date.now() - startTime;
+                
+                // Determine if execution was successful
+                const success = !capturedStderr || capturedStderr.trim() === '';
+                
+                return {
+                    success,
+                    output: capturedStdout || '',
+                    error: capturedStderr || null,
+                    executionTime,
+                    modifiedFiles
+                };
+                
+            } catch (error) {
+                const executionTime = Date.now() - startTime;
+                return {
+                    success: false,
+                    output: stdout,
+                    error: error.message,
+                    executionTime,
+                    modifiedFiles: []
+                };
+            }
+        };
+        
+        // Start initialization when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initPyodide().catch(error => {
+                console.error('Initialization failed:', error);
+                document.getElementById('status').textContent = `Initialization failed: ${error.message}`;
+            });
+        });
+    </script>
+</body>
+</html>
