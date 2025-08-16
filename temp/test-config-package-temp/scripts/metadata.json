@@ -1,0 +1,32 @@
+[
+  {
+    "id": "basic-sales-analysis",
+    "title": "Basic Sales Analysis",
+    "description": "Analyze sales data and generate summary statistics and reports",
+    "filename": "basic_analysis.py",
+    "category": "analysis",
+    "dependencies": [
+      {
+        "type": "uploaded",
+        "sourceId": "sales_data"
+      }
+    ]
+  },
+  {
+    "id": "customer-report",
+    "title": "Customer Analysis Report",
+    "description": "Generate customer demographics report and combine with sales data",
+    "filename": "customer_report.py",
+    "category": "reporting",
+    "dependencies": [
+      {
+        "type": "uploaded",
+        "sourceId": "customer_data"
+      },
+      {
+        "type": "uploaded",
+        "sourceId": "sales_data"
+      }
+    ]
+  }
+]

@@ -1,0 +1,121 @@
+[
+  {
+    "id": "sales-data-validation",
+    "title": "Sales Data Validation",
+    "description": "Validate sales data structure, data types, and business rules",
+    "filename": "sales_validation.py",
+    "expectations": {
+      "description": "Sales data should contain valid transactions with proper data types and reasonable ranges",
+      "columns": {
+        "date": {
+          "type": "string",
+          "required": true,
+          "null_allowed": false,
+          "description": "Transaction date"
+        },
+        "customer_id": {
+          "type": "int64",
+          "required": true,
+          "min_value": 1,
+          "null_allowed": false,
+          "description": "Unique customer identifier"
+        },
+        "product_id": {
+          "type": "int64",
+          "required": true,
+          "min_value": 1,
+          "null_allowed": false,
+          "description": "Product identifier"
+        },
+        "amount": {
+          "type": "float64",
+          "required": true,
+          "min_value": 0,
+          "max_value": 10000,
+          "null_allowed": false,
+          "description": "Sale amount in currency"
+        },
+        "quantity": {
+          "type": "int64",
+          "required": true,
+          "min_value": 1,
+          "max_value": 100,
+          "null_allowed": false,
+          "description": "Quantity sold"
+        }
+      },
+      "expected_row_count": {
+        "min": 10,
+        "max": 100000
+      }
+    },
+    "category": "validation",
+    "dependencies": [
+      {
+        "type": "uploaded",
+        "sourceId": "sales_data"
+      }
+    ]
+  },
+  {
+    "id": "customer-data-validation",
+    "title": "Customer Data Validation",
+    "description": "Validate customer information including demographics and contact details",
+    "filename": "customer_validation.py",
+    "expectations": {
+      "description": "Customer data should contain valid customer records with proper contact information and demographics",
+      "columns": {
+        "customer_id": {
+          "type": "int64",
+          "required": true,
+          "min_value": 1,
+          "null_allowed": false,
+          "description": "Unique customer identifier"
+        },
+        "name": {
+          "type": "string",
+          "required": true,
+          "null_allowed": false,
+          "description": "Customer full name"
+        },
+        "email": {
+          "type": "string",
+          "required": true,
+          "null_allowed": false,
+          "description": "Customer email address"
+        },
+        "age": {
+          "type": "int64",
+          "required": true,
+          "min_value": 18,
+          "max_value": 120,
+          "null_allowed": false,
+          "description": "Customer age in years"
+        },
+        "city": {
+          "type": "string",
+          "required": false,
+          "null_allowed": true,
+          "description": "Customer city"
+        },
+        "signup_date": {
+          "type": "string",
+          "required": true,
+          "null_allowed": false,
+          "description": "Customer signup date"
+        }
+      },
+      "expected_row_count": {
+        "min": 5,
+        "max": 50000
+      }
+    },
+    "category": "validation",
+    "dependencies": [
+      {
+        "type": "uploaded",
+        "sourceId": "customer_data"
+      }
+    ]
+  }
+]
