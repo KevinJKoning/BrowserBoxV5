@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Tooltip as TooltipPrimitive } from "bits-ui";
-	import { cn } from "../../../utils.js";
+	import { cn } from "../../../utils/generic.ts";
 
 	let {
 		ref = $bindable(null),

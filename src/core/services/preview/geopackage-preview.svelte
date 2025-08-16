@@ -2,7 +2,7 @@
 	import { Badge } from "../../../lib/components/ui/badge/index.js";
 	import { Card, CardContent, CardHeader, CardTitle } from "../../../lib/components/ui/card/index.js";
 	import { Separator } from "../../../lib/components/ui/separator/index.js";
-	import { formatFileSize } from "../../../lib/utils.js";
+	import { formatFileSize } from "../../../lib/utils/formatting.ts";
 	// Old worker system removed - using simplified Pyodide
 	// import { createPyodideWorker, type WorkerMessage, type ScriptExecutionResult } from "../pyodide/pyodide-worker.js";
 

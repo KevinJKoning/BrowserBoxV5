@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Badge } from "../../../lib/components/ui/badge/index.js";
 	import { Button } from "../../../lib/components/ui/button/index.js";
-	import { cn } from "../../../lib/utils.js";
+	import { cn } from "../../../lib/utils/generic.ts";
 	import { getSchemaCardStatus, schemaStatusConfig } from "../../../lib/utils/status.js";
 	import { checkSchemaDependencies } from "../../../lib/utils/dependencies.js";
 	import CheckCircleIcon from "@lucide/svelte/icons/check-circle";

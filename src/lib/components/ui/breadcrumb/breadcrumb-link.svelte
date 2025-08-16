@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { HTMLAnchorAttributes } from "svelte/elements";
 	import type { Snippet } from "svelte";
-	import { cn, type WithElementRef } from "../../../utils.js";
+	import { cn, type WithElementRef } from "../../../utils/generic.ts";
 
 	let {
 		ref = $bindable(null),

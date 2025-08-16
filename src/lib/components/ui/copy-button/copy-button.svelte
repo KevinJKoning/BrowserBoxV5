@@ -2,7 +2,7 @@
 	import { Button } from "../button/index.js";
 	import CopyIcon from "@lucide/svelte/icons/copy";
 	import CheckIcon from "@lucide/svelte/icons/check";
-	import { copyToClipboard } from "../../../utils.js";
+	import { copyToClipboard } from "../../../utils/formatting.ts";
 
 	interface Props {
 		/** Content to copy to clipboard */
