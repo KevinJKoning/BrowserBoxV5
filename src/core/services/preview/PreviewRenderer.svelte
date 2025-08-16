@@ -6,7 +6,7 @@
 
   interface Props {
     /** Filename to preview */
-    filename: string;
+    filename: string | undefined | null;
     /** File content (optional, for content-based preview decisions) */
     content?: string | Uint8Array;
     /** Additional props to pass to the preview component */
@@ -22,8 +22,8 @@
     fallbackMessage = "No preview available for this file type" 
   }: Props = $props();
 
-  // Get the appropriate preview component
-  const previewRegistration = $derived(getPreviewComponent(filename, content));
+  // Get the appropriate preview component (with null check)
+  const previewRegistration = $derived(filename ? getPreviewComponent(filename, content) : null);
   
   import type { ComponentType } from 'svelte';
   let PreviewComponent = $state<ComponentType | null>(null);
@@ -62,7 +62,7 @@
           PreviewComponent = componentOrPromise as ComponentType;
         }
       } catch (err) {
-        console.error(`Failed to load preview component for ${filename}:`, err);
+        console.error(`Failed to load preview component for ${filename || 'unknown file'}:`, err);
         error = `Failed to load preview component: ${err instanceof Error ? err.message : String(err)}`;
         PreviewComponent = null;
       } finally {
@@ -94,7 +94,9 @@
       <div class="text-center">
         <FileTextIcon class="h-6 w-6 mx-auto mb-2 text-muted-foreground opacity-50" />
         <p class="text-sm text-muted-foreground">{fallbackMessage}</p>
-        <p class="text-xs text-muted-foreground mt-1">File: {filename}</p>
+        {#if filename}
+          <p class="text-xs text-muted-foreground mt-1">File: {filename}</p>
+        {/if}
       </div>
     </div>
   {/if}
