@@ -155,6 +155,14 @@ export class RuntimeConfigLoader implements ConfigLoader {
         import('@plugins/schema-validation/store.svelte')
       ]);
 
+  // CURRENT MODEL: Each newly applied package REPLACES the active runtime
+  // configuration in the plugin stores (single-active-package behavior).
+  // Previously loaded packages remain in configLoader.packages for history,
+  // but only the latest applied contents are live. If/when composition or
+  // merging is desired, this is the focal point to implement it.
+  // Callers wanting the latest dynamic state should use state-access.ts
+  // helpers instead of static @config/* modules.
+
       // Load file requirements
       if (configPackage.files) {
         fileStore.loadFileRequirements(configPackage.files);
