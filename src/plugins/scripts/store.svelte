@@ -2,6 +2,7 @@
   import { pythonExecutor } from '@worker/executor';
   import { scripts, type Script, type ScriptExecution } from '@config/script-config.js';
   import { select, clearOtherSelections, getSelection } from '@core/state/workspace.svelte';
+  import { activeFileRequirements, files as uploadedFiles } from '@plugins/required-files/store.svelte';
 
   export const availableScripts = $state<Script[]>([...scripts]);
   export const executions = $state<Record<string, ScriptExecution>>({});
@@ -12,7 +13,23 @@
     const base: ScriptExecution = { id: `exec_${scriptId}_${Date.now()}`, scriptId, status: 'running', lastRun: new Date().toISOString() };
     executions[scriptId] = base;
     try {
-      const result = await pythonExecutor.executeScript({ id: script.id, content: script.content, title: script.title }, { timeout:60000, onStatusUpdate: (status) => { if (executions[scriptId]) executions[scriptId].metrics = { ...executions[scriptId].metrics, status }; } });
+      // Gather uploaded dependency files (only 'uploaded' dependencies currently supported)
+      const dataFiles = (script.dependencies || [])
+        .filter(d => d.type === 'uploaded')
+        .map(d => {
+          const req = activeFileRequirements.find(r => r.id === d.sourceId);
+          const uploaded = req ? uploadedFiles[req.id] : undefined;
+          if (req && uploaded?.file) {
+            return { file: uploaded.file, filename: req.defaultFilename };
+          }
+          return null; // missing dependency; silently skip (status UI will reflect waiting earlier)
+        })
+        .filter(Boolean) as { file: File; filename: string }[];
+
+      const result = await pythonExecutor.executeScript(
+        { id: script.id, content: script.content, title: script.title },
+        { timeout:60000, dataFiles, onStatusUpdate: (status) => { if (executions[scriptId]) executions[scriptId].metrics = { ...executions[scriptId].metrics, status }; } }
+      );
       const generatedFiles = result.modifiedFiles || [];
       const end = new Date().toISOString();
       executions[scriptId] = { ...base, status: result.success ? 'completed':'error', executionTime: `${result.executionTime}ms`, output: result.output, error: result.error, lastRun: end, metrics: { executionTime: `${result.executionTime}ms`, lastRun: end, outputLines: result.output?.split('\n').length || 0, errorCount: result.error ? 1:0, filesGenerated: generatedFiles.length } };

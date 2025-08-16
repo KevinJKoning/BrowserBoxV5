@@ -2,6 +2,7 @@
   import { pythonExecutor } from '@worker/executor';
   import { schemaValidations, type SchemaValidation, type SchemaValidationExecution, type SchemaValidationResult } from '@config/schema-config.js';
   import { select, clearOtherSelections, getSelection } from '@core/state/workspace.svelte';
+  import { activeFileRequirements, files as uploadedFiles } from '@plugins/required-files/store.svelte';
   export const availableSchemas = $state<SchemaValidation[]>([...schemaValidations]);
   export const executions = $state<Record<string, SchemaValidationExecution>>({});
   export function getExecutionsList(){ return Object.values(executions); }
@@ -10,7 +11,23 @@
     const base: SchemaValidationExecution = { id: `exec_${schemaId}_${Date.now()}`, schemaId, status: 'running', lastRun: new Date().toISOString() };
     executions[schemaId] = base;
     try {
-  const result = await pythonExecutor.executeScript({ id: `schema-validation-${schemaId}`, content: schema.content, title: `Schema Validation: ${schema.title}` }, { timeout:30000, onStatusUpdate: (status) => { if (executions[schemaId]) executions[schemaId].metrics = { ...executions[schemaId].metrics, status }; } });
+  // Gather uploaded dependency files for the schema
+  const dataFiles = (schema.dependencies || [])
+    .filter(d => d.type === 'uploaded')
+    .map(d => {
+      const req = activeFileRequirements.find(r => r.id === d.sourceId);
+      const uploaded = req ? uploadedFiles[req.id] : undefined;
+      if (req && uploaded?.file) {
+        return { file: uploaded.file, filename: req.defaultFilename };
+      }
+      return null;
+    })
+    .filter(Boolean) as { file: File; filename: string }[];
+
+  const result = await pythonExecutor.executeScript(
+    { id: `schema-validation-${schemaId}`, content: schema.content, title: `Schema Validation: ${schema.title}` },
+    { timeout:30000, dataFiles, onStatusUpdate: (status) => { if (executions[schemaId]) executions[schemaId].metrics = { ...executions[schemaId].metrics, status }; } }
+  );
       const end = new Date().toISOString();
       executions[schemaId] = { ...base, status: result.success ? 'completed':'error', executionTime: `${result.executionTime}ms`, output: result.output, error: result.error, lastRun: end, results: result.success ? parseValidationResults(result.output): undefined, metrics: { executionTime: `${result.executionTime}ms`, lastRun: end, outputLines: result.output?.split('\n').length || 0, errorCount: result.error ? 1:0 } };
     } catch (e) {
