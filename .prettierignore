@@ -5,5 +5,25 @@ yarn.lock
 bun.lock
 bun.lockb
 
-# Miscellaneous
+# Build outputs
+/dist/
+/build/
+*.min.js
+*.min.css
+
+# Third-party dependencies  
+/node_modules/
+pyodide_*/
 /static/
+
+# Generated files
+*.d.ts.map
+*.js.map
+
+# IDE/Editor files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

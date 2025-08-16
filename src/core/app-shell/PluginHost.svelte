@@ -21,9 +21,15 @@
     // fire & forget async loader
   (async () => {
       try {
-    const module = await currentPlugin.main();
-        const comp = module?.default ?? module;
-        MainComponent = comp as ComponentType;
+        const loaded = await currentPlugin.main();
+        // Safely extract default export if present
+        let comp: ComponentType;
+        if (typeof loaded === 'object' && loaded && 'default' in loaded) {
+          comp = (loaded as { default: ComponentType }).default;
+        } else {
+          comp = loaded as ComponentType;
+        }
+        MainComponent = comp;
       } catch (error) {
         console.error(`Failed to load main component for plugin ${currentPlugin.id}:`, error);
         MainComponent = null;

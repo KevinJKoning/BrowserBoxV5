@@ -23,9 +23,16 @@
   export function getAllPreviews() { return [...registry]; }
   export function hasPreview(filename: string) { return getPreviewComponent(filename) !== null; }
   export function initializeBuiltinPreviews() {
-    registerPreview({ extensions:['.csv','.tsv'], component: () => import('./csv-preview.svelte').then(m=>({default:m.default})), priority:10 });
-    registerPreview({ extensions:['.parquet','.pq'], component: () => import('./parquet-preview.svelte').then(m=>({default:m.default})), priority:10 });
-    registerPreview({ extensions:['.gpkg','.geopackage'], component: () => import('./geopackage-preview.svelte').then(m=>({default:m.default})), priority:10 });
-    registerPreview({ extensions:['.html','.htm'], component: () => import('./html-preview.svelte').then(m=>({default:m.default})), priority:10 });
+    const safe = (loader: () => Promise<unknown>) => async () => {
+      const mod = await loader();
+      if (typeof mod === 'object' && mod && 'default' in mod) {
+        return { default: (mod as { default: ComponentType }).default };
+      }
+      return { default: mod as ComponentType };
+    };
+    registerPreview({ extensions:['.csv','.tsv'], component: safe(() => import('./csv-preview.svelte')), priority:10 });
+    registerPreview({ extensions:['.parquet','.pq'], component: safe(() => import('./parquet-preview.svelte')), priority:10 });
+    registerPreview({ extensions:['.gpkg','.geopackage'], component: safe(() => import('./geopackage-preview.svelte')), priority:10 });
+    registerPreview({ extensions:['.html','.htm'], component: safe(() => import('./html-preview.svelte')), priority:10 });
   }
 </script>
