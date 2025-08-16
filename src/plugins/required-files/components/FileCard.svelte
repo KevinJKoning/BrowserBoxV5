@@ -2,6 +2,7 @@
 	import { Badge } from "../../../lib/components/ui/badge/index.js";
 	import { Button } from "../../../lib/components/ui/button/index.js";
 	import { cn } from "../../../lib/utils.js";
+	import { isSelected } from "../../../core/state/workspace.svelte.js";
 	import CheckCircleIcon from "@lucide/svelte/icons/check-circle";
 	import FileIcon from "@lucide/svelte/icons/file";
 	import UploadIcon from "@lucide/svelte/icons/upload";
@@ -84,11 +85,11 @@
 	const IconComponent = $derived(config.icon);
 
 	// Modern runes-based reactive state - use $derived for reactivity
-	const isSelected = $derived(fileSelectors.isFileSelected(id));
+	const isFileSelected = $derived(isSelected('file', id));
 	
 	// Debug logging to track status changes
 	$effect(() => {
-		console.log(`FileCard ${id}: status="${status}", isSelected=${isSelected}, onPreview=${!!onPreview}`);
+		console.log(`FileCard ${id}: status="${status}", isSelected=${isFileSelected}, onPreview=${!!onPreview}`);
 		console.log(`  - config:`, config);
 		console.log(`  - uploadedFilename:`, uploadedFilename);
 		console.log(`  - rendering in:`, status === "completed" && onPreview ? "BUTTON (completed)" : "DIV (other)");
@@ -101,7 +102,7 @@
 			"flex flex-col gap-3 rounded-lg border p-4 transition-all w-full text-left",
 			config.cardClass,
 			"cursor-pointer hover:shadow-md hover:scale-[1.02]",
-			isSelected && "ring-2 ring-blue-500/80 ring-offset-2 shadow-lg drop-shadow-sm"
+			isFileSelected && "ring-2 ring-blue-500/80 ring-offset-2 shadow-lg drop-shadow-sm"
 		)}
 		onclick={onPreview}
 		{...restProps}

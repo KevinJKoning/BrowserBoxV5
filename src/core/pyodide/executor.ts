@@ -3,7 +3,7 @@
  * Provides a clean interface for plugins to execute Python code
  */
 
-import { SimplePyodideExecutor, type ScriptResult, type ScriptOptions, type Script } from './simple-pyodide.js';
+import { SimplePyodideExecutor, type ScriptResult, type ScriptOptions, type Script } from './internal/simple-pyodide.js';
 
 class PyodideExecutorService {
   private executor: SimplePyodideExecutor;

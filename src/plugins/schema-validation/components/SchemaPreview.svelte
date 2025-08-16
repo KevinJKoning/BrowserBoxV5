@@ -19,7 +19,8 @@
 	import type { SchemaExpectation, SchemaValidationResult, SchemaColumnValidation } from "../../../lib/config/schema-config.js";
 	import { schemaValidations } from "../../../lib/config/schema-config.js";
 	import { fileRequirements } from "../../../lib/config/file-config.js";
-	import { checkSchemaDependencies, previewStatusConfig, getPyodideInitializationMessage, getValidationStatusIcon, getValidationStatusClass } from "../../../lib/utils.js";
+	import { checkSchemaDependencies } from "../../../lib/utils/dependencies.js";
+	import { previewStatusConfig, getPyodideInitializationMessage, getValidationStatusIcon, getValidationStatusClass } from "../../../lib/utils/status.js";
 
 	interface Props {
 		/** Schema validation ID */

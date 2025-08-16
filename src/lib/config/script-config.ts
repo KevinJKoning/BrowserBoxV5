@@ -1,4 +1,9 @@
-// Script configuration and management
+/**
+ * @deprecated This static config file will be replaced by runtime config loading
+ * TODO: Move to external config packages loaded via src/core/config-runtime/loader.ts
+ * 
+ * Script configuration and management
+ */
 export interface ScriptDependency {
 	/** Source type - either an uploaded file requirement or a result file */
 	type: 'uploaded' | 'result';

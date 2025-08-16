@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { Badge } from "../../components/ui/badge/index.js";
-	import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card/index.js";
-	import { Separator } from "../../components/ui/separator/index.js";
-	import { formatFileSize } from "../../utils.js";
+	import { Badge } from "../../../lib/components/ui/badge/index.js";
+	import { Card, CardContent, CardHeader, CardTitle } from "../../../lib/components/ui/card/index.js";
+	import { Separator } from "../../../lib/components/ui/separator/index.js";
+	import { formatFileSize } from "../../../lib/utils.js";
 
 	interface Props {
 		file: File;

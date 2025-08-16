@@ -1,4 +1,9 @@
-// File upload configuration
+/**
+ * @deprecated This static config file will be replaced by runtime config loading
+ * TODO: Move to external config packages loaded via src/core/config-runtime/loader.ts
+ * 
+ * File upload configuration
+ */
 export interface FileRequirement {
 	id: string;
 	title: string;

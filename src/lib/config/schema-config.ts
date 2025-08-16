@@ -1,4 +1,9 @@
-// Schema validation configuration and management
+/**
+ * @deprecated This static config file will be replaced by runtime config loading
+ * TODO: Move to external config packages loaded via src/core/config-runtime/loader.ts
+ * 
+ * Schema validation configuration and management
+ */
 export interface SchemaColumnExpectation {
 	/** Expected data type for the column */
 	type: 'int64' | 'float64' | 'string' | 'datetime' | 'boolean';

@@ -13,7 +13,9 @@
 	import { onMount } from 'svelte';
 	import { scripts } from "../../../lib/config/script-config.js";
 	import { fileRequirements } from "../../../lib/config/file-config.js";
-	import { checkScriptDependencies, previewStatusConfig, formatFileSize, getPyodideInitializationMessage } from "../../../lib/utils.js";
+	import { formatFileSize } from "../../../lib/utils/formatting.js";
+	import { checkScriptDependencies } from "../../../lib/utils/dependencies.js";
+	import { previewStatusConfig, getPyodideInitializationMessage } from "../../../lib/utils/status.js";
 
 	interface Props {
 		/** Script ID for looking up dependencies */
