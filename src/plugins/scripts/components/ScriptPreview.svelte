@@ -90,9 +90,9 @@
 	});
 </script>
 
-<div class="flex gap-6 h-full">
+<div class="flex gap-6 h-full min-h-0 overflow-hidden">
 	<!-- Script Content View (1/2 width) -->
-	<div class="flex-1 min-w-0 max-w-[50%]">
+	<div class="flex-1 min-w-0">
 		<Card class="h-full">
 			<CardHeader>
 				<CardTitle class="flex items-center justify-between gap-2 min-w-0">
@@ -112,7 +112,7 @@
 	</div>
 
 	<!-- Metrics & Output View (1/2 width) -->
-	<div class="flex-1 min-w-0 max-w-[50%] flex flex-col space-y-4">
+	<div class="flex-1 min-w-0 flex flex-col space-y-4 min-h-0">
 		<!-- Script Metrics -->
 		<Card class="h-80 flex-shrink-0 overflow-hidden">
 			<CardHeader>
@@ -242,8 +242,7 @@
 					{/if}
 				</CardTitle>
 			</CardHeader>
-			<CardContent class="h-[calc(100%-4rem)] overflow-hidden">
-				<div class="overflow-auto h-full">
+			<CardContent class="h-[calc(100%-4rem)] overflow-auto">
 					{#if status === "error" && error}
 						<div class="space-y-3">
 							{#if output && output.trim()}
@@ -298,7 +297,6 @@
 							</div>
 						</div>
 					{/if}
-				</div>
 			</CardContent>
 		</Card>
 	</div>

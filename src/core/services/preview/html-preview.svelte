@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Card, CardContent, CardHeader, CardTitle } from "../../../lib/components/ui/card/index.js";
 	import { Button } from "../../../lib/components/ui/button/index.js";
+	import { createResponsiveHelpers } from "../../../lib/utils/window.svelte.ts";
 	import FileTextIcon from "@lucide/svelte/icons/file-text";
 	import ExternalLinkIcon from "@lucide/svelte/icons/external-link";
 	import RefreshCwIcon from "@lucide/svelte/icons/refresh-cw";
@@ -14,9 +15,10 @@
 		fileSize?: number;
 		/** Creation date */
 		createdAt?: string;
-		/** Click handler for download action */
 		/** Click handler for open in new tab action */
 		onOpenNewTab?: () => void;
+		/** Container size for responsive behavior */
+		containerSize?: { width: number; height: number };
 	}
 
 	let {
@@ -24,9 +26,13 @@
 		filename,
 		fileSize,
 		createdAt,
-		// onDownload, // unused currently
-		onOpenNewTab
+		onOpenNewTab,
+		containerSize: _containerSize = { width: 0, height: 0 }
 	}: Props = $props();
+	
+	// Responsive helpers
+	const responsiveHelpers = createResponsiveHelpers();
+	const isMobile = $derived(responsiveHelpers.isMobile);
 
 	let iframeElement: HTMLIFrameElement;
 	let isLoading = $state(true);
@@ -80,7 +86,7 @@
 	});
 </script>
 
-<div class="flex gap-6 h-full">
+<div class="flex gap-6 h-full {isMobile ? 'flex-col' : 'flex-row'}">
 	<!-- HTML Content View -->
 	<div class="flex-1 min-w-0">
 		<Card class="h-full">
@@ -114,7 +120,7 @@
 					</div>
 				</CardTitle>
 			</CardHeader>
-			<CardContent class="p-0 h-[calc(100%-4rem)] overflow-hidden">
+			<CardContent class="p-0 h-[calc(100%-4rem)] overflow-hidden iframe-container">
 				<div class="relative h-full">
 					{#if isLoading}
 						<div class="absolute inset-0 flex items-center justify-center bg-muted/20">
@@ -137,7 +143,7 @@
 	</div>
 
 	<!-- File Info Panel -->
-	<div class="w-80 flex-shrink-0">
+	<div class="w-80 flex-shrink-0 {isMobile ? 'w-full h-64' : ''}">
 		<Card class="h-full">
 			<CardHeader>
 				<CardTitle class="text-base">File Information</CardTitle>
@@ -194,3 +200,22 @@
 		</Card>
 	</div>
 </div>
+
+<style>
+  :global(.iframe-container) {
+    /* Performance optimizations for iframe containers */
+    contain: layout style paint;
+    will-change: auto;
+  }
+  
+  iframe {
+    /* Optimize iframe rendering */
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+  
+  /* Smooth transitions */
+  :global(.transition-opacity) {
+    transition: opacity 0.2s ease-in-out;
+  }
+</style>

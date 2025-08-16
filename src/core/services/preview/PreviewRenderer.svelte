@@ -1,5 +1,6 @@
 <script lang="ts">
   import { getPreviewComponent } from './registry.svelte';
+  import { resize } from '@svelte-put/resize';
   import FileTextIcon from '@lucide/svelte/icons/file-text';
   import AlertCircleIcon from '@lucide/svelte/icons/alert-circle';
 
@@ -28,6 +29,14 @@
   let PreviewComponent = $state<ComponentType | null>(null);
   let loading = $state(false);
   let error = $state<string | null>(null);
+  
+  // Track container size for responsive behavior
+  let containerSize = $state({ width: 0, height: 0 });
+  
+  function handleResize(event: CustomEvent) {
+    const { width, height } = event.detail;
+    containerSize = { width, height };
+  }
 
   // Load preview component when registration changes
   $effect(() => {
@@ -63,7 +72,7 @@
   });
 </script>
 
-<div class="preview-container h-full w-full">
+<div class="preview-container h-full w-full" use:resize onresized={handleResize}>
   {#if loading}
     <div class="flex items-center justify-center h-full">
       <div class="text-center">
@@ -79,7 +88,7 @@
       </div>
     </div>
   {:else if PreviewComponent}
-    <PreviewComponent {filename} {content} {...previewProps} />
+    <PreviewComponent {filename} {content} {containerSize} {...previewProps} />
   {:else}
     <div class="flex items-center justify-center h-full">
       <div class="text-center">
@@ -94,5 +103,8 @@
 <style>
   .preview-container {
     min-height: 200px;
+    /* Performance optimizations */
+    contain: layout style paint;
+    will-change: auto;
   }
 </style>

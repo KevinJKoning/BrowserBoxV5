@@ -116,6 +116,18 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground h-screen overflow-hidden;
   }
+}
+
+/* Root app container should occupy full viewport height and prevent page scroll */
+html, body, #app {
+  height: 100%;
+}
+
+#app {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* allow children with flex to shrink */
 }

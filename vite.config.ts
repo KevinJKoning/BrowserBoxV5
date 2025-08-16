@@ -34,7 +34,14 @@ export default defineConfig(({ command, mode }) => ({
 		tailwindcss(), 
 		svelte({
 			// Only process real .svelte files; .svelte.ts legacy hybrids removed
-			extensions: ['.svelte']
+			extensions: ['.svelte'],
+			inspector: {
+				// Enable Svelte Inspector in development mode
+				toggleKeyCombo: 'meta-shift',
+				holdMode: true,
+				showToggleButton: 'always',
+				toggleButtonPos: 'top-right'
+			}
 		}),
 		viteStaticCopyPyodide(),
 		VitePWA({

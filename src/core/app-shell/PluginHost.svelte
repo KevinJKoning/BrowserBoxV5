@@ -11,6 +11,8 @@
   let currentPlugin = $derived(getAllPlugins().find(p => p.id === workspace.activePluginId));
   // Dynamic component loaded from plugin main()
   let MainComponent = $state<ComponentType | null>(null);
+  
+  // Note: resize handling removed since we're using flexbox layout
 
   // Load main component when plugin changes
   $effect(() => {
@@ -53,7 +55,7 @@
   });
 </script>
 
-<div class={className} {...restProps}>
+<div class={"flex flex-col min-h-0 h-full overflow-hidden " + (className ?? '')} {...restProps}>
   <header class="bg-background sticky top-0 flex shrink-0 items-center gap-2 border-b p-4">
     <Sidebar.Trigger class="-ml-1" />
     <Separator orientation="vertical" class="mr-2 data-[orientation=vertical]:h-4" />
@@ -83,7 +85,7 @@
     </Breadcrumb.Root>
   </header>
   
-  <div class="flex flex-1 flex-col gap-4 p-4 max-h-[calc(100vh-5rem)] min-h-0 overflow-hidden">
+  <div class="flex flex-1 flex-col gap-4 p-4 min-h-0 overflow-hidden">
     {#if MainComponent}
       <MainComponent />
     {:else if currentPlugin}

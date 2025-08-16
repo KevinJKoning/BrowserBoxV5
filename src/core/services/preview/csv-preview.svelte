@@ -3,22 +3,34 @@
 	import { Card, CardContent, CardHeader, CardTitle } from "../../../lib/components/ui/card/index.js";
 	import { Separator } from "../../../lib/components/ui/separator/index.js";
 	import { formatFileSize } from "../../../lib/utils/formatting.ts";
+	import { createResponsiveHelpers } from "../../../lib/utils/window.svelte.ts";
 
 	interface Props {
 		file: File;
 		filename: string;
+		containerSize?: { width: number; height: number };
 	}
 
-	let { file, filename }: Props = $props();
+	let { file, filename, containerSize = { width: 0, height: 0 } }: Props = $props();
+	
+	// Responsive helpers
+	const responsiveHelpers = createResponsiveHelpers();
+	const isMobile = $derived(responsiveHelpers.isMobile);
 
 	let tableData: string[][] = $state([]);
 	let columns: string[] = $state([]);
 	let loading = $state(true);
 	let error = $state<string | null>(null);
 	let rowCount = $state(0);
-	let displayRows = $state(100); // Limit display for performance
 	let delimiter = $state(','); // Detected or default delimiter
 	let encoding = $state('utf-8'); // Detected encoding
+	
+	// Dynamic display rows based on container size for performance
+	let displayRows = $derived(() => {
+		if (containerSize.height === 0) return 50;
+		// Estimate ~40px per row, show enough to fill container + buffer
+		return Math.min(100, Math.max(20, Math.floor(containerSize.height / 40) + 10));
+	});
 
 	// Use $effect to react to file changes
 	$effect(() => {
@@ -58,7 +70,7 @@
 			columns = parseCSVLine(lines[0], delimiter);
 			
 			// Parse data rows (up to display limit)
-			const dataLines = lines.slice(1, Math.min(lines.length, displayRows + 1));
+			const dataLines = lines.slice(1, Math.min(lines.length, displayRows() + 1));
 			tableData = dataLines.map(line => parseCSVLine(line, delimiter));
 			
 			// Ensure all rows have same number of columns as header
@@ -165,9 +177,9 @@
 	}
 </script>
 
-<div class="flex gap-6 h-full">
-	<!-- Table View (2/3 width) -->
-	<div class="flex-[2] min-w-0">
+<div class="flex gap-6 h-full {isMobile ? 'flex-col' : 'flex-row'}">
+	<!-- Table View (2/3 width on desktop, full width on mobile) -->
+	<div class="flex-{isMobile ? '1' : '[2]'} min-w-0">
 		<Card class="h-full">
 			<CardHeader>
 				<CardTitle class="flex items-center justify-between">
@@ -195,7 +207,7 @@
 						</div>
 					</div>
 				{:else}
-					<div class="overflow-auto h-full">
+					<div class="overflow-auto h-full table-container">
 						<table class="w-full text-sm">
 							<thead class="sticky top-0 bg-muted">
 								<tr>
@@ -223,10 +235,10 @@
 										{/each}
 									</tr>
 								{/each}
-								{#if tableData.length === displayRows && rowCount > displayRows + 1}
+								{#if tableData.length === displayRows() && rowCount > displayRows() + 1}
 									<tr>
 										<td colspan={columns.length} class="p-3 text-center text-sm text-muted-foreground">
-											Showing first {displayRows} rows of {(rowCount - 1).toLocaleString()} total data rows
+											Showing first {displayRows()} rows of {(rowCount - 1).toLocaleString()} total data rows
 										</td>
 									</tr>
 								{/if}
@@ -238,8 +250,8 @@
 		</Card>
 	</div>
 
-	<!-- Metadata View (1/3 width) -->
-	<div class="flex-1 min-w-0">
+	<!-- Metadata View (1/3 width on desktop, hidden on mobile unless toggled) -->
+	<div class="flex-1 min-w-0 {isMobile ? 'h-64' : ''}">
 		<Card class="h-full">
 			<CardHeader>
 				<CardTitle>Metadata</CardTitle>
@@ -327,3 +339,21 @@
 		</Card>
 	</div>
 </div>
+
+<style>
+  .table-container {
+    /* Performance optimizations for scrolling tables */
+    contain: layout style paint;
+    will-change: scroll-position;
+  }
+  
+  /* Optimize table rendering */
+  table {
+    table-layout: fixed;
+  }
+  
+  /* Smooth scrolling for better UX */
+  .overflow-auto {
+    scroll-behavior: smooth;
+  }
+</style>
