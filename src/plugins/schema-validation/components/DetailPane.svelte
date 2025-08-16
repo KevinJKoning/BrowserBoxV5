@@ -1,5 +1,5 @@
 <script lang="ts">
-  import SchemaPreview from "../../../lib/components/schema-preview.svelte";
+  import SchemaPreview from "./SchemaPreview.svelte";
   import { getSelection } from "../../../core/state/workspace.svelte.js";
   import { getSchema, getExecution, getValidationResults, startExecution } from "../store.svelte.js";
 

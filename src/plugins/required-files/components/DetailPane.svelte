@@ -1,49 +1,38 @@
 <script lang="ts">
-  import ParquetPreview from "../../../lib/components/parquet-preview.svelte";
-  import CsvPreview from "../../../lib/components/csv-preview.svelte";
-  import GeopackagePreview from "../../../lib/components/geopackage-preview.svelte";
+  import { PreviewRenderer, initializeBuiltinPreviews } from "../../../lib/systems/preview/index.js";
   import { getSelection } from "../../../core/state/workspace.svelte.js";
   import { getFile } from "../store.svelte.js";
-  import { getFileExtension } from "../../../lib/utils.js";
+  import { onMount } from "svelte";
+
+  // Initialize built-in preview components
+  onMount(() => {
+    initializeBuiltinPreviews();
+  });
 
   // Get selected file
   const selectedFileId = $derived(getSelection('file'));
   const selectedFile = $derived(selectedFileId ? getFile(selectedFileId) : null);
+  
+  // Create preview props for uploaded file
+  const previewProps = $derived(() => {
+    if (!selectedFile?.file) return {};
+    
+    return {
+      file: selectedFile.file,
+      fileSize: selectedFile.file.size,
+      uploadedAt: selectedFile.uploadedAt
+    };
+  });
 </script>
 
 {#if selectedFile?.file}
   <!-- File Preview Mode -->
   <div class="h-full min-h-0 overflow-hidden">
-    {#if getFileExtension(selectedFile.originalName) === '.csv'}
-      <CsvPreview 
-        file={selectedFile.file} 
-        filename={selectedFile.originalName} 
-      />
-    {:else if getFileExtension(selectedFile.originalName) === '.parquet'}
-      <ParquetPreview 
-        file={selectedFile.file} 
-        filename={selectedFile.originalName} 
-      />
-    {:else if getFileExtension(selectedFile.originalName) === '.gpkg'}
-      <GeopackagePreview 
-        file={selectedFile.file} 
-        filename={selectedFile.originalName} 
-      />
-    {:else}
-      <!-- Generic file preview for other types -->
-      <div class="flex items-center justify-center h-full">
-        <div class="text-center">
-          <div class="text-6xl mb-4">📄</div>
-          <h3 class="text-lg font-medium mb-2">{selectedFile.originalName}</h3>
-          <p class="text-muted-foreground mb-4">
-            {getFileExtension(selectedFile.originalName).toUpperCase().slice(1)} file • {selectedFile.size}
-          </p>
-          <p class="text-sm text-muted-foreground">
-            Preview not available for this file type
-          </p>
-        </div>
-      </div>
-    {/if}
+    <PreviewRenderer 
+      filename={selectedFile.originalName} 
+      previewProps={previewProps()}
+      fallbackMessage="Preview not available for this file type"
+    />
   </div>
 {:else}
   <!-- No file selected -->

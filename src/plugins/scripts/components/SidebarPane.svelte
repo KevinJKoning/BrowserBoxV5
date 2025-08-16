@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button } from "../../../lib/components/ui/button/index.js";
   import * as Sidebar from "../../../lib/components/ui/sidebar/index.js";
-  import ScriptCard from "../../../lib/components/script-card.svelte";
+  import ScriptCard from "./ScriptCard.svelte";
   import PlayIcon from "@lucide/svelte/icons/play";
   import XIcon from "@lucide/svelte/icons/x";
   import FileIcon from "@lucide/svelte/icons/file";

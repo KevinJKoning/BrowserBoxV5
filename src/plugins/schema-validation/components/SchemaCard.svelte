@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { Badge } from "./ui/badge/index.js";
-	import { Button } from "./ui/button/index.js";
-	import { cn, getSchemaCardStatus, schemaStatusConfig } from "../utils.js";
+	import { Badge } from "../../../lib/components/ui/badge/index.js";
+	import { Button } from "../../../lib/components/ui/button/index.js";
+	import { cn, getSchemaCardStatus, schemaStatusConfig } from "../../../lib/utils.js";
 	import CheckCircleIcon from "@lucide/svelte/icons/check-circle";
 	import ShieldCheckIcon from "@lucide/svelte/icons/shield-check";
 	import XCircleIcon from "@lucide/svelte/icons/x-circle";
 	import AlertTriangleIcon from "@lucide/svelte/icons/alert-triangle";
-	import { fileRequirements } from "../config/file-config.js";
-	import { schemaValidations } from "../config/schema-config.js";
+	import { fileRequirements } from "../../../lib/config/file-config.js";
+	import { schemaValidations } from "../../../lib/config/schema-config.js";
 
 	interface Props {
 		/** Unique identifier for the schema validation */

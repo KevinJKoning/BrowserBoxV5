@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button } from "../../../lib/components/ui/button/index.js";
   import * as Sidebar from "../../../lib/components/ui/sidebar/index.js";
-  import SchemaCard from "../../../lib/components/schema-card.svelte";
+  import SchemaCard from "./SchemaCard.svelte";
   import ShieldCheckIcon from "@lucide/svelte/icons/shield-check";
   import XIcon from "@lucide/svelte/icons/x";
   import { 

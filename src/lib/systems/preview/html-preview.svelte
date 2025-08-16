@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Card, CardContent, CardHeader, CardTitle } from "./ui/card/index.js";
-	import { Badge } from "./ui/badge/index.js";
-	import { Button } from "./ui/button/index.js";
+	import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card/index.js";
+	import { Badge } from "../../components/ui/badge/index.js";
+	import { Button } from "../../components/ui/button/index.js";
 	import FileTextIcon from "@lucide/svelte/icons/file-text";
 	import DownloadIcon from "@lucide/svelte/icons/download";
 	import ExternalLinkIcon from "@lucide/svelte/icons/external-link";

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Badge } from "./ui/badge/index.js";
-	import { Button } from "./ui/button/index.js";
-	import { Card, CardContent, CardHeader, CardTitle } from "./ui/card/index.js";
-	import { Separator } from "./ui/separator/index.js";
-	import { CopyButton } from "./ui/copy-button/index.js";
+	import { Badge } from "../../../lib/components/ui/badge/index.js";
+	import { Button } from "../../../lib/components/ui/button/index.js";
+	import { Card, CardContent, CardHeader, CardTitle } from "../../../lib/components/ui/card/index.js";
+	import { Separator } from "../../../lib/components/ui/separator/index.js";
+	import { CopyButton } from "../../../lib/components/ui/copy-button/index.js";
 	import ShieldCheckIcon from "@lucide/svelte/icons/shield-check";
 	import FileTextIcon from "@lucide/svelte/icons/file-text";
 	import LoaderIcon from "@lucide/svelte/icons/loader";
@@ -16,10 +16,10 @@
 	// PyodideManager removed - using simplified system
 	// import { PyodideManager, type PyodideInitializationStatus } from "../pyodide/pyodide-manager.js";
 	import { onMount } from 'svelte';
-	import type { SchemaExpectation, SchemaValidationResult, SchemaColumnValidation } from "../config/schema-config.js";
-	import { schemaValidations } from "../config/schema-config.js";
-	import { fileRequirements } from "../config/file-config.js";
-	import { checkSchemaDependencies, previewStatusConfig, getPyodideInitializationMessage, getValidationStatusIcon, getValidationStatusClass } from "../utils.js";
+	import type { SchemaExpectation, SchemaValidationResult, SchemaColumnValidation } from "../../../lib/config/schema-config.js";
+	import { schemaValidations } from "../../../lib/config/schema-config.js";
+	import { fileRequirements } from "../../../lib/config/file-config.js";
+	import { checkSchemaDependencies, previewStatusConfig, getPyodideInitializationMessage, getValidationStatusIcon, getValidationStatusClass } from "../../../lib/utils.js";
 
 	interface Props {
 		/** Schema validation ID */

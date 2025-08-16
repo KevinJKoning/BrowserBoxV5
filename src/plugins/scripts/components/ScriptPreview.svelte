@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Badge } from "./ui/badge/index.js";
-	import { Button } from "./ui/button/index.js";
-	import { Card, CardContent, CardHeader, CardTitle } from "./ui/card/index.js";
-	import { Separator } from "./ui/separator/index.js";
-	import { CopyButton } from "./ui/copy-button/index.js";
+	import { Badge } from "../../../lib/components/ui/badge/index.js";
+	import { Button } from "../../../lib/components/ui/button/index.js";
+	import { Card, CardContent, CardHeader, CardTitle } from "../../../lib/components/ui/card/index.js";
+	import { Separator } from "../../../lib/components/ui/separator/index.js";
+	import { CopyButton } from "../../../lib/components/ui/copy-button/index.js";
 	import PlayIcon from "@lucide/svelte/icons/play";
 	import FileTextIcon from "@lucide/svelte/icons/file-text";
 	import LoaderIcon from "@lucide/svelte/icons/loader";
@@ -11,11 +11,9 @@
 	// PyodideManager removed - using simplified system
 	// import { PyodideManager, type PyodideInitializationStatus } from "../pyodide/pyodide-manager.js";
 	import { onMount } from 'svelte';
-	import { scripts } from "../config/script-config.js";
-	import { fileRequirements } from "../config/file-config.js";
-	import { fileManagerState, fileSelectors } from "../stores/file-store.svelte.js";
-	import { resultsManagerState, resultsSelectors } from "../stores/results-store.svelte.js";
-	import { checkScriptDependencies, previewStatusConfig, formatFileSize, getPyodideInitializationMessage } from "../utils.js";
+	import { scripts } from "../../../lib/config/script-config.js";
+	import { fileRequirements } from "../../../lib/config/file-config.js";
+	import { checkScriptDependencies, previewStatusConfig, formatFileSize, getPyodideInitializationMessage } from "../../../lib/utils.js";
 
 	interface Props {
 		/** Script ID for looking up dependencies */

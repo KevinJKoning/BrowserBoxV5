@@ -1,80 +1,74 @@
 <script lang="ts">
-  import ParquetPreview from "../../../lib/components/parquet-preview.svelte";
-  import CsvPreview from "../../../lib/components/csv-preview.svelte";
-  import GeopackagePreview from "../../../lib/components/geopackage-preview.svelte";
-  import HtmlPreview from "../../../lib/components/html-preview.svelte";
+  import { PreviewRenderer, initializeBuiltinPreviews } from "../../../lib/systems/preview/index.js";
   import { getSelection } from "../../../core/state/workspace.svelte.js";
   import { getResultFile } from "../store.svelte.js";
+  import { onMount } from "svelte";
+
+  // Initialize built-in preview components
+  onMount(() => {
+    initializeBuiltinPreviews();
+  });
 
   // Get selected result
   const selectedResultId = $derived(getSelection('result'));
   const selectedResult = $derived(selectedResultId ? getResultFile(selectedResultId) : null);
+  
+  // Create preview props for result file
+  const previewProps = $derived(() => {
+    if (!selectedResult) return {};
+    
+    // Convert content to appropriate format
+    let content = selectedResult.content;
+    if (content && typeof content !== 'string' && content instanceof Uint8Array) {
+      // Try to decode as text for text-based formats
+      const textFormats = ['.csv', '.html', '.htm', '.txt', '.json'];
+      const hasTextFormat = textFormats.some(ext => selectedResult.filename.toLowerCase().endsWith(ext));
+      if (hasTextFormat) {
+        try {
+          content = new TextDecoder().decode(content);
+        } catch {
+          // Keep as Uint8Array if decoding fails
+        }
+      }
+    }
+    
+    return {
+      content,
+      file: content ? new File([content], selectedResult.filename, {
+        type: getFileType(selectedResult.fileType),
+        lastModified: new Date(selectedResult.createdAt).getTime()
+      }) : undefined,
+      fileSize: selectedResult.fileSize,
+      createdAt: selectedResult.createdAt,
+      onDownload: () => {
+        console.log('Download result:', selectedResult.filename);
+      }
+    };
+  });
+  
+  function getFileType(extension: string): string {
+    const mimeTypes: Record<string, string> = {
+      'csv': 'text/csv',
+      'html': 'text/html',
+      'htm': 'text/html',
+      'parquet': 'application/octet-stream',
+      'pq': 'application/octet-stream',
+      'gpkg': 'application/geopackage+sqlite3',
+      'geopackage': 'application/geopackage+sqlite3'
+    };
+    return mimeTypes[extension] || 'application/octet-stream';
+  }
 </script>
 
 {#if selectedResult}
   <!-- Result Preview Mode -->
   <div class="h-full min-h-0 overflow-hidden">
-    {#if selectedResult.fileType === 'html' || selectedResult.fileType === 'htm'}
-      <HtmlPreview
-        htmlContent={selectedResult.content ? (typeof selectedResult.content === 'string' ? selectedResult.content : new TextDecoder().decode(selectedResult.content)) : ''}
-        filename={selectedResult.filename}
-        fileSize={selectedResult.fileSize}
-        createdAt={selectedResult.createdAt}
-        onDownload={() => {
-          console.log('Download result:', selectedResult.filename);
-        }}
-      />
-    {:else if selectedResult.fileType === 'csv'}
-      <!-- Convert result to File object for CSV preview -->
-      {#if selectedResult.content}
-        {@const resultFile = new File([selectedResult.content], selectedResult.filename, { 
-          type: 'text/csv',
-          lastModified: new Date(selectedResult.createdAt).getTime()
-        })}
-        <CsvPreview 
-          file={resultFile} 
-          filename={selectedResult.filename} 
-        />
-      {/if}
-    {:else if selectedResult.fileType === 'parquet' || selectedResult.fileType === 'pq'}
-      <!-- Convert result to File object for parquet preview -->
-      {#if selectedResult.content}
-        {@const resultFile = new File([selectedResult.content], selectedResult.filename, { 
-          type: 'application/octet-stream',
-          lastModified: new Date(selectedResult.createdAt).getTime()
-        })}
-        <ParquetPreview 
-          file={resultFile} 
-          filename={selectedResult.filename} 
-        />
-      {/if}
-    {:else if selectedResult.fileType === 'gpkg'}
-      <!-- Convert result to File object for GeoPackage preview -->
-      {#if selectedResult.content}
-        {@const resultFile = new File([selectedResult.content], selectedResult.filename, { 
-          type: 'application/geopackage+sqlite3',
-          lastModified: new Date(selectedResult.createdAt).getTime()
-        })}
-        <GeopackagePreview 
-          file={resultFile} 
-          filename={selectedResult.filename} 
-        />
-      {/if}
-    {:else}
-      <!-- Generic file preview for other types -->
-      <div class="flex items-center justify-center h-full">
-        <div class="text-center">
-          <div class="text-6xl mb-4">📄</div>
-          <h3 class="text-lg font-medium mb-2">{selectedResult.filename}</h3>
-          <p class="text-muted-foreground mb-4">
-            {selectedResult.fileType.toUpperCase()} file • {(selectedResult.fileSize / 1024).toFixed(1)} KB
-          </p>
-          <p class="text-sm text-muted-foreground">
-            {selectedResult.description || 'Generated file from script execution'}
-          </p>
-        </div>
-      </div>
-    {/if}
+    <PreviewRenderer 
+      filename={selectedResult.filename} 
+      content={selectedResult.content}
+      previewProps={previewProps()}
+      fallbackMessage="No preview available for this file type. Generated file from script execution."
+    />
   </div>
 {:else}
   <!-- No result selected -->

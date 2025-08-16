@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Badge } from "./ui/badge/index.js";
-	import { Button } from "./ui/button/index.js";
-	import { cn } from "../utils.js";
+	import { Badge } from "../../../lib/components/ui/badge/index.js";
+	import { Button } from "../../../lib/components/ui/button/index.js";
+	import { cn } from "../../../lib/utils.js";
 	import FileIcon from "@lucide/svelte/icons/file";
 	import FileTextIcon from "@lucide/svelte/icons/file-text";
 	import DownloadIcon from "@lucide/svelte/icons/download";

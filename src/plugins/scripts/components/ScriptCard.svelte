@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Badge } from "./ui/badge/index.js";
-	import { Button } from "./ui/button/index.js";
-	import { cn, getScriptCardStatus, scriptStatusConfig } from "../utils.js";
+	import { Badge } from "../../../lib/components/ui/badge/index.js";
+	import { Button } from "../../../lib/components/ui/button/index.js";
+	import { cn, getScriptCardStatus, scriptStatusConfig } from "../../../lib/utils.js";
 	import PlayIcon from "@lucide/svelte/icons/play";
 
 	interface Props {

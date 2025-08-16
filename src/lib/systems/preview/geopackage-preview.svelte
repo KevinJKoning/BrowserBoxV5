@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { Badge } from "./ui/badge/index.js";
-	import { Card, CardContent, CardHeader, CardTitle } from "./ui/card/index.js";
-	import { Separator } from "./ui/separator/index.js";
-	import { formatFileSize } from "../utils.js";
+	import { Badge } from "../../components/ui/badge/index.js";
+	import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card/index.js";
+	import { Separator } from "../../components/ui/separator/index.js";
+	import { formatFileSize } from "../../utils.js";
 	// Old worker system removed - using simplified Pyodide
 	// import { createPyodideWorker, type WorkerMessage, type ScriptExecutionResult } from "../pyodide/pyodide-worker.js";
 

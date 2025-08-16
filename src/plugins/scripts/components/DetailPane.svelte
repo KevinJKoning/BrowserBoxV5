@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ScriptPreview from "../../../lib/components/script-preview.svelte";
+  import ScriptPreview from "./ScriptPreview.svelte";
   import { getSelection } from "../../../core/state/workspace.svelte.js";
   import { getScript, getExecution, startExecution } from "../store.svelte.js";
 
