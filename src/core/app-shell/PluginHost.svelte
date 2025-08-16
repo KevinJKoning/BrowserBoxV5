@@ -2,12 +2,12 @@
   import * as Breadcrumb from "../../lib/components/ui/breadcrumb/index.js";
   import * as Sidebar from "../../lib/components/ui/sidebar/index.js";
   import { Separator } from "../../lib/components/ui/separator/index.js";
-  import { allPlugins } from "../state/plugin-registry.js";
-  import { workspace, getSelection } from "../state/workspace.js";
+  import { getAllPlugins } from "../state/plugin-registry.svelte.js";
+  import { workspace, getSelection } from "../state/workspace.svelte.js";
 
   let { class: className, ...restProps } = $props();
 
-  let currentPlugin = $derived(allPlugins.find(p => p.id === workspace.activePluginId));
+  let currentPlugin = $derived(getAllPlugins().find(p => p.id === workspace.activePluginId));
   let MainComponent = $state<any>(null);
 
   // Load main component when plugin changes
@@ -91,7 +91,7 @@
           <div class="space-y-4">
             <h2 class="text-xl font-semibold">Available Plugins:</h2>
             <ul class="list-disc list-inside space-y-2 text-muted-foreground">
-              {#each allPlugins as plugin}
+              {#each getAllPlugins() as plugin}
                 <li>{plugin.title} - Click the icon in the sidebar to get started</li>
               {/each}
             </ul>

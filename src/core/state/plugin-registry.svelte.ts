@@ -27,7 +27,9 @@ export function setPlugins(list: PluginDefinition[]) {
     .forEach(p => pluginList.push(p));
 }
 
-export const allPlugins = $derived(pluginList);
+export function getAllPlugins(): PluginDefinition[] {
+  return pluginList;
+}
 
 /**
  * Auto-discover plugins from the plugins directory
@@ -62,7 +64,7 @@ export async function initializePlugins() {
   setPlugins(discoveredPlugins);
   
   // Initialize each plugin
-  for (const plugin of allPlugins) {
+  for (const plugin of getAllPlugins()) {
     try {
       await plugin.init?.();
     } catch (error) {
@@ -75,7 +77,7 @@ export async function initializePlugins() {
  * Get plugin by ID
  */
 export function getPlugin(id: string): PluginDefinition | undefined {
-  return allPlugins.find(p => p.id === id);
+  return getAllPlugins().find(p => p.id === id);
 }
 
 /**

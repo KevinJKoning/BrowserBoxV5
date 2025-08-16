@@ -4,19 +4,16 @@
  */
 
 import { pythonExecutor } from '../../core/pyodide/executor.js';
-import { availableSchemas } from '../../lib/config/schema-config.js';
-import type { Schema, SchemaExecution, ValidationResults } from '../../lib/config/schema-config.js';
-import { select, clearOtherSelections } from '../../core/state/workspace.js';
+import { schemaValidations, type SchemaValidation, type SchemaValidationExecution, type SchemaValidationResult } from '../../lib/config/schema-config.js';
+import { select, clearOtherSelections, getSelection } from '../../core/state/workspace.svelte.js';
 
 // Plugin state using Svelte 5 runes
-export const executions = $state<Record<string, SchemaExecution>>({});
+export const availableSchemas = $state(schemaValidations);
+export const executions = $state<Record<string, SchemaValidationExecution>>({});
 
 // Derived state
-export const executionsList = $derived(Object.values(executions));
-
-// Helper functions
-function generateExecutionId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+export function getExecutionsList(): SchemaValidationExecution[] {
+  return Object.values(executions);
 }
 
 // Actions
@@ -26,9 +23,8 @@ export async function startExecution(schemaId: string): Promise<void> {
     throw new Error(`Schema ${schemaId} not found`);
   }
 
-  const executionId = generateExecutionId();
-  const execution: SchemaExecution = {
-    id: executionId,
+  const execution: SchemaValidationExecution = {
+    id: `exec_${schemaId}_${Date.now()}`,
     schemaId: schemaId,
     status: "running",
     lastRun: new Date().toISOString()
@@ -65,6 +61,8 @@ export async function startExecution(schemaId: string): Promise<void> {
       lastRun: endTime,
       results: result.success ? parseValidationResults(result.output) : undefined,
       metrics: {
+        executionTime: `${result.executionTime}ms`,
+        lastRun: endTime,
         outputLines: result.output?.split('\n').length || 0,
         errorCount: result.error ? 1 : 0
       }
@@ -80,7 +78,7 @@ export async function startExecution(schemaId: string): Promise<void> {
   }
 }
 
-function parseValidationResults(output: string): ValidationResults | undefined {
+function parseValidationResults(output: string): SchemaValidationResult | undefined {
   try {
     // Try to parse JSON output from validation script
     const lines = output.split('\n');
@@ -90,10 +88,11 @@ function parseValidationResults(output: string): ValidationResults | undefined {
       const parsed = JSON.parse(jsonLine);
       return {
         summary: {
-          totalRows: parsed.total_rows || 0,
-          validRows: parsed.valid_rows || 0,
-          errorRows: parsed.error_rows || 0,
-          successRate: parsed.success_rate || 0
+          overall_status: parsed.overall_status || 'pass',
+          total_checks: parsed.total_checks || 0,
+          passed: parsed.passed || 0,
+          failed: parsed.failed || 0,
+          warnings: parsed.warnings || 0
         },
         details: parsed.details || []
       };
@@ -110,11 +109,11 @@ export function selectSchema(schemaId: string | null): void {
   select('schema', schemaId);
 }
 
-export function getSchema(schemaId: string): Schema | undefined {
+export function getSchema(schemaId: string): SchemaValidation | undefined {
   return availableSchemas.find(s => s.id === schemaId);
 }
 
-export function getExecution(schemaId: string): SchemaExecution | undefined {
+export function getExecution(schemaId: string): SchemaValidationExecution | undefined {
   return executions[schemaId];
 }
 
@@ -122,6 +121,10 @@ export function getExecutionStatus(schemaId: string): "ready" | "running" | "com
   return executions[schemaId]?.status || "ready";
 }
 
-export function getValidationResults(schemaId: string): ValidationResults | undefined {
+export function getValidationResults(schemaId: string): SchemaValidationResult | undefined {
   return executions[schemaId]?.results;
+}
+
+export function isSchemaSelected(schemaId: string): boolean {
+  return getSelection('schema') === schemaId;
 }

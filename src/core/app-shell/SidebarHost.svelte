@@ -1,9 +1,9 @@
 <script lang="ts">
   import * as Sidebar from "../../lib/components/ui/sidebar/index.js";
-  import { allPlugins } from "../state/plugin-registry.js";
-  import { workspace, activatePlugin, sidebarOpen } from "../state/workspace.js";
+  import { getAllPlugins } from "../state/plugin-registry.svelte.js";
+  import { workspace, activatePlugin } from "../state/workspace.svelte.js";
 
-  let currentPlugin = $derived(allPlugins.find(p => p.id === workspace.activePluginId));
+  let currentPlugin = $derived(getAllPlugins().find(p => p.id === workspace.activePluginId));
   let SidebarComponent = $state<any>(null);
 
   // Load sidebar component when plugin changes
@@ -36,7 +36,7 @@
       <Sidebar.Group>
         <Sidebar.GroupContent class="px-1.5 md:px-0">
           <Sidebar.Menu>
-            {#each allPlugins as plugin (plugin.id)}
+            {#each getAllPlugins() as plugin (plugin.id)}
               <Sidebar.MenuItem>
                 <Sidebar.MenuButton
                   tooltipContentProps={{ hidden: false }}

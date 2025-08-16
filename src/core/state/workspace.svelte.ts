@@ -26,7 +26,9 @@ export function activatePlugin(id: string) {
 /**
  * Get the currently active plugin ID
  */
-export const activePluginId = $derived(workspace.activePluginId);
+export function getActivePluginId(): string | null {
+  return workspace.activePluginId;
+}
 
 /**
  * Set selection for a specific category (e.g., 'file', 'schema', 'script', 'result')
@@ -70,7 +72,9 @@ export function setSidebarOpen(open: boolean) {
 /**
  * Get sidebar state
  */
-export const sidebarOpen = $derived(workspace.sidebarOpen);
+export function getSidebarOpen(): boolean {
+  return workspace.sidebarOpen;
+}
 
 /**
  * Check if a specific item is selected in a category

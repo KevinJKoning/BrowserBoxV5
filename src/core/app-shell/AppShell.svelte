@@ -4,8 +4,8 @@
   import SidebarHost from "./SidebarHost.svelte";
   import PluginHost from "./PluginHost.svelte";
   import { pythonExecutor } from "../pyodide/executor.js";
-  import { workspace, activatePlugin } from "../state/workspace.js";
-  import { allPlugins, initializePlugins } from "../state/plugin-registry.js";
+  import { workspace, activatePlugin } from "../state/workspace.svelte.js";
+  import { getAllPlugins, initializePlugins } from "../state/plugin-registry.svelte.js";
 
   // Provide shared services to the component tree
   setContext("executor", pythonExecutor);
@@ -16,8 +16,8 @@
     await initializePlugins();
     
     // Activate first plugin if none selected
-    if (!workspace.activePluginId && allPlugins.length > 0) {
-      activatePlugin(allPlugins[0].id);
+    if (!workspace.activePluginId && getAllPlugins().length > 0) {
+      activatePlugin(getAllPlugins()[0].id);
     }
   });
 </script>

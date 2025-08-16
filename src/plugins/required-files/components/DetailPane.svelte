@@ -2,8 +2,8 @@
   import ParquetPreview from "../../../lib/components/parquet-preview.svelte";
   import CsvPreview from "../../../lib/components/csv-preview.svelte";
   import GeopackagePreview from "../../../lib/components/geopackage-preview.svelte";
-  import { getSelection } from "../../../core/state/workspace.js";
-  import { getFile } from "../store.js";
+  import { getSelection } from "../../../core/state/workspace.svelte.js";
+  import { getFile } from "../store.svelte.js";
   import { getFileExtension } from "../../../lib/utils.js";
 
   // Get selected file

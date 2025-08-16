@@ -5,7 +5,7 @@
 
 import { fileRequirements, type FileRequirement, type UploadedFile } from '../../lib/config/file-config.js';
 import { formatFileSize } from '../../lib/utils.js';
-import { select, clearOtherSelections } from '../../core/state/workspace.js';
+import { select, clearOtherSelections } from '../../core/state/workspace.svelte.js';
 
 // Plugin state using Svelte 5 runes
 export const files = $state<Record<string, UploadedFile>>({});
@@ -14,8 +14,13 @@ export const uploadStates = $state<Record<string, "waiting" | "uploading" | "com
 );
 
 // Derived state
-export const uploadedFiles = $derived(Object.values(files));
-export const completedUploads = $derived(uploadedFiles.filter(f => f.status === 'completed'));
+export function getUploadedFiles(): UploadedFile[] {
+  return Object.values(files);
+}
+
+export function getCompletedUploads(): UploadedFile[] {
+  return getUploadedFiles().filter(f => f.status === 'completed');
+}
 
 // Helper functions
 function isFileTypeAccepted(fileName: string, requirement: FileRequirement): boolean {
