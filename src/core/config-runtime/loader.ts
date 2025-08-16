@@ -7,9 +7,9 @@
  * TODO: Implement runtime package loading system for External Config Loading phase
  */
 
-import type { FileRequirement } from '../../lib/config/file-config.js';
-import type { SchemaValidation } from '../../lib/config/schema-config.js';
-import type { Script } from '../../lib/config/script-config.js';
+import type { FileRequirement } from '@config/file-config.js';
+import type { SchemaValidation } from '@config/schema-config.js';
+import type { Script } from '@config/script-config.js';
 
 // Placeholder interfaces for runtime config
 export interface ConfigPackage {
@@ -68,9 +68,9 @@ export const configLoader = new RuntimeConfigLoader();
 export async function loadLegacyConfig(): Promise<void> {
   // Dynamic imports to avoid circular dependencies
   const [fileConfig, schemaConfig, scriptConfig] = await Promise.all([
-    import('../../lib/config/file-config.js'),
-    import('../../lib/config/schema-config.js'),
-    import('../../lib/config/script-config.js')
+  import('@config/file-config.js'),
+  import('@config/schema-config.js'),
+  import('@config/script-config.js')
   ]);
 
   // Register legacy config as a package

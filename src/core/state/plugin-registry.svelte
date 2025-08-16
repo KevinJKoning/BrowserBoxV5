@@ -4,13 +4,14 @@
    */
   import type { ComponentType } from 'svelte';
 
+  // Relaxed plugin component typing: allow any Svelte component factory or dynamic import promise
   export interface PluginDefinition {
     id: string;
     title: string;
     order?: number;
-    icon?: ComponentType;
-    sidebar: () => Promise<{ default: ComponentType }> | ComponentType;
-    main: () => Promise<{ default: ComponentType }> | ComponentType;
+    icon?: any; // using any to avoid icon component constructor mismatches
+    sidebar: () => Promise<any> | any;
+    main: () => Promise<any> | any;
     init?: () => Promise<void> | void;
     dispose?: () => void;
     capabilities?: string[];

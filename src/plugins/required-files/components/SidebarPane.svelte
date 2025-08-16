@@ -4,7 +4,7 @@
   import FileCard from "./FileCard.svelte";
   import FolderUpIcon from "@lucide/svelte/icons/folder-up";
   import XIcon from "@lucide/svelte/icons/x";
-  import { fileRequirements } from "../../../lib/config/file-config.js";
+  import { fileRequirements } from "@config/file-config.js";
   import { loadFile, loadFilesFromFolder, removeFile, selectFile, getFile, getUploadState } from "../store.svelte";
 
   let searchQuery = $state("");

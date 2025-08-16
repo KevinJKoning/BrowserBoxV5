@@ -23,7 +23,8 @@
 			"@utils/*": ["lib/utils/*"],
 			"@ui/*": ["lib/components/ui/*"],
 			"@plugins/*": ["plugins/*"],
-			"@worker/*": ["core/pyodide/*"]
+			"@worker/*": ["core/pyodide/*"],
+			"@config/*": ["lib/config/*"]
 		}
 	},
 	"include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],

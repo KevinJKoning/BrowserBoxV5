@@ -12,7 +12,7 @@
 	// PyodideManager removed - using simplified system
 	// import { PyodideManager, type PyodideInitializationStatus } from "../pyodide/pyodide-manager.js";
 	import { onMount } from 'svelte';
-	import type { SchemaExpectation, SchemaValidationResult } from "../../../lib/config/schema-config.js";
+	import type { SchemaExpectation, SchemaValidationResult } from "@config/schema-config.js";
 	import { checkSchemaDependencies } from "../../../lib/utils/dependencies.js";
 	import { getValidationStatusIcon, getValidationStatusClass } from "../../../lib/utils/status.js";
 

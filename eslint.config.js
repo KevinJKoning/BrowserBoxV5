@@ -69,6 +69,16 @@ export default ts.config(
 			'@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
 			// Allow empty interfaces only when extending something else (already covered by rule) – keep default
 			'@typescript-eslint/no-empty-object-type': ['error', { allowInterfaces: 'with-single-extends' }],
+			// Enforce use of path aliases instead of deep relative traversal into config/core domains
+			'no-restricted-imports': ['error', {
+				patterns: [
+					'../**/lib/config/*',
+					'../../lib/config/*',
+					'../../../lib/config/*',
+					'../../core/state/*',
+					'../../../core/state/*'
+				]
+			}]
 			// Svelte specifics already covered by plugin; we can tighten keys requirement (already default) if needed
 		}
 	},

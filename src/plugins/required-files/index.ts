@@ -3,7 +3,7 @@
  */
 
 import DatabaseIcon from "@lucide/svelte/icons/database";
-import type { PluginDefinition } from "../../core/state/plugin-registry.js";
+import type { PluginDefinition } from "@core/state/plugin-registry";
 
 export default {
   id: "required-files",

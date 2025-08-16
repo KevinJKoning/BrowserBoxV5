@@ -26,7 +26,8 @@ export default defineConfig(({ command, mode }) => ({
 			'@utils': '/src/lib/utils',
 			'@ui': '/src/lib/components/ui',
 			'@plugins': '/src/plugins',
-			'@worker': '/src/core/pyodide'
+			'@worker': '/src/core/pyodide',
+			'@config': '/src/lib/config'
 		}
 	},
 	plugins: [

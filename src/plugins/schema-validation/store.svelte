@@ -1,7 +1,7 @@
 <script module lang="ts">
-  import { pythonExecutor } from '@worker/executor.ts';
-  import { schemaValidations, type SchemaValidationExecution, type SchemaValidationResult } from '../../lib/config/schema-config.js';
-  import { select, clearOtherSelections, getSelection } from '../../core/state/workspace.svelte';
+  import { pythonExecutor } from '@worker/executor';
+  import { schemaValidations, type SchemaValidationExecution, type SchemaValidationResult } from '@config/schema-config.js';
+  import { select, clearOtherSelections, getSelection } from '@core/state/workspace.svelte';
   export const availableSchemas = $state(schemaValidations);
   export const executions = $state<Record<string, SchemaValidationExecution>>({});
   export function getExecutionsList(){ return Object.values(executions); }

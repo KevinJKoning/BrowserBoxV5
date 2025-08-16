@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import { fileRequirements, type FileRequirement, type UploadedFile } from '../../lib/config/file-config.js';
+  import { fileRequirements, type FileRequirement, type UploadedFile } from '@config/file-config.js';
   import { formatFileSize } from '@utils/formatting.ts';
   import { select, clearOtherSelections } from '@core/state/workspace.svelte';
 

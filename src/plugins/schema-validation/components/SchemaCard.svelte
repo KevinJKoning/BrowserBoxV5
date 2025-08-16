@@ -8,8 +8,8 @@
 	import ShieldCheckIcon from "@lucide/svelte/icons/shield-check";
 	import XCircleIcon from "@lucide/svelte/icons/x-circle";
 	import AlertTriangleIcon from "@lucide/svelte/icons/alert-triangle";
-	import { fileRequirements } from "../../../lib/config/file-config.js";
-	import { schemaValidations } from "../../../lib/config/schema-config.js";
+	import { fileRequirements } from "@config/file-config.js";
+	import { schemaValidations } from "@config/schema-config.js";
 
 	interface Props {
 		/** Unique identifier for the schema validation */

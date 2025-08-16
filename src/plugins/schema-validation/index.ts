@@ -3,7 +3,7 @@
  */
 
 import ShieldCheckIcon from "@lucide/svelte/icons/shield-check";
-import type { PluginDefinition } from "../../core/state/plugin-registry.js";
+import type { PluginDefinition } from "@core/state/plugin-registry";
 
 export default {
   id: "schema-validation",

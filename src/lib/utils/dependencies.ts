@@ -3,9 +3,9 @@
  * Dependency graph, ordering, and checking logic
  */
 
-import { scripts } from "../config/script-config.js";
-import { schemaValidations } from "../config/schema-config.js";
-import { fileRequirements } from "../config/file-config.js";
+import { scripts } from "@config/script-config.js";
+import { schemaValidations } from "@config/schema-config.js";
+import { fileRequirements } from "@config/file-config.js";
 import { getUploadStateStrict } from "../../plugins/required-files/store.svelte";
 
 // Interface for dependency information
