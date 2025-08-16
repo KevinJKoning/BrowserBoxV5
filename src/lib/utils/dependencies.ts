@@ -3,10 +3,19 @@
  * Dependency graph, ordering, and checking logic
  */
 
-import { scripts } from "@config/script-config.js";
-import { schemaValidations } from "@config/schema-config.js";
-import { fileRequirements } from "@config/file-config.js";
-import { getUploadStateStrict } from "../../plugins/required-files/store.svelte";
+// NOTE: We intentionally use the dynamic plugin stores instead of the static
+// config module exports so that runtime-loaded configuration packages are
+// reflected in dependency checking. The previous implementation imported
+// the static config arrays which are never updated after initial load,
+// causing newly loaded package entities to appear to have no dependencies
+// (script/schema not found => "allMet: true") and thus incorrectly display
+// a Ready status.
+import { availableScripts } from "../../plugins/scripts/store.svelte";
+import { availableSchemas } from "../../plugins/schema-validation/store.svelte";
+import { activeFileRequirements, getUploadStateStrict } from "../../plugins/required-files/store.svelte";
+import type { Script } from "@config/script-config.js";
+import type { SchemaValidation } from "@config/schema-config.js";
+import type { FileRequirement } from "@config/file-config.js";
 
 // Interface for dependency information
 export interface DependencyInfo {
@@ -28,36 +37,49 @@ export interface DependencyStatus {
  * Check script dependencies
  */
 export function checkScriptDependencies(scriptId: string): DependencyStatus {
-  const script = scripts.find(s => s.id === scriptId);
-  if (!script || !script.dependencies || script.dependencies.length === 0) {
+  // Find the script in the dynamic store
+  const script: Script | undefined = availableScripts.find(s => s.id === scriptId);
+  if (!script) {
+    // Unknown script; treat as having unmet dependencies to avoid false Ready state
+    return { allMet: false, dependencies: [] };
+  }
+  if (!script.dependencies || script.dependencies.length === 0) {
     return { allMet: true, dependencies: [] };
   }
 
   const dependencies: DependencyInfo[] = [];
-  
-  // Process each dependency in the array
+
   for (const dependency of script.dependencies) {
     if (dependency.type === 'uploaded') {
-      const requirement = fileRequirements.find(r => r.id === dependency.sourceId);
+      const requirement: FileRequirement | undefined = activeFileRequirements.find(r => r.id === dependency.sourceId);
       if (requirement) {
-  const uploadState = getUploadStateStrict(requirement.id);
+        const uploadState = getUploadStateStrict(requirement.id);
         dependencies.push({
           id: requirement.id,
           type: 'uploaded',
           filename: requirement.defaultFilename,
-          title: requirement.title,
+            title: requirement.title,
           description: requirement.description,
           isAvailable: uploadState === 'completed'
         });
+      } else {
+        // Requirement referenced but not present in current config
+        dependencies.push({
+          id: dependency.sourceId,
+          type: 'uploaded',
+          filename: dependency.sourceId,
+          title: `Missing requirement: ${dependency.sourceId}`,
+          isAvailable: false
+        });
       }
     } else if (dependency.type === 'result') {
-      // TODO: Check results plugin store when available
+      // Future: integrate results plugin
       dependencies.push({
         id: dependency.sourceId,
         type: 'result',
         filename: dependency.sourceId,
         title: `Result: ${dependency.sourceId}`,
-        isAvailable: false // Results plugin not implemented yet
+        isAvailable: false
       });
     }
   }
@@ -70,19 +92,21 @@ export function checkScriptDependencies(scriptId: string): DependencyStatus {
  * Check schema validation dependencies
  */
 export function checkSchemaDependencies(schemaId: string): DependencyStatus {
-  const schema = schemaValidations.find(s => s.id === schemaId);
-  if (!schema || !schema.dependencies || schema.dependencies.length === 0) {
+  const schema: SchemaValidation | undefined = availableSchemas.find(s => s.id === schemaId);
+  if (!schema) {
+    return { allMet: false, dependencies: [] };
+  }
+  if (!schema.dependencies || schema.dependencies.length === 0) {
     return { allMet: true, dependencies: [] };
   }
 
   const dependencies: DependencyInfo[] = [];
-  
-  // Process each dependency in the array
+
   for (const dependency of schema.dependencies) {
     if (dependency.type === 'uploaded') {
-      const requirement = fileRequirements.find(r => r.id === dependency.sourceId);
+      const requirement: FileRequirement | undefined = activeFileRequirements.find(r => r.id === dependency.sourceId);
       if (requirement) {
-  const uploadState = getUploadStateStrict(requirement.id);
+        const uploadState = getUploadStateStrict(requirement.id);
         dependencies.push({
           id: requirement.id,
           type: 'uploaded',
@@ -91,9 +115,16 @@ export function checkSchemaDependencies(schemaId: string): DependencyStatus {
           description: requirement.description,
           isAvailable: uploadState === 'completed'
         });
+      } else {
+        dependencies.push({
+          id: dependency.sourceId,
+          type: 'uploaded',
+          filename: dependency.sourceId,
+          title: `Missing requirement: ${dependency.sourceId}`,
+          isAvailable: false
+        });
       }
     }
-    // Note: Schema validations currently only support 'uploaded' dependencies
   }
 
   const allMet = dependencies.every(dep => dep.isAvailable);

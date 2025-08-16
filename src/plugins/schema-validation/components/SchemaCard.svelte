@@ -8,8 +8,10 @@
 	import ShieldCheckIcon from "@lucide/svelte/icons/shield-check";
 	import XCircleIcon from "@lucide/svelte/icons/x-circle";
 	import AlertTriangleIcon from "@lucide/svelte/icons/alert-triangle";
-	import { fileRequirements } from "@config/file-config.js";
-	import { schemaValidations } from "@config/schema-config.js";
+	// Use dynamic plugin stores instead of static config exports so that
+	// runtime-loaded configuration packages update the dependency display.
+	import { activeFileRequirements } from "../../required-files/store.svelte";
+	import { availableSchemas } from "../store.svelte";
 
 	interface Props {
 		/** Unique identifier for the schema validation */
@@ -87,18 +89,14 @@
 
 	// Find the target file for this schema validation
 	const targetFile = $derived.by(() => {
-		const schemaValidation = schemaValidations.find(s => s.id === id);
-		if (!schemaValidation?.dependencies?.[0]) {
-			return filename; // fallback to validation script filename
-		}
-		
+		const schemaValidation = availableSchemas.find(s => s.id === id);
+		if (!schemaValidation?.dependencies?.[0]) return filename;
 		const dependency = schemaValidation.dependencies[0];
 		if (dependency.type === 'uploaded') {
-			const fileReq = fileRequirements.find(req => req.id === dependency.sourceId);
+			const fileReq = activeFileRequirements.find(req => req.id === dependency.sourceId);
 			return fileReq?.defaultFilename || filename;
 		}
-		
-		return filename; // fallback
+		return filename;
 	});
 </script>
 
