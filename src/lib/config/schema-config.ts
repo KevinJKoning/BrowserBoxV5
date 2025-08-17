@@ -1,140 +1,140 @@
 /**
- * @deprecated This static config file will be replaced by runtime config loading
- * TODO: Move to external config packages loaded via src/core/config-runtime/loader.ts
- * 
- * Schema validation configuration and management
+ * Schema validation configuration using two-path approach:
+ * 1. JavaScript validation for simple files (CSV, JSON, basic Parquet)
+ * 2. Python validation for complex files (GeoPackage, advanced business logic)
  */
-export interface SchemaColumnExpectation {
-	/** Expected data type for the column */
-	type: 'int64' | 'float64' | 'string' | 'datetime' | 'boolean';
-	/** Whether this column is required to exist */
-	required: boolean;
-	/** Minimum value for numeric columns */
-	min_value?: number;
-	/** Maximum value for numeric columns */
-	max_value?: number;
-	/** Allowed categorical values for string columns */
-	allowed_values?: string[];
-	/** Maximum number of unique categorical values */
-	max_categories?: number;
-	/** Whether null/NA values are allowed */
-	null_allowed?: boolean;
-	/** Human-readable description of this column */
-	description?: string;
+
+// JavaScript validation interfaces
+export interface JavaScriptValidationRules {
+  /** Column names that must be present in the data */
+  requiredColumns?: string[];
+  /** Expected data types for columns */
+  columnTypes?: Record<string, 'string' | 'number' | 'boolean' | 'date'>;
+  /** Validation constraints for specific columns */
+  constraints?: Record<string, {
+    min?: number;
+    max?: number;
+    pattern?: string;
+    allowedValues?: (string | number)[];
+    notNull?: boolean;
+  }>;
+  /** Row count constraints */
+  rowCount?: {
+    min?: number;
+    max?: number;
+  };
 }
 
-export interface SchemaExpectation {
-	/** Column-specific expectations */
-	columns: {
-		[columnName: string]: SchemaColumnExpectation;
-	};
-	/** Expected row count constraints */
-	expected_row_count?: {
-		min?: number;
-		max?: number;
-	};
-	/** Human-readable description of the overall schema */
-	description: string;
+export interface JavaScriptValidation {
+  id: string;
+  title: string;
+  description: string;
+  validationType: 'javascript';
+  targetFileId: string;
+  category?: string;
+  tags?: string[];
+  validationRules: JavaScriptValidationRules;
 }
 
-export interface SchemaValidationCheck {
-	/** Type of check performed */
-	check: 'data_type' | 'min_value' | 'max_value' | 'allowed_values' | 'null_values' | 'row_count' | 'column_exists';
-	/** Status of this specific check */
-	status: 'pass' | 'fail' | 'warning';
-	/** Human-readable message about the check result */
-	message?: string;
-	/** Expected value for comparison checks */
-	expected?: unknown;
-	/** Actual value found */
-	actual?: unknown;
-	/** List of violations for categorical/list checks */
-	violations?: string[];
+// Python validation interfaces
+export interface PythonValidation {
+  id: string;
+  title: string;
+  description: string;
+  validationType: 'python';
+  targetFileId: string;
+  category?: string;
+  tags?: string[];
+  /** Python validation script filename */
+  filename: string;
+  /** Expected HTML report filename */
+  outputHtml: string;
 }
 
-export interface SchemaColumnValidation {
-	/** Name of the column being validated */
-	column_name: string;
-	/** Expected data type */
-	expected_type?: string;
-	/** Actual data type found */
-	actual_type?: string;
-	/** Overall status for this column */
-	status: 'pass' | 'fail' | 'warning';
-	/** Detailed check results */
-	checks: SchemaValidationCheck[];
+// Union type for all schema validations
+export type SchemaValidation = JavaScriptValidation | PythonValidation;
+
+// JavaScript validation result interfaces
+export interface JavaScriptValidationError {
+  column?: string;
+  row?: number;
+  message: string;
+  value?: unknown;
+  constraint?: string;
 }
 
-export interface SchemaValidationResult {
-	/** Overall validation status */
-	overall_status: 'pass' | 'fail' | 'warning';
-	/** Per-column validation results */
-	column_validations: SchemaColumnValidation[];
-	/** Summary statistics */
-	summary: {
-		total_checks: number;
-		passed: number;
-		failed: number;
-		warnings: number;
-	};
-	/** Timestamp of validation */
-	validation_timestamp?: string;
-	/** Additional metadata */
-	metadata?: {
-		total_rows?: number;
-		total_columns?: number;
-		file_size?: number;
-		[key: string]: unknown;
-	};
+export interface JavaScriptValidationResult {
+  success: boolean;
+  errors: JavaScriptValidationError[];
+  warnings: JavaScriptValidationError[];
+  summary: {
+    totalRows: number;
+    totalColumns: number;
+    validRows: number;
+    errorCount: number;
+    warningCount: number;
+  };
+  timestamp: string;
 }
 
-export interface SchemaDependency {
-	/** Source type - uploaded file requirement */
-	type: 'uploaded';
-	/** ID of the file requirement */
-	sourceId: string;
-}
-
-export interface SchemaValidation {
-	id: string;
-	title: string;
-	description: string;
-	filename: string;
-	/** Schema expectations metadata */
-	expectations: SchemaExpectation;
-	/** Python validation script content */
-	content: string;
-	category?: string;
-	/** Files that should be validated */
-	dependencies?: SchemaDependency[];
-}
-
+// Execution tracking interfaces
 export interface SchemaValidationExecution {
-	id: string;
-	schemaId: string;
-	status: "ready" | "running" | "completed" | "error";
-	executionTime?: string;
-	lastRun?: string;
-	/** Raw JSON output from Python validation script */
-	output?: string;
-	/** Parsed validation results */
-	results?: SchemaValidationResult;
-	/** Error message if validation failed */
-	error?: string;
-	metrics?: {
-		outputLines?: number;
-		errorCount?: number;
-		memoryUsage?: string;
-		[key: string]: unknown;
-	};
+  id: string;
+  schemaId: string;
+  status: 'ready' | 'running' | 'completed' | 'error';
+  executionTime?: string;
+  lastRun?: string;
+  error?: string;
+  // For JavaScript validations
+  jsResult?: JavaScriptValidationResult;
+  // For Python validations - just track that HTML was generated
+  htmlGenerated?: boolean;
+  htmlPath?: string;
 }
 
-// Import all individual schema validations
-import { randomDataSchema } from './schema/random-data-schema';
-import { sampleDataSchema } from './schema/sample-data-schema';
-
-// Schema validations for the application
+// Static schema validations (will be replaced by runtime loading)
 export const schemaValidations: SchemaValidation[] = [
-	randomDataSchema,
-	sampleDataSchema
+  // Example JavaScript validation
+  {
+    id: 'sample-data-js-validation',
+    title: 'Sample Data Basic Validation',
+    description: 'Basic JavaScript validation for sample CSV data structure and content',
+    validationType: 'javascript',
+    targetFileId: 'identity',
+    category: 'validation',
+    tags: ['sample', 'csv', 'basic'],
+    validationRules: {
+      requiredColumns: ['id', 'name'],
+      columnTypes: {
+        id: 'number',
+        name: 'string'
+      },
+      constraints: {
+        id: {
+          min: 1,
+          notNull: true
+        },
+        name: {
+          notNull: true,
+          pattern: '^[A-Za-z\\s]+$'
+        }
+      },
+      rowCount: {
+        min: 1,
+        max: 100000
+      }
+    }
+  },
+  // Example Python validation  
+  {
+    id: 'random-data-python-validation',
+    title: 'Random Data Advanced Validation',
+    description: 'Advanced Python validation for random data with statistical analysis',
+    validationType: 'python',
+    targetFileId: 'random_data',
+    category: 'quality',
+    tags: ['random', 'parquet', 'advanced'],
+    filename: 'random_data_validation.py',
+    outputHtml: 'random_data_report.html'
+  }
 ];

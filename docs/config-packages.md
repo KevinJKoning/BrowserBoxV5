@@ -328,26 +328,64 @@ if __name__ == "__main__":
 
 ## Schema Validations (schemas/)
 
-Schema validations check data quality, structure, and business rules.
+Schema validations use a two-path approach for different validation needs:
+
+1. **JavaScript Validation**: Fast client-side validation for simple files (CSV, JSON)
+2. **Python Validation**: Advanced validation with detailed HTML reports for complex analysis
 
 ### Metadata Format (schemas/metadata.json)
 
+The schema uses a discriminated union based on `validationType`:
+
+#### JavaScript Validation Example
 ```json
-[
-  {
-    "id": "validation_id",
-    "title": "Validation Name",
-    "description": "What this validation checks",
-    "filename": "validation_script.py",
-    "category": "validation",
-    "dependencies": [],
-    "expectations": {
-      "description": "Expected data characteristics",
-      "columns": {},
-      "expected_row_count": {"min": 1, "max": 1000000}
+{
+  "id": "customer-data-validation",
+  "title": "Customer Data Validation",
+  "description": "Validate customer CSV structure and basic data quality",
+  "validationType": "javascript",
+  "targetFileId": "customer_data",
+  "category": "validation",
+  "tags": ["customer", "csv", "basic"],
+  "validationRules": {
+    "requiredColumns": ["customer_id", "name", "email"],
+    "columnTypes": {
+      "customer_id": "string",
+      "name": "string",
+      "email": "string",
+      "age": "number"
+    },
+    "constraints": {
+      "email": {
+        "pattern": "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$",
+        "notNull": true
+      },
+      "age": {
+        "min": 0,
+        "max": 120
+      }
+    },
+    "rowCount": {
+      "min": 1,
+      "max": 100000
     }
   }
-]
+}
+```
+
+#### Python Validation Example  
+```json
+{
+  "id": "geopackage-validation",
+  "title": "GeoPackage Spatial Validation",
+  "description": "Comprehensive validation of GeoPackage structure and spatial data integrity",
+  "validationType": "python",
+  "targetFileId": "spatial_data",
+  "category": "quality",
+  "tags": ["geopackage", "spatial", "advanced"],
+  "filename": "geopackage_validation.py",
+  "outputHtml": "geopackage_validation_report.html"
+}
 ```
 
 ### Validation Script Template

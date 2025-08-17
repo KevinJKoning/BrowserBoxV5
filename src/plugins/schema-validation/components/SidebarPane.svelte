@@ -10,7 +10,6 @@
     selectSchema, 
     getExecution, 
     getExecutionStatus, 
-    getValidationResults, 
     isSchemaSelected 
   } from "../store.svelte";
 

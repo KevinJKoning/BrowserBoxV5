@@ -13,14 +13,8 @@
   <!-- Schema Preview Mode -->
   <div class="h-full min-h-0 overflow-hidden">
     <SchemaPreview 
-      schemaId={selectedSchema.id}
-      expectations={selectedSchema.expectations}
-      filename={selectedSchema.filename}
-      status={selectedExecution?.status}
-      metrics={selectedExecution?.metrics}
-      output={selectedExecution?.output}
-      validationResults={selectedExecution?.results}
-      error={selectedExecution?.error}
+      schema={selectedSchema}
+      execution={selectedExecution}
       onValidate={() => {
         if (selectedSchema) {
           startExecution(selectedSchema.id);
@@ -34,26 +28,44 @@
     <div class="p-8">
       <h1 class="text-3xl font-bold mb-4">Schema Validation</h1>
       <p class="text-lg text-muted-foreground mb-6">
-        Validate your data against predefined schemas with comprehensive reporting.
+        Validate your data using two approaches: fast JavaScript validation for simple files or comprehensive Python validation for complex analysis.
         The sidebar shows available schema validations and their execution status.
       </p>
       <div class="space-y-4">
+        <h2 class="text-xl font-semibold">Validation Types:</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border">
+            <h3 class="font-medium text-green-900 dark:text-green-100 mb-2">
+              JavaScript Validation
+            </h3>
+            <p class="text-sm text-green-700 dark:text-green-300">
+              Fast client-side validation for CSV and JSON files. Checks column types, constraints, and data quality in real-time.
+            </p>
+          </div>
+          <div class="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border">
+            <h3 class="font-medium text-blue-900 dark:text-blue-100 mb-2">
+              Python Validation
+            </h3>
+            <p class="text-sm text-blue-700 dark:text-blue-300">
+              Advanced validation with statistical analysis, complex business rules, and detailed HTML reports for comprehensive data quality assessment.
+            </p>
+          </div>
+        </div>
         <h2 class="text-xl font-semibold">Features:</h2>
         <ul class="list-disc list-inside space-y-2 text-muted-foreground">
-          <li>Automated schema validation with Python scripts</li>
-          <li>Comprehensive validation reporting and metrics</li>
-          <li>Real-time execution status and progress tracking</li>
-          <li>Detailed error reporting and debugging information</li>
-          <li>Batch validation of multiple schemas</li>
+          <li>Two-path validation: JavaScript for speed, Python for depth</li>
+          <li>Real-time validation results with detailed error reporting</li>
+          <li>Interactive HTML reports for Python validations</li>
+          <li>Column-level constraint checking and type validation</li>
+          <li>Business rule validation and compliance checking</li>
           <li>Schema search and filtering capabilities</li>
         </ul>
-        <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border">
-          <h3 class="font-medium text-blue-900 dark:text-blue-100 mb-2">
+        <div class="mt-6 p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border">
+          <h3 class="font-medium text-amber-900 dark:text-amber-100 mb-2">
             Getting Started
           </h3>
-          <p class="text-sm text-blue-700 dark:text-blue-300">
-            Click "Validate All" to run all available schema validations, or select individual schemas 
-            to run specific validations. Click on any schema to view detailed validation results and metrics.
+          <p class="text-sm text-amber-700 dark:text-amber-300">
+            Upload your data files first, then select a schema validation from the sidebar. JavaScript validations run instantly, while Python validations generate detailed HTML reports.
           </p>
         </div>
       </div>

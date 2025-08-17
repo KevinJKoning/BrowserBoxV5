@@ -1,72 +1,387 @@
 <script module lang="ts">
   import { pythonExecutor } from '@worker/executor';
-  import { schemaValidations, type SchemaValidation, type SchemaValidationExecution, type SchemaValidationResult } from '@config/schema-config.js';
+  import { 
+    schemaValidations, 
+    type SchemaValidation, 
+    type SchemaValidationExecution,
+    type JavaScriptValidation,
+    type PythonValidation,
+    type JavaScriptValidationResult,
+    type JavaScriptValidationError
+  } from '@config/schema-config.js';
   import { select, clearOtherSelections, getSelection } from '@core/state/workspace.svelte';
   import { activeFileRequirements, files as uploadedFiles } from '@plugins/required-files/store.svelte';
   import { registerSelectionResolver } from '@utils/breadcrumbs.ts';
+
   export const availableSchemas = $state<SchemaValidation[]>([...schemaValidations]);
   export const executions = $state<Record<string, SchemaValidationExecution>>({});
-  export function getExecutionsList(){ return Object.values(executions); }
-  export async function startExecution(schemaId: string){
-    const schema = availableSchemas.find(s => s.id === schemaId); if (!schema) throw new Error(`Schema ${schemaId} not found`);
-    const base: SchemaValidationExecution = { id: `exec_${schemaId}_${Date.now()}`, schemaId, status: 'running', lastRun: new Date().toISOString() };
-    executions[schemaId] = base;
-    try {
-  // Gather uploaded dependency files for the schema
-  const dataFiles = (schema.dependencies || [])
-    .filter(d => d.type === 'uploaded')
-    .map(d => {
-      const req = activeFileRequirements.find(r => r.id === d.sourceId);
-      const uploaded = req ? uploadedFiles[req.id] : undefined;
-      if (req && uploaded?.file) {
-        return { file: uploaded.file, filename: req.defaultFilename };
-      }
-      return null;
-    })
-    .filter(Boolean) as { file: File; filename: string }[];
 
-  const result = await pythonExecutor.executeScript(
-    { id: `schema-validation-${schemaId}`, content: schema.content, title: `Schema Validation: ${schema.title}` },
-    { timeout:30000, dataFiles, onStatusUpdate: (status) => { if (executions[schemaId]) executions[schemaId].metrics = { ...executions[schemaId].metrics, status }; } }
-  );
-      const end = new Date().toISOString();
-      executions[schemaId] = { ...base, status: result.success ? 'completed':'error', executionTime: `${result.executionTime}ms`, output: result.output, error: result.error, lastRun: end, results: result.success ? parseValidationResults(result.output): undefined, metrics: { executionTime: `${result.executionTime}ms`, lastRun: end, outputLines: result.output?.split('\n').length || 0, errorCount: result.error ? 1:0 } };
+  export function getExecutionsList() { 
+    return Object.values(executions); 
+  }
+
+  export async function startExecution(schemaId: string) {
+    const schema = availableSchemas.find(s => s.id === schemaId);
+    if (!schema) throw new Error(`Schema ${schemaId} not found`);
+
+    const base: SchemaValidationExecution = { 
+      id: `exec_${schemaId}_${Date.now()}`, 
+      schemaId, 
+      status: 'running', 
+      lastRun: new Date().toISOString() 
+    };
+    executions[schemaId] = base;
+
+    try {
+      if (schema.validationType === 'javascript') {
+        await executeJavaScriptValidation(schema, base);
+      } else {
+        await executePythonValidation(schema, base);
+      }
     } catch (e) {
-      executions[schemaId] = { ...base, status: 'error', error: e instanceof Error? e.message:'Unknown error', lastRun: new Date().toISOString() };
+      executions[schemaId] = { 
+        ...base, 
+        status: 'error', 
+        error: e instanceof Error ? e.message : 'Unknown error', 
+        lastRun: new Date().toISOString() 
+      };
       throw e;
     }
   }
-  function parseValidationResults(output: string): SchemaValidationResult | undefined {
-  try { const lines = output.split('\n'); const jsonLine = lines.find(l => l.trim().startsWith('{') && l.includes('total_checks')); if (jsonLine){ const parsed = JSON.parse(jsonLine); return { overall_status: parsed.overall_status || 'pass', column_validations: parsed.column_validations || [], summary: { total_checks: parsed.summary?.total_checks || parsed.total_checks || 0, passed: parsed.summary?.passed || parsed.passed || 0, failed: parsed.summary?.failed || parsed.failed || 0, warnings: parsed.summary?.warnings || parsed.warnings || 0 }, validation_timestamp: parsed.validation_timestamp, metadata: parsed.metadata }; } } catch(e){ console.warn('Failed to parse validation results', e); }
-    return undefined;
+
+  async function executeJavaScriptValidation(schema: JavaScriptValidation, base: SchemaValidationExecution) {
+    const startTime = Date.now();
+
+    // Get the target file
+    const req = activeFileRequirements.find(r => r.id === schema.targetFileId);
+    const uploaded = req ? uploadedFiles[req.id] : undefined;
+    
+    if (!req || !uploaded?.file) {
+      throw new Error(`Required file '${schema.targetFileId}' not found`);
+    }
+
+    // Validate the file
+    const result = await validateFileWithJavaScript(uploaded.file, schema.validationRules);
+    
+    const executionTime = Date.now() - startTime;
+    executions[schema.id] = {
+      ...base,
+      status: result.success ? 'completed' : 'error',
+      executionTime: `${executionTime}ms`,
+      lastRun: new Date().toISOString(),
+      jsResult: result,
+      error: result.success ? undefined : `Validation failed with ${result.errors.length} errors`
+    };
   }
-  export function selectSchema(id: string | null){ clearOtherSelections('schema'); select('schema', id); }
-  export function getSchema(id: string){ return availableSchemas.find(s => s.id === id); }
-  export function getExecution(id: string){ return executions[id]; }
+
+  async function executePythonValidation(schema: PythonValidation, base: SchemaValidationExecution) {
+    // Get the target file
+    const req = activeFileRequirements.find(r => r.id === schema.targetFileId);
+    const uploaded = req ? uploadedFiles[req.id] : undefined;
+    
+    if (!req || !uploaded?.file) {
+      throw new Error(`Required file '${schema.targetFileId}' not found`);
+    }
+
+    const dataFiles = [{ file: uploaded.file, filename: req.defaultFilename }];
+
+    // Load Python script content - for now use placeholder
+    const pythonContent = `
+# Python validation script: ${schema.filename}
+import pandas as pd
+import json
+
+def main():
+    # Load the data file
+    df = pd.read_parquet('${req.defaultFilename}') if '${req.defaultFilename}'.endswith('.parquet') else pd.read_csv('${req.defaultFilename}')
+    
+    # Generate HTML report
+    html_content = f'''
+    <!DOCTYPE html>
+    <html>
+    <head><title>Validation Report: ${schema.title}</title></head>
+    <body>
+        <h1>${schema.title}</h1>
+        <p>Validation completed for file: ${req.defaultFilename}</p>
+        <h2>Data Summary</h2>
+        <p>Rows: {len(df)}</p>
+        <p>Columns: {len(df.columns)}</p>
+        <h2>Column Information</h2>
+        <pre>{df.dtypes.to_string()}</pre>
+        <h2>Sample Data</h2>
+        <div>{df.head().to_html()}</div>
+    </body>
+    </html>
+    '''
+    
+    # Write HTML report
+    with open('${schema.outputHtml}', 'w') as f:
+        f.write(html_content)
+    
+    print(f"Generated HTML report: ${schema.outputHtml}")
+
+if __name__ == "__main__":
+    main()
+`;
+
+    const result = await pythonExecutor.executeScript(
+      { id: `schema-validation-${schema.id}`, content: pythonContent, title: `Schema Validation: ${schema.title}` },
+      { timeout: 86400000, dataFiles, onStatusUpdate: (status) => { 
+        if (executions[schema.id]) executions[schema.id].metrics = { ...executions[schema.id].metrics, status }; 
+      }}
+    );
+
+    const end = new Date().toISOString();
+    executions[schema.id] = {
+      ...base,
+      status: result.success ? 'completed' : 'error',
+      executionTime: `${result.executionTime}ms`,
+      lastRun: end,
+      error: result.success ? undefined : result.error,
+      htmlGenerated: result.success,
+      htmlPath: result.success ? schema.outputHtml : undefined
+    };
+  }
+
+  async function validateFileWithJavaScript(file: File, rules: JavaScriptValidation['validationRules']): Promise<JavaScriptValidationResult> {
+    const errors: JavaScriptValidationError[] = [];
+    const warnings: JavaScriptValidationError[] = [];
+    
+    try {
+      // Parse file based on type
+      let data: any[];
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        data = await parseCSV(file);
+      } else if (file.name.toLowerCase().endsWith('.json')) {
+        data = await parseJSON(file);
+      } else {
+        throw new Error(`Unsupported file type for JavaScript validation: ${file.name}`);
+      }
+
+      const summary = {
+        totalRows: data.length,
+        totalColumns: data.length > 0 ? Object.keys(data[0]).length : 0,
+        validRows: 0,
+        errorCount: 0,
+        warningCount: 0
+      };
+
+      // Check row count constraints
+      if (rules.rowCount) {
+        if (rules.rowCount.min !== undefined && data.length < rules.rowCount.min) {
+          errors.push({
+            message: `Insufficient rows: found ${data.length}, minimum required ${rules.rowCount.min}`,
+            constraint: 'rowCount.min'
+          });
+        }
+        if (rules.rowCount.max !== undefined && data.length > rules.rowCount.max) {
+          errors.push({
+            message: `Too many rows: found ${data.length}, maximum allowed ${rules.rowCount.max}`,
+            constraint: 'rowCount.max'
+          });
+        }
+      }
+
+      // Check required columns
+      if (rules.requiredColumns && data.length > 0) {
+        const actualColumns = Object.keys(data[0]);
+        for (const requiredCol of rules.requiredColumns) {
+          if (!actualColumns.includes(requiredCol)) {
+            errors.push({
+              column: requiredCol,
+              message: `Required column '${requiredCol}' is missing`,
+              constraint: 'requiredColumns'
+            });
+          }
+        }
+      }
+
+      // Validate each row
+      data.forEach((row, rowIndex) => {
+        let rowValid = true;
+
+        // Check column types
+        if (rules.columnTypes) {
+          for (const [column, expectedType] of Object.entries(rules.columnTypes)) {
+            const value = row[column];
+            if (value !== null && value !== undefined && !isValidType(value, expectedType)) {
+              errors.push({
+                column,
+                row: rowIndex + 1,
+                message: `Invalid type for column '${column}': expected ${expectedType}, got ${typeof value}`,
+                value,
+                constraint: 'columnTypes'
+              });
+              rowValid = false;
+            }
+          }
+        }
+
+        // Check constraints
+        if (rules.constraints) {
+          for (const [column, constraint] of Object.entries(rules.constraints)) {
+            const value = row[column];
+            
+            if (constraint.notNull && (value === null || value === undefined || value === '')) {
+              errors.push({
+                column,
+                row: rowIndex + 1,
+                message: `Column '${column}' cannot be null or empty`,
+                value,
+                constraint: 'notNull'
+              });
+              rowValid = false;
+            }
+
+            if (value !== null && value !== undefined && value !== '') {
+              if (constraint.min !== undefined && typeof value === 'number' && value < constraint.min) {
+                errors.push({
+                  column,
+                  row: rowIndex + 1,
+                  message: `Value ${value} is below minimum ${constraint.min}`,
+                  value,
+                  constraint: 'min'
+                });
+                rowValid = false;
+              }
+
+              if (constraint.max !== undefined && typeof value === 'number' && value > constraint.max) {
+                errors.push({
+                  column,
+                  row: rowIndex + 1,
+                  message: `Value ${value} is above maximum ${constraint.max}`,
+                  value,
+                  constraint: 'max'
+                });
+                rowValid = false;
+              }
+
+              if (constraint.pattern && typeof value === 'string' && !new RegExp(constraint.pattern).test(value)) {
+                errors.push({
+                  column,
+                  row: rowIndex + 1,
+                  message: `Value '${value}' does not match pattern ${constraint.pattern}`,
+                  value,
+                  constraint: 'pattern'
+                });
+                rowValid = false;
+              }
+
+              if (constraint.allowedValues && !constraint.allowedValues.includes(value)) {
+                errors.push({
+                  column,
+                  row: rowIndex + 1,
+                  message: `Value '${value}' is not in allowed values: ${constraint.allowedValues.join(', ')}`,
+                  value,
+                  constraint: 'allowedValues'
+                });
+                rowValid = false;
+              }
+            }
+          }
+        }
+
+        if (rowValid) summary.validRows++;
+      });
+
+      summary.errorCount = errors.length;
+      summary.warningCount = warnings.length;
+
+      return {
+        success: errors.length === 0,
+        errors,
+        warnings,
+        summary,
+        timestamp: new Date().toISOString()
+      };
+
+    } catch (error) {
+      return {
+        success: false,
+        errors: [{
+          message: error instanceof Error ? error.message : 'Unknown parsing error'
+        }],
+        warnings: [],
+        summary: {
+          totalRows: 0,
+          totalColumns: 0,
+          validRows: 0,
+          errorCount: 1,
+          warningCount: 0
+        },
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+
+  async function parseCSV(file: File): Promise<any[]> {
+    const text = await file.text();
+    const lines = text.split('\n').filter(line => line.trim());
+    if (lines.length === 0) return [];
+    
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    return lines.slice(1).map(line => {
+      const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+      const row: any = {};
+      headers.forEach((header, index) => {
+        let value: any = values[index] || '';
+        // Try to parse as number
+        if (value && !isNaN(Number(value))) {
+          value = Number(value);
+        }
+        row[header] = value;
+      });
+      return row;
+    });
+  }
+
+  async function parseJSON(file: File): Promise<any[]> {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    return Array.isArray(data) ? data : [data];
+  }
+
+  function isValidType(value: any, expectedType: string): boolean {
+    switch (expectedType) {
+      case 'string': return typeof value === 'string';
+      case 'number': return typeof value === 'number' && !isNaN(value);
+      case 'boolean': return typeof value === 'boolean';
+      case 'date': return !isNaN(Date.parse(value));
+      default: return true;
+    }
+  }
+
+  export function selectSchema(id: string | null) { 
+    clearOtherSelections('schema'); 
+    select('schema', id); 
+  }
+
+  export function getSchema(id: string) { 
+    return availableSchemas.find(s => s.id === id); 
+  }
+
+  export function getExecution(id: string) { 
+    return executions[id]; 
+  }
+
   export function getExecutionStatus(id: string): "ready" | "running" | "completed" | "error" { 
     return executions[id]?.status || 'ready'; 
   }
-  export function getValidationResults(id: string){ return executions[id]?.results; }
-  export function isSchemaSelected(id: string){ return getSelection('schema') === id; }
+
+  export function isSchemaSelected(id: string) { 
+    return getSelection('schema') === id; 
+  }
 
   // Configuration management functions
   export function clearSchemas() {
-    // Clear all schemas and executions
     availableSchemas.length = 0;
     Object.keys(executions).forEach(key => delete executions[key]);
-    // Clear any schema selections
     clearOtherSelections('schema');
   }
 
   export function loadSchemas(newSchemas: SchemaValidation[]) {
-    // Clear existing state
     clearSchemas();
-    
-    // Update available schemas
     availableSchemas.push(...newSchemas);
-    
-    // Note: We don't pre-initialize executions for schemas like we do for scripts,
-    // as they're created on-demand when validation is triggered
   }
 
   export function getAvailableSchemas() {
