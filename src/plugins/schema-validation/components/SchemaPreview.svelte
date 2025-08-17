@@ -1,10 +1,7 @@
 <script lang="ts">
-  import { Button } from "@ui/button";
   import { Card, CardContent, CardHeader, CardTitle } from "@ui/card";
   import { Badge } from "@ui/badge";
   import { Separator } from "@ui/separator";
-  import PlayIcon from "@lucide/svelte/icons/play";
-  import LoaderIcon from "@lucide/svelte/icons/loader";
   import CheckCircleIcon from "@lucide/svelte/icons/check-circle";
   import AlertCircleIcon from "@lucide/svelte/icons/alert-circle";
   import CodeIcon from "@lucide/svelte/icons/code";
@@ -14,21 +11,13 @@
   interface Props {
     schema: SchemaValidation;
     execution?: SchemaValidationExecution | null;
-    onValidate: () => void;
   }
 
-  let { schema, execution, onValidate }: Props = $props();
+  let { schema, execution }: Props = $props();
 
   const isRunning = $derived(execution?.status === 'running');
   const isCompleted = $derived(execution?.status === 'completed');
   const hasError = $derived(execution?.status === 'error');
-
-  function getStatusIcon() {
-    if (isRunning) return LoaderIcon;
-    if (isCompleted) return CheckCircleIcon;
-    if (hasError) return AlertCircleIcon;
-    return PlayIcon;
-  }
 
   function getStatusColor() {
     if (isRunning) return "default";
@@ -64,16 +53,6 @@
           </Badge>
         </div>
       </div>
-      <Button onclick={onValidate} disabled={isRunning}>
-        {#if isRunning}
-          <LoaderIcon class="size-4 mr-2 animate-spin" />
-          Running...
-        {:else}
-          {@const StatusIcon = getStatusIcon()}
-          <StatusIcon class="size-4 mr-2" />
-          Validate
-        {/if}
-      </Button>
     </div>
 
     <Separator />

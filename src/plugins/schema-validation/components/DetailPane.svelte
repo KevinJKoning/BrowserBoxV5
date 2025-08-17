@@ -1,7 +1,7 @@
 <script lang="ts">
   import SchemaPreview from "./SchemaPreview.svelte";
   import { getSelection } from "@core/state/workspace.svelte";
-  import { getSchema, getExecution, startExecution } from "../store.svelte";
+  import { getSchema, getExecution } from "../store.svelte";
 
   // Get selected schema
   const selectedSchemaId = $derived(getSelection('schema'));
@@ -15,11 +15,6 @@
     <SchemaPreview 
       schema={selectedSchema}
       execution={selectedExecution}
-      onValidate={() => {
-        if (selectedSchema) {
-          startExecution(selectedSchema.id);
-        }
-      }}
     />
   </div>
 {:else}
