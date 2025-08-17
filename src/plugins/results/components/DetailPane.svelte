@@ -15,44 +15,25 @@
   
   // Create preview props for result file
   const previewProps = $derived((): Record<string, unknown> => {
-    if (!selectedResult) return {};
+    const result = selectedResult();
+    if (!result?.content) return {};
 
-    // Normalize content (string or Uint8Array only)
-    let content: string | Uint8Array | undefined = selectedResult.content;
-    if (content instanceof Uint8Array) {
-      const textFormats = ['.csv', '.html', '.htm', '.txt', '.json'];
-      const hasTextFormat = textFormats.some(ext => selectedResult.filename.toLowerCase().endsWith(ext));
-      if (hasTextFormat) {
-        try {
-          content = new TextDecoder().decode(content);
-        } catch {
-          // leave as Uint8Array if decode fails
-        }
-      }
-    }
+    // Create File object from content for preview
+    const parts: BlobPart[] = [result.content];
+    const file = new File(parts, result.filename, {
+      type: getMimeType(result.filename),
+      lastModified: new Date(result.createdAt).getTime()
+    });
 
-    // Build File only if we have content
-    let file: File | undefined;
-    if (content !== undefined) {
-      const parts: BlobPart[] = [content];
-      file = new File(parts, selectedResult.filename, {
-        type: getFileType(selectedResult.fileType),
-        lastModified: new Date(selectedResult.createdAt).getTime()
-      });
-    }
-
-  return {
-      content,
+    return {
       file,
-      fileSize: selectedResult.fileSize,
-      createdAt: selectedResult.createdAt,
-      onDownload: () => {
-        console.log('Download result:', selectedResult.filename);
-      }
+      fileSize: result.fileSize,
+      createdAt: result.createdAt
     };
   });
   
-  function getFileType(extension: string): string {
+  function getMimeType(filename: string): string {
+    const ext = filename.toLowerCase().split('.').pop() || '';
     const mimeTypes: Record<string, string> = {
       'csv': 'text/csv',
       'html': 'text/html',
@@ -60,18 +41,19 @@
       'parquet': 'application/octet-stream',
       'pq': 'application/octet-stream',
       'gpkg': 'application/geopackage+sqlite3',
-      'geopackage': 'application/geopackage+sqlite3'
+      'geopackage': 'application/geopackage+sqlite3',
+      'txt': 'text/plain',
+      'json': 'application/json'
     };
-    return mimeTypes[extension] || 'application/octet-stream';
+    return mimeTypes[ext] || 'application/octet-stream';
   }
 </script>
 
-{#if selectedResult}
+{#if selectedResult()}
   <!-- Result Preview Mode -->
   <div class="h-full min-h-0 overflow-hidden">
     <PreviewRenderer 
-      filename={selectedResult.filename} 
-      content={selectedResult.content}
+      filename={selectedResult()?.filename} 
       previewProps={previewProps()}
       fallbackMessage="No preview available for this file type. Generated file from script execution."
     />
