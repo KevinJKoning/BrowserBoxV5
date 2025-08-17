@@ -3,6 +3,7 @@
   import { scripts, type Script, type ScriptExecution } from '@config/script-config.js';
   import { select, clearOtherSelections, getSelection } from '@core/state/workspace.svelte';
   import { activeFileRequirements, files as uploadedFiles } from '@plugins/required-files/store.svelte';
+  import { registerSelectionResolver } from '@utils/breadcrumbs.ts';
 
   export const availableScripts = $state<Script[]>([...scripts]);
   export const executions = $state<Record<string, ScriptExecution>>({});
@@ -71,4 +72,15 @@
   export function getAvailableScripts() {
     return availableScripts;
   }
+
+  // Register breadcrumb resolver for scripts
+  registerSelectionResolver('script', {
+    getDisplayName: (id: string) => {
+      const script = availableScripts.find(s => s.id === id);
+      return script ? script.title : null;
+    },
+    getStatus: (id: string) => {
+      return getExecutionStatus(id);
+    }
+  });
 </script>

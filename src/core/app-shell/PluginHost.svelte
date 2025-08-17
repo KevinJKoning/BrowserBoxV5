@@ -3,7 +3,8 @@
   import * as Sidebar from "../../lib/components/ui/sidebar/index.js";
   import { Separator } from "../../lib/components/ui/separator/index.js";
   import { getAllPlugins } from "../state/plugin-registry.svelte";
-  import { workspace, getSelection } from "../state/workspace.svelte";
+  import { workspace } from "../state/workspace.svelte";
+  import { generateBreadcrumbs, handleBreadcrumbClick } from "../../lib/utils/breadcrumbs.js";
   import type { ComponentType } from 'svelte';
 
   let { class: className, ...restProps } = $props();
@@ -39,20 +40,8 @@
     })();
   });
 
-  // Get current selection context for breadcrumbs
-  type Selection = { type: string; id: string } | null;
-  const currentSelection = $derived((): Selection => {
-    const fileId = getSelection('file');
-    const schemaId = getSelection('schema');
-    const scriptId = getSelection('script');
-    const resultId = getSelection('result');
-    
-    if (fileId) return { type: 'file', id: fileId };
-    if (schemaId) return { type: 'schema', id: schemaId };
-    if (scriptId) return { type: 'script', id: scriptId };
-    if (resultId) return { type: 'result', id: resultId };
-    return null;
-  });
+  // Generate breadcrumbs based on current state
+  const breadcrumbs = $derived(generateBreadcrumbs());
 </script>
 
 <div class={"flex flex-col min-h-0 h-full overflow-hidden " + (className ?? '')} {...restProps}>
@@ -61,24 +50,30 @@
     <Separator orientation="vertical" class="mr-2 data-[orientation=vertical]:h-4" />
     <Breadcrumb.Root>
       <Breadcrumb.List>
-        <Breadcrumb.Item class="hidden md:block">
-          <Breadcrumb.Link href="#">BrowserBoxV5</Breadcrumb.Link>
-        </Breadcrumb.Item>
-        <Breadcrumb.Separator class="hidden md:block" />
-        <Breadcrumb.Item class="hidden md:block">
-          <Breadcrumb.Link href="#">
-            {currentPlugin?.title || 'Dashboard'}
-          </Breadcrumb.Link>
-        </Breadcrumb.Item>
-    {#if currentSelection}
-          <Breadcrumb.Separator class="hidden md:block" />
-          <Breadcrumb.Item>
-      <Breadcrumb.Page>{currentSelection()?.type}: {currentSelection()?.id}</Breadcrumb.Page>
+        {#each breadcrumbs as item, index (index)}
+          <Breadcrumb.Item class="hidden md:block">
+            {#if item.isClickable}
+              <Breadcrumb.Link 
+                href="#" 
+                onclick={(e) => { e.preventDefault(); handleBreadcrumbClick(item); }}
+                class="cursor-pointer hover:text-foreground transition-colors"
+              >
+                {item.label}
+              </Breadcrumb.Link>
+            {:else}
+              <Breadcrumb.Page>{item.label}</Breadcrumb.Page>
+            {/if}
           </Breadcrumb.Item>
-        {:else}
-          <Breadcrumb.Separator class="hidden md:block" />
-          <Breadcrumb.Item>
-            <Breadcrumb.Page>Dashboard</Breadcrumb.Page>
+          
+          {#if index < breadcrumbs.length - 1}
+            <Breadcrumb.Separator class="hidden md:block" />
+          {/if}
+        {/each}
+        
+        <!-- Fallback for when no breadcrumbs are generated -->
+        {#if breadcrumbs.length === 0}
+          <Breadcrumb.Item class="hidden md:block">
+            <Breadcrumb.Page>BrowserBox</Breadcrumb.Page>
           </Breadcrumb.Item>
         {/if}
       </Breadcrumb.List>

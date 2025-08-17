@@ -1,6 +1,7 @@
 <script module lang="ts">
   import { configLoader, type ConfigPackage } from '@core/config-runtime/loader';
   import { select, clearOtherSelections, getSelection } from '@core/state/workspace.svelte';
+  import { registerSelectionResolver } from '@utils/breadcrumbs.ts';
 
   // Configuration management state
   const state = $state({
@@ -119,4 +120,17 @@
   export function getActiveConfigId(): string | null {
     return state.activeConfigId;
   }
+
+  // Register breadcrumb resolver for configuration packages
+  registerSelectionResolver('config-package', {
+    getDisplayName: (id: string) => {
+      const pkg = state.activePackages.find(p => (p.name + p.version) === id);
+      return pkg ? `${pkg.name} v${pkg.version}` : null;
+    },
+    getStatus: (id: string) => {
+      const pkg = state.activePackages.find(p => (p.name + p.version) === id);
+      if (!pkg) return 'unknown';
+      return isPackageActive(pkg) ? 'active' : pkg.isValid ? 'valid' : 'invalid';
+    }
+  });
 </script>

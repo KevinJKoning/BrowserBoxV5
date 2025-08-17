@@ -3,6 +3,7 @@
   import { schemaValidations, type SchemaValidation, type SchemaValidationExecution, type SchemaValidationResult } from '@config/schema-config.js';
   import { select, clearOtherSelections, getSelection } from '@core/state/workspace.svelte';
   import { activeFileRequirements, files as uploadedFiles } from '@plugins/required-files/store.svelte';
+  import { registerSelectionResolver } from '@utils/breadcrumbs.ts';
   export const availableSchemas = $state<SchemaValidation[]>([...schemaValidations]);
   export const executions = $state<Record<string, SchemaValidationExecution>>({});
   export function getExecutionsList(){ return Object.values(executions); }
@@ -71,4 +72,15 @@
   export function getAvailableSchemas() {
     return availableSchemas;
   }
+
+  // Register breadcrumb resolver for schemas
+  registerSelectionResolver('schema', {
+    getDisplayName: (id: string) => {
+      const schema = availableSchemas.find(s => s.id === id);
+      return schema ? schema.title : null;
+    },
+    getStatus: (id: string) => {
+      return getExecutionStatus(id);
+    }
+  });
 </script>

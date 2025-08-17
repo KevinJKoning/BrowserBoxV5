@@ -2,6 +2,7 @@
   import { fileRequirements, type FileRequirement, type UploadedFile } from '@config/file-config.js';
   import { formatFileSize } from '@utils/formatting.ts';
   import { select, clearOtherSelections } from '@core/state/workspace.svelte';
+  import { registerSelectionResolver } from '@utils/breadcrumbs.ts';
 
   // Current active file requirements (can be updated dynamically)
   export const activeFileRequirements = $state<FileRequirement[]>([...fileRequirements]);
@@ -92,4 +93,20 @@
   export function getActiveRequirements() {
     return activeFileRequirements;
   }
+
+  // Register breadcrumb resolver for files
+  registerSelectionResolver('file', {
+    getDisplayName: (id: string) => {
+      const uploadedFile = files[id];
+      if (uploadedFile) {
+        return uploadedFile.originalName;
+      }
+      // If no uploaded file, try to get requirement title
+      const requirement = activeFileRequirements.find(r => r.id === id);
+      return requirement ? requirement.title : null;
+    },
+    getStatus: (id: string) => {
+      return getUploadStateStrict(id);
+    }
+  });
 </script>
