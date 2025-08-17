@@ -2,6 +2,7 @@
   import { Button } from "@ui/button";
   import * as Sidebar from "@ui/sidebar";
   import { Badge } from "@ui/badge";
+  import { cn } from "@utils/generic.ts";
   import UploadIcon from "@lucide/svelte/icons/upload";
   import PackageIcon from "@lucide/svelte/icons/package";
   import XIcon from "@lucide/svelte/icons/x";
@@ -158,28 +159,38 @@
           {@const selected = isPackageSelected(pkg)}
           <button
             onclick={() => handlePackageSelect(pkg)}
-            class="w-full text-left p-3 rounded-lg border transition-all {selected 
-              ? 'bg-sidebar-accent border-sidebar-border ring-2 ring-ring' 
-              : 'hover:bg-sidebar-accent/50 border-transparent'}"
+            class={cn(
+              "flex flex-col gap-3 rounded-lg border p-4 transition-all w-full text-left",
+              "border-muted bg-card hover:bg-muted/50",
+              "cursor-pointer hover:shadow-md hover:scale-[1.02]",
+              selected && "ring-2 ring-blue-500/80 ring-offset-2 shadow-lg drop-shadow-sm"
+            )}
           >
-            <div class="space-y-2">
-              <div class="flex items-start justify-between">
-                <div class="min-w-0 flex-1">
-                  <div class="font-medium text-sm truncate">{pkg.name}</div>
-                  <div class="text-xs text-muted-foreground truncate">v{pkg.version}</div>
-                </div>
-                <Badge 
-                  variant={isPackageActive(pkg) ? "default" : pkg.isValid ? "secondary" : "destructive"} 
-                  class="text-xs flex-shrink-0"
-                >
-                  {isPackageActive(pkg) ? "Active" : pkg.isValid ? "Valid" : "Invalid"}
-                </Badge>
+            <!-- Header with status -->
+            <div class="flex items-center justify-between min-w-0">
+              <div class="flex items-center gap-2 min-w-0 flex-1">
+                <PackageIcon class="size-4 text-muted-foreground" />
+                <span class="font-medium text-sm truncate">{pkg.name}</span>
               </div>
-              
-              {#if pkg.description}
-                <p class="text-xs text-muted-foreground line-clamp-2">{pkg.description}</p>
-              {/if}
-              
+              <Badge 
+                variant={isPackageActive(pkg) ? "default" : pkg.isValid ? "secondary" : "destructive"} 
+                class="flex-shrink-0"
+              >
+                {isPackageActive(pkg) ? "Active" : pkg.isValid ? "Valid" : "Invalid"}
+              </Badge>
+            </div>
+
+            <!-- Description -->
+            {#if pkg.description}
+              <p class="text-xs text-muted-foreground line-clamp-2">{pkg.description}</p>
+            {/if}
+
+            <!-- Package details -->
+            <div class="space-y-1">
+              <div class="text-xs">
+                <span class="font-medium">Version:</span>
+                {pkg.version}
+              </div>
               <div class="flex gap-2 text-xs">
                 {#if stats.files > 0}
                   <Badge variant="secondary" class="text-xs">
@@ -197,20 +208,20 @@
                   </Badge>
                 {/if}
               </div>
+            </div>
 
-              <!-- Actions -->
-              <div class="flex gap-2 mt-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  class="flex-1 text-xs h-7"
-                  onclick={(e) => handlePackageActivate(pkg, e)}
-                  disabled={isLoading}
-                >
-                  <CheckIcon class="size-3 mr-1" />
-                  Activate
-                </Button>
-              </div>
+            <!-- Actions -->
+            <div class="flex gap-2 mt-2">
+              <Button
+                size="sm"
+                variant="outline"
+                class="flex-1 text-xs h-7"
+                onclick={(e) => handlePackageActivate(pkg, e)}
+                disabled={isLoading}
+              >
+                <CheckIcon class="size-3 mr-1" />
+                Activate
+              </Button>
             </div>
           </button>
         {/each}
