@@ -5,6 +5,7 @@
   import UploadIcon from "@lucide/svelte/icons/upload";
   import PackageIcon from "@lucide/svelte/icons/package";
   import XIcon from "@lucide/svelte/icons/x";
+  import CheckIcon from "@lucide/svelte/icons/check";
   import {
     activePackages,
     selectPackage,
@@ -13,7 +14,9 @@
     loadConfigurationPackage,
     clearMessages,
     getIsLoading,
-    refreshActivePackages
+    refreshActivePackages,
+    activatePackage,
+    isPackageActive
   } from "../store.svelte";
   import { onMount } from 'svelte';
 
@@ -57,6 +60,16 @@
       selectPackage(null);
     } else {
       selectPackage(packageKey);
+    }
+  }
+
+  async function handlePackageActivate(pkg: any, event: Event) {
+    event.stopPropagation(); // Prevent card selection
+    try {
+      await activatePackage(pkg);
+    } catch (error) {
+      // Error handling is done in the store
+      console.error('Failed to activate package:', error);
     }
   }
 
@@ -155,8 +168,11 @@
                   <div class="font-medium text-sm truncate">{pkg.name}</div>
                   <div class="text-xs text-muted-foreground truncate">v{pkg.version}</div>
                 </div>
-                <Badge variant={pkg.isValid ? "default" : "destructive"} class="text-xs flex-shrink-0">
-                  {pkg.isValid ? "Valid" : "Invalid"}
+                <Badge 
+                  variant={isPackageActive(pkg) ? "default" : pkg.isValid ? "secondary" : "destructive"} 
+                  class="text-xs flex-shrink-0"
+                >
+                  {isPackageActive(pkg) ? "Active" : pkg.isValid ? "Valid" : "Invalid"}
                 </Badge>
               </div>
               
@@ -180,6 +196,20 @@
                     {stats.schemas} schemas
                   </Badge>
                 {/if}
+              </div>
+
+              <!-- Actions -->
+              <div class="flex gap-2 mt-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  class="flex-1 text-xs h-7"
+                  onclick={(e) => handlePackageActivate(pkg, e)}
+                  disabled={isLoading}
+                >
+                  <CheckIcon class="size-3 mr-1" />
+                  Activate
+                </Button>
               </div>
             </div>
           </button>

@@ -5,6 +5,7 @@
   // Configuration management state
   const state = $state({
     activePackages: [] as ConfigPackage[],
+    activeConfigId: null as string | null, // Track which configuration is currently active
     isLoading: false,
     loadingMessage: '',
     errorMessage: '',
@@ -81,5 +82,41 @@
 
   export function getActivePackages(): ConfigPackage[] {
     return state.activePackages;
+  }
+
+  export async function activatePackage(pkg: ConfigPackage): Promise<void> {
+    clearMessages();
+    state.isLoading = true;
+    state.loadingMessage = `Activating configuration: ${pkg.name} v${pkg.version}...`;
+    
+    try {
+      // Apply the package to all plugin stores
+      await configLoader.applyPackageToStores(pkg);
+      
+      // Set this package as the active configuration
+      const packageId = pkg.name + pkg.version;
+      state.activeConfigId = packageId;
+      
+      // Keep the package selected to show the detail view
+      selectPackage(packageId);
+      
+      state.successMessage = `Successfully activated configuration: ${pkg.name} v${pkg.version}`;
+      
+    } catch (error) {
+      state.errorMessage = `Failed to activate configuration: ${error instanceof Error ? error.message : String(error)}`;
+      throw error;
+    } finally {
+      state.isLoading = false;
+      state.loadingMessage = '';
+    }
+  }
+
+  export function isPackageActive(pkg: ConfigPackage): boolean {
+    const packageId = pkg.name + pkg.version;
+    return state.activeConfigId === packageId;
+  }
+
+  export function getActiveConfigId(): string | null {
+    return state.activeConfigId;
   }
 </script>

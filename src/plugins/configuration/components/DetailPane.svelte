@@ -9,7 +9,8 @@
     getLoadingMessage,
     getErrorMessage,
     getSuccessMessage,
-    refreshActivePackages
+    refreshActivePackages,
+    isPackageActive
   } from "../store.svelte";
   import { onMount } from 'svelte';
   import type { ConfigPackage } from "@core/config-runtime/loader";
@@ -70,8 +71,8 @@
             <p class="text-sm text-muted-foreground mt-2">{selectedPackage.description}</p>
           {/if}
         </div>
-        <Badge variant={selectedPackage.isValid ? "default" : "destructive"}>
-          {selectedPackage.isValid ? "Valid" : "Invalid"}
+        <Badge variant={isPackageActive(selectedPackage) ? "default" : selectedPackage.isValid ? "secondary" : "destructive"}>
+          {isPackageActive(selectedPackage) ? "Active" : selectedPackage.isValid ? "Valid" : "Invalid"}
         </Badge>
       </div>
 
@@ -202,87 +203,45 @@
   </div>
 {:else}
   <!-- Configuration Management Main View -->
-  <div class="h-full min-h-0 overflow-auto">
-    <div class="p-6 space-y-6">
-      <div>
-        <h1 class="text-2xl font-bold mb-2">Configuration Management</h1>
-        <p class="text-muted-foreground">
-          Manage configuration packages that define file requirements, analysis scripts, and schema validations.
-        </p>
-      </div>
-
-      <!-- Upload Section -->
-      <Card>
-        <CardHeader>
-          <CardTitle class="flex items-center gap-2">
-            <PackageIcon class="size-5" />
-            Load Configuration Package
-          </CardTitle>
-        </CardHeader>
-        <CardContent class="space-y-4">
-          <p class="text-sm text-muted-foreground">
-            Upload a ZIP configuration package to replace the current file requirements, scripts, and schema validations.
+  <div class="bg-muted/50 flex-1 rounded-xl overflow-auto">
+    <div class="p-8">
+      <h1 class="text-3xl font-bold mb-4">Configuration Management</h1>
+      <p class="text-lg text-muted-foreground mb-6">
+        Manage configuration packages that define file requirements, analysis scripts, and schema validations.
+        The sidebar shows available configuration packages and their status.
+      </p>
+      <div class="space-y-4">
+        <h2 class="text-xl font-semibold">Features:</h2>
+        <ul class="list-disc list-inside space-y-2 text-muted-foreground">
+          <li>Load configuration packages from ZIP files</li>
+          <li>Package validation and error reporting</li>
+          <li>Real-time configuration status monitoring</li>
+          <li>Activate configurations to apply to workspace</li>
+          <li>Package search and filtering capabilities</li>
+          <li>Detailed package content inspection</li>
+        </ul>
+        <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border">
+          <h3 class="font-medium text-blue-900 dark:text-blue-100 mb-2">
+            Getting Started
+          </h3>
+          <p class="text-sm text-blue-700 dark:text-blue-300">
+            Click "Load" in the sidebar to upload a ZIP configuration package, then use "Activate" 
+            to apply the configuration to your workspace. Click on any package to view its detailed contents.
           </p>
-          
-          <!-- Hidden file input -->
-          <input
-            bind:this={fileInput}
-            type="file"
-            accept=".zip"
-            onchange={handleFileUpload}
-            class="hidden"
-          />
-          
-          <!-- Upload button -->
-          <Button 
-            onclick={handleUploadClick}
-            disabled={isLoading}
-            class="w-full"
-          >
-            {#if isLoading}
-              <LoaderIcon class="size-4 mr-2 animate-spin" />
-              {loadingMessage || 'Loading...'}
-            {:else}
-              <FileUpIcon class="size-4 mr-2" />
-              Select Configuration Package (ZIP)
-            {/if}
-          </Button>
-
-          <!-- Messages -->
-          {#if errorMessage}
-            <div class="flex items-start gap-2 p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
-              <AlertCircleIcon class="size-4 mt-0.5 flex-shrink-0" />
-              <div class="flex-1">{errorMessage}</div>
-              <Button variant="ghost" size="sm" onclick={clearMessages}>×</Button>
-            </div>
-          {/if}
-
-          {#if successMessage}
-            <div class="flex items-start gap-2 p-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-md">
-              <CheckCircleIcon class="size-4 mt-0.5 flex-shrink-0" />
-              <div class="flex-1">{successMessage}</div>
-              <Button variant="ghost" size="sm" onclick={clearMessages}>×</Button>
-            </div>
-          {/if}
-        </CardContent>
-      </Card>
-
-      <!-- Help Section -->
-      <Card>
-        <CardHeader>
-          <CardTitle>Package Structure</CardTitle>
-        </CardHeader>
-        <CardContent class="text-sm text-muted-foreground space-y-2">
-          <p><strong>Expected ZIP structure:</strong></p>
-          <ul class="list-disc list-inside ml-4 space-y-1">
+        </div>
+        <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-950/20 rounded-lg border">
+          <h3 class="font-medium text-gray-900 dark:text-gray-100 mb-2">
+            Package Structure
+          </h3>
+          <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">Expected ZIP structure:</p>
+          <ul class="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside ml-4 space-y-1">
             <li><code>package.json</code> - Package metadata (name, version, description)</li>
             <li><code>files/requirements.json</code> - File requirement definitions</li>
             <li><code>scripts/*.py + scripts/metadata.json</code> - Python analysis scripts</li>
             <li><code>schemas/*.py + schemas/metadata.json</code> - Schema validation scripts</li>
-            <li><code>plugins/</code> - Future plugin definitions (optional)</li>
           </ul>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   </div>
 {/if}
