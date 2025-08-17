@@ -7,28 +7,23 @@
 	import RefreshCwIcon from "@lucide/svelte/icons/refresh-cw";
 
 	interface Props {
-		/** HTML content to display */
-		htmlContent: string;
+		/** File to preview */
+		file: File;
 		/** Filename being previewed */
 		filename: string;
-		/** File size */
-		fileSize?: number;
-		/** Creation date */
-		createdAt?: string;
-		/** Click handler for open in new tab action */
-		onOpenNewTab?: () => void;
 		/** Container size for responsive behavior */
 		containerSize?: { width: number; height: number };
 	}
 
 	let {
-		htmlContent,
+		file,
 		filename,
-		fileSize,
-		createdAt,
-		onOpenNewTab,
 		containerSize: _containerSize = { width: 0, height: 0 }
 	}: Props = $props();
+
+	// HTML content loaded from file
+	let htmlContent = $state('');
+	let loadingContent = $state(true);
 	
 	// Responsive helpers
 	const responsiveHelpers = createResponsiveHelpers();
@@ -36,6 +31,27 @@
 
 	let iframeElement: HTMLIFrameElement;
 	let isLoading = $state(true);
+
+	// Load HTML content from file
+	const loadFileContent = async () => {
+		if (!file) return;
+		
+		try {
+			loadingContent = true;
+			const content = await file.text();
+			htmlContent = content;
+		} catch (error) {
+			console.error('Failed to load HTML file:', error);
+			htmlContent = '<p>Failed to load HTML content</p>';
+		} finally {
+			loadingContent = false;
+		}
+	};
+
+	// Load file content when file changes
+	$effect(() => {
+		loadFileContent();
+	});
 
 	// Format file size
 	const formatFileSize = (bytes: number): string => {
@@ -52,7 +68,7 @@
 
 	// Load HTML content into iframe
 	const loadHtmlContent = () => {
-		if (iframeElement && htmlContent) {
+		if (iframeElement && htmlContent && !loadingContent) {
 			isLoading = true;
 			// Create a blob URL for the HTML content
 			const blob = new Blob([htmlContent], { type: 'text/html' });
@@ -80,7 +96,7 @@
 
 	// Load content when component mounts or content changes
 	$effect(() => {
-		if (iframeElement && htmlContent) {
+		if (iframeElement && htmlContent && !loadingContent) {
 			loadHtmlContent();
 		}
 	});
@@ -101,32 +117,23 @@
 							size="sm"
 							variant="ghost"
 							onclick={refreshContent}
-							disabled={isLoading}
+							disabled={isLoading || loadingContent}
 							title="Refresh content"
 						>
-							<RefreshCwIcon class="size-3 {isLoading ? 'animate-spin' : ''}" />
+							<RefreshCwIcon class="size-3 {isLoading || loadingContent ? 'animate-spin' : ''}" />
 						</Button>
-						
-						{#if onOpenNewTab}
-							<Button
-								size="sm"
-								variant="ghost"
-								onclick={onOpenNewTab}
-								title="Open in new tab"
-							>
-								<ExternalLinkIcon class="size-3" />
-							</Button>
-						{/if}
 					</div>
 				</CardTitle>
 			</CardHeader>
 			<CardContent class="p-0 h-[calc(100%-4rem)] overflow-hidden iframe-container">
 				<div class="relative h-full">
-					{#if isLoading}
+					{#if isLoading || loadingContent}
 						<div class="absolute inset-0 flex items-center justify-center bg-muted/20">
 							<div class="text-center">
 								<RefreshCwIcon class="animate-spin h-6 w-6 mx-auto mb-2 text-primary" />
-								<p class="text-sm text-muted-foreground">Loading HTML content...</p>
+								<p class="text-sm text-muted-foreground">
+									{loadingContent ? 'Loading file content...' : 'Loading HTML content...'}
+								</p>
 							</div>
 						</div>
 					{/if}
@@ -160,18 +167,14 @@
 							<span class="text-muted-foreground">Filename:</span>
 							<span class="truncate ml-2" title={filename}>{filename}</span>
 						</div>
-						{#if fileSize}
-							<div class="flex justify-between">
-								<span class="text-muted-foreground">Size:</span>
-								<span>{formatFileSize(fileSize)}</span>
-							</div>
-						{/if}
-						{#if createdAt}
-							<div class="flex justify-between">
-								<span class="text-muted-foreground">Created:</span>
-								<span>{formatDate(createdAt)}</span>
-							</div>
-						{/if}
+						<div class="flex justify-between">
+							<span class="text-muted-foreground">Size:</span>
+							<span>{formatFileSize(file.size)}</span>
+						</div>
+						<div class="flex justify-between">
+							<span class="text-muted-foreground">Modified:</span>
+							<span>{formatDate(new Date(file.lastModified).toISOString())}</span>
+						</div>
 					</div>
 				</div>
 
@@ -183,17 +186,21 @@
 							Some interactive features may be limited.
 						</p>
 						
-						{#if onOpenNewTab}
-							<Button
-								size="sm"
-								variant="outline"
-								onclick={onOpenNewTab}
-								class="w-full"
-							>
-								<ExternalLinkIcon class="size-3 mr-2" />
-								Open in New Tab
-							</Button>
-						{/if}
+						<Button
+							size="sm"
+							variant="outline"
+							onclick={() => {
+								const blob = new Blob([htmlContent], { type: 'text/html' });
+								const url = URL.createObjectURL(blob);
+								window.open(url, '_blank');
+								setTimeout(() => URL.revokeObjectURL(url), 1000);
+							}}
+							class="w-full"
+							disabled={!htmlContent || loadingContent}
+						>
+							<ExternalLinkIcon class="size-3 mr-2" />
+							Open in New Tab
+						</Button>
 					</div>
 				</div>
 			</CardContent>
