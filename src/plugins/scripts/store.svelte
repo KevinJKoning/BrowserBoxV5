@@ -30,7 +30,7 @@
 
       const result = await pythonExecutor.executeScript(
         { id: script.id, content: script.content, title: script.title },
-        { timeout:60000, dataFiles, onStatusUpdate: (status) => { if (executions[scriptId]) executions[scriptId].metrics = { ...executions[scriptId].metrics, status }; } }
+        { timeout:86400000, dataFiles, onStatusUpdate: (status) => { if (executions[scriptId]) executions[scriptId].metrics = { ...executions[scriptId].metrics, status }; } }
       );
       const generatedFiles = result.modifiedFiles || [];
       const end = new Date().toISOString();
