@@ -126,8 +126,8 @@ export default defineConfig(({ command, mode }) => ({
 				]
 			},
 			manifest: {
-				name: 'PRAv3 - File Management System',
-				short_name: 'PRAv3',
+				name: 'BrowserBox',
+				short_name: 'BrowserBox',
 				description: 'Progressive file management system with Python analysis capabilities',
 				theme_color: '#ffffff',
 				background_color: '#ffffff',
