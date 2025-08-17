@@ -45,4 +45,4 @@ class PyodideExecutorService {
 export const pythonExecutor = new PyodideExecutorService();
 
 // Export types for plugins to use
-export type { ScriptResult, ScriptOptions, Script } from './simple-pyodide.js';
+export type { ScriptResult, ScriptOptions, Script } from './internal/simple-pyodide.js';

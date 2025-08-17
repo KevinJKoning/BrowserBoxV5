@@ -11,6 +11,7 @@
   } from '@config/schema-config.js';
   import { select, clearOtherSelections, getSelection } from '@core/state/workspace.svelte';
   import { activeFileRequirements, files as uploadedFiles } from '@plugins/required-files/store.svelte';
+  import { addResult } from '@plugins/results/store.svelte';
   import { registerSelectionResolver } from '@utils/breadcrumbs.ts';
 
   export const availableSchemas = $state<SchemaValidation[]>([...schemaValidations]);
@@ -126,12 +127,29 @@ if __name__ == "__main__":
 
     const result = await pythonExecutor.executeScript(
       { id: `schema-validation-${schema.id}`, content: pythonContent, title: `Schema Validation: ${schema.title}` },
-      { timeout: 86400000, dataFiles, onStatusUpdate: (status) => { 
-        if (executions[schema.id]) executions[schema.id].metrics = { ...executions[schema.id].metrics, status }; 
-      }}
+      { timeout: 86400000, dataFiles }
     );
 
     const end = new Date().toISOString();
+    
+    // Add generated HTML report to Results plugin
+    if (result.success && result.modifiedFiles) {
+      for (const file of result.modifiedFiles) {
+        if (file.name === schema.outputHtml) {
+          addResult({
+            filename: file.name,
+            fileType: 'HTML',
+            fileSize: file.data.length,
+            content: file.data,
+            createdAt: end,
+            scriptId: `schema-validation-${schema.id}`,
+            description: `Validation report for ${schema.title}`,
+            pyodidePath: file.path
+          });
+        }
+      }
+    }
+    
     executions[schema.id] = {
       ...base,
       status: result.success ? 'completed' : 'error',
