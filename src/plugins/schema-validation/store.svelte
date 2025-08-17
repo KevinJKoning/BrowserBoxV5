@@ -42,7 +42,9 @@
   export function selectSchema(id: string | null){ clearOtherSelections('schema'); select('schema', id); }
   export function getSchema(id: string){ return availableSchemas.find(s => s.id === id); }
   export function getExecution(id: string){ return executions[id]; }
-  export function getExecutionStatus(id: string){ return executions[id]?.status || 'ready'; }
+  export function getExecutionStatus(id: string): "ready" | "running" | "completed" | "error" { 
+    return executions[id]?.status || 'ready'; 
+  }
   export function getValidationResults(id: string){ return executions[id]?.results; }
   export function isSchemaSelected(id: string){ return getSelection('schema') === id; }
 

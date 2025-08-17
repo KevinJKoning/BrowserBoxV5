@@ -60,16 +60,32 @@
   }
 
   export function loadFileRequirements(newRequirements: FileRequirement[]) {
-    // Clear existing state
+    // Store existing uploaded files to attempt re-mapping
+    const existingFiles = { ...files };
+    
+    // Clear state but preserve file selections
     clearFiles();
     
     // Update active requirements
     activeFileRequirements.length = 0;
     activeFileRequirements.push(...newRequirements);
     
-    // Initialize upload states for new requirements
+    // Initialize upload states and attempt to re-map existing files
     for (const req of newRequirements) {
       uploadStates[req.id] = 'waiting';
+      
+      // Try to re-map existing files by filename
+      const matchingFile = Object.values(existingFiles).find(file => 
+        file.filename.toLowerCase() === req.defaultFilename.toLowerCase() ||
+        file.originalName.toLowerCase() === req.defaultFilename.toLowerCase()
+      );
+      
+      if (matchingFile && isFileTypeAccepted(matchingFile.originalName, req)) {
+        // Re-map the existing file to the new requirement
+        files[req.id] = matchingFile;
+        uploadStates[req.id] = 'completed';
+        console.log(`Re-mapped file ${matchingFile.filename} to requirement ${req.id}`);
+      }
     }
   }
 

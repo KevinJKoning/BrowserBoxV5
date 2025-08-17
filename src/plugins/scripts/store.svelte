@@ -6,7 +6,8 @@
 
   export const availableScripts = $state<Script[]>([...scripts]);
   export const executions = $state<Record<string, ScriptExecution>>({});
-  scripts.forEach(s => { executions[s.id] = { id: `exec_${s.id}`, scriptId: s.id, status: 'ready' }; });
+  // Note: Don't pre-initialize executions - they should be created on-demand when scripts run
+  // This ensures proper dependency checking and prevents showing "Ready" for scripts with unmet dependencies
 
   export async function startExecution(scriptId: string) {
     const script = availableScripts.find(s => s.id === scriptId); if (!script) throw new Error(`Script ${scriptId} not found`);
@@ -41,7 +42,9 @@
   export function selectScript(id: string | null) { clearOtherSelections('script'); select('script', id); }
   export function getScript(id: string) { return availableScripts.find(s => s.id === id); }
   export function getExecution(id: string) { return executions[id]; }
-  export function getExecutionStatus(id: string) { return executions[id]?.status || 'ready'; }
+  export function getExecutionStatus(id: string): "ready" | "running" | "completed" | "error" { 
+    return executions[id]?.status || 'ready'; 
+  }
   export function isScriptSelected(id: string) { return getSelection('script') === id; }
 
   // Configuration management functions
@@ -60,14 +63,9 @@
     // Update available scripts
     availableScripts.push(...newScripts);
     
-    // Initialize executions for new scripts
-    for (const script of newScripts) {
-      executions[script.id] = { 
-        id: `exec_${script.id}`, 
-        scriptId: script.id, 
-        status: 'ready' 
-      };
-    }
+    // Note: Don't pre-initialize executions for new scripts.
+    // Executions are created on-demand when scripts are actually run.
+    // This allows proper dependency checking to determine if scripts show "Waiting" or "Ready"
   }
 
   export function getAvailableScripts() {
