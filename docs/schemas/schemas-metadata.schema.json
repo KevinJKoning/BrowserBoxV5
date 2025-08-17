@@ -1,0 +1,304 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://browserbox.dev/schemas/schemas-metadata.schema.json",
+  "title": "Schema Validations Metadata",
+  "description": "Schema for schemas/metadata.json in BrowserBox configuration packages",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "id",
+      "title",
+      "description",
+      "filename"
+    ],
+    "properties": {
+      "id": {
+        "type": "string", 
+        "pattern": "^[a-z0-9-_]+$",
+        "minLength": 1,
+        "maxLength": 50,
+        "description": "Unique identifier for this schema validation"
+      },
+      "title": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 100,
+        "description": "Human-readable validation name displayed in the UI"
+      },
+      "description": {
+        "type": "string",
+        "minLength": 10,
+        "maxLength": 500,
+        "description": "Detailed explanation of what this validation checks"
+      },
+      "filename": {
+        "type": "string",
+        "pattern": "^[^<>:\"/\\\\|?*]+\\.py$",
+        "description": "Python validation script filename in the schemas/ directory"
+      },
+      "category": {
+        "type": "string",
+        "enum": ["validation", "quality", "compliance", "completeness", "consistency"],
+        "description": "Validation category for organization"
+      },
+      "dependencies": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": {
+              "type": "string", 
+              "enum": ["uploaded", "schema"]
+            },
+            "sourceId": {
+              "type": "string",
+              "description": "ID of the required dependency"
+            },
+            "description": {
+              "type": "string",
+              "description": "Description of how this dependency is used"
+            }
+          },
+          "if": {
+            "properties": {
+              "type": { "const": "uploaded" }
+            }
+          },
+          "then": {
+            "required": ["sourceId"],
+            "properties": {
+              "sourceId": {
+                "description": "File requirement ID that this validation checks"
+              }
+            }
+          },
+          "else": {
+            "required": ["sourceId"],
+            "properties": {
+              "sourceId": {
+                "description": "Schema validation ID that must pass first"
+              }
+            }
+          }
+        },
+        "description": "Dependencies required for this validation to run"
+      },
+      "expectations": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Summary of what the validation expects to find"
+          },
+          "columns": {
+            "type": "object",
+            "patternProperties": {
+              "^[a-zA-Z_][a-zA-Z0-9_]*$": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["string", "integer", "float", "boolean", "datetime", "categorical"]
+                  },
+                  "required": {
+                    "type": "boolean"
+                  },
+                  "min": {
+                    "type": "number"
+                  },
+                  "max": {
+                    "type": "number"
+                  },
+                  "pattern": {
+                    "type": "string"
+                  },
+                  "values": {
+                    "type": "array",
+                    "items": {
+                      "type": ["string", "number"]
+                    }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "description": "Expected column definitions and constraints"
+          },
+          "expected_row_count": {
+            "type": "object",
+            "properties": {
+              "min": {
+                "type": "number",
+                "minimum": 0
+              },
+              "max": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "additionalProperties": false,
+            "description": "Expected range of row counts"
+          },
+          "business_rules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["rule", "description"],
+              "properties": {
+                "rule": {
+                  "type": "string",
+                  "description": "Business rule expression or description"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Human-readable explanation of the rule"
+                },
+                "severity": {
+                  "type": "string",
+                  "enum": ["error", "warning", "info"],
+                  "default": "error"
+                }
+              }
+            },
+            "description": "Business logic validation rules"
+          }
+        },
+        "additionalProperties": false
+      },
+      "severity": {
+        "type": "string",
+        "enum": ["critical", "high", "medium", "low"],
+        "default": "medium",
+        "description": "Validation failure severity level"
+      },
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "timeout": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 120,
+            "default": 30,
+            "description": "Maximum validation time in seconds"
+          },
+          "sample_size": {
+            "type": "number",
+            "minimum": 100,
+            "maximum": 100000,
+            "description": "Number of rows to sample for validation (if applicable)"
+          }
+        },
+        "additionalProperties": false
+      },
+      "tags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 30
+        },
+        "maxItems": 10,
+        "description": "Tags for searching and filtering validations"
+      }
+    },
+    "additionalProperties": false
+  },
+  "examples": [
+    [
+      {
+        "id": "sales-data-quality",
+        "title": "Sales Data Quality Check",
+        "description": "Validate the structure, completeness, and business rules for sales transaction data",
+        "filename": "sales_quality_check.py",
+        "category": "quality",
+        "dependencies": [
+          {
+            "type": "uploaded",
+            "sourceId": "sales_data",
+            "description": "Primary sales data to validate"
+          }
+        ],
+        "expectations": {
+          "description": "Sales data should have complete transaction records with valid business values",
+          "columns": {
+            "date": {
+              "type": "datetime",
+              "required": true
+            },
+            "customer_id": {
+              "type": "string",
+              "required": true,
+              "pattern": "^C[0-9]{3,6}$"
+            },
+            "product_id": {
+              "type": "string", 
+              "required": true,
+              "pattern": "^P[0-9]{3,6}$"
+            },
+            "quantity": {
+              "type": "integer",
+              "required": true,
+              "min": 1,
+              "max": 1000
+            },
+            "revenue": {
+              "type": "float",
+              "required": true,
+              "min": 0
+            }
+          },
+          "expected_row_count": {
+            "min": 1,
+            "max": 10000000
+          },
+          "business_rules": [
+            {
+              "rule": "revenue > 0",
+              "description": "All transactions must have positive revenue",
+              "severity": "error"
+            },
+            {
+              "rule": "quantity * unit_price = revenue",
+              "description": "Revenue should equal quantity times unit price",
+              "severity": "warning"
+            }
+          ]
+        },
+        "severity": "high",
+        "parameters": {
+          "timeout": 60,
+          "sample_size": 10000
+        },
+        "tags": ["sales", "quality", "business-rules"]
+      },
+      {
+        "id": "data-completeness",
+        "title": "Data Completeness Check",
+        "description": "Ensure all required fields are present and no critical data is missing",
+        "filename": "completeness_check.py",
+        "category": "completeness", 
+        "dependencies": [
+          {
+            "type": "schema",
+            "sourceId": "sales-data-quality",
+            "description": "Basic quality checks must pass first"
+          }
+        ],
+        "expectations": {
+          "description": "All required fields should be populated with valid data",
+          "business_rules": [
+            {
+              "rule": "null_percentage < 5%",
+              "description": "No more than 5% null values in any required column",
+              "severity": "error"
+            }
+          ]
+        },
+        "severity": "critical",
+        "tags": ["completeness", "data-quality"]
+      }
+    ]
+  ]
+}
