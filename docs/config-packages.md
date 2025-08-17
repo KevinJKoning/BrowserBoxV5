@@ -463,7 +463,6 @@ Configuration packages are validated when loaded. Common validation errors inclu
 ### Script Errors
 
 - **Invalid Python syntax**: Scripts must be valid Python files
-- **Missing dependencies**: Referenced files must be defined in file requirements
 - **Circular dependencies**: Scripts cannot have circular dependency chains
 
 ## Troubleshooting

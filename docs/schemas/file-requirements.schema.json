@@ -64,49 +64,6 @@
         "type": "string",
         "enum": ["data", "config", "reference", "template", "documentation"],
         "description": "Category for organizing file requirements"
-      },
-      "validation": {
-        "type": "object",
-        "properties": {
-          "minRows": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Minimum number of rows required (for data files)"
-          },
-          "maxRows": {
-            "type": "number",
-            "minimum": 0,
-            "description": "Maximum number of rows supported (for data files)"
-          },
-          "requiredColumns": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Column names that must be present (for structured data)"
-          },
-          "encoding": {
-            "type": "string",
-            "enum": ["utf-8", "latin1", "ascii"],
-            "default": "utf-8",
-            "description": "Expected text encoding"
-          }
-        },
-        "additionalProperties": false
-      },
-      "examples": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "Example file contents or structure descriptions"
-      },
-      "dependencies": {
-        "type": "array",
-        "items": {
-          "type": "string"
-        },
-        "description": "IDs of other file requirements this file depends on"
       }
     },
     "additionalProperties": false
@@ -121,15 +78,7 @@
         "required": true,
         "acceptedTypes": [".csv", ".parquet"],
         "maxSize": 200,
-        "category": "data",
-        "validation": {
-          "minRows": 1,
-          "requiredColumns": ["date", "customer_id", "product_id", "revenue"],
-          "encoding": "utf-8"
-        },
-        "examples": [
-          "date,customer_id,product_id,quantity,revenue\\n2025-01-01,C001,P001,2,150.00"
-        ]
+        "category": "data"
       },
       {
         "id": "customer_metadata",
@@ -139,8 +88,7 @@
         "required": false,
         "acceptedTypes": [".csv", ".xlsx"],
         "maxSize": 50,
-        "category": "reference",
-        "dependencies": ["sales_data"]
+        "category": "reference"
       }
     ]
   ]
