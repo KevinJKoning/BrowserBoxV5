@@ -20,21 +20,21 @@
 		title: string;
 		/** Description of what this schema validates */
 		description: string;
-		/** Schema validation filename */
-		filename: string;
+		/** Schema validation filename (only for Python validations) */
+		filename?: string;
 		/** Current validation status */
 		status: "ready" | "running" | "completed" | "error";
 		/** Execution time (if completed) */
 		executionTime?: string;
 		/** Last run date (if completed) */
 		lastRun?: string;
-		/** Validation results summary */
+		/** Validation results summary (from JavaScript validation) */
 		validationSummary?: {
-			overall_status: "pass" | "fail" | "warning";
-			total_checks: number;
-			passed: number;
-			failed: number;
-			warnings: number;
+			totalRows: number;
+			totalColumns: number;
+			validRows: number;
+			errorCount: number;
+			warningCount: number;
 		};
 		/** Whether schema is selected for preview */
 		isSelected?: boolean;
@@ -65,14 +65,18 @@
 		
 		// Override completed status based on validation results
 		if (effectiveStatus === "completed" && validationSummary) {
+			const hasErrors = validationSummary.errorCount > 0;
+			const hasWarnings = validationSummary.warningCount > 0;
+			const status = hasErrors ? "fail" : hasWarnings ? "warning" : "pass";
+			
 			baseConfig.completed = {
 				badge: { variant: "default" as const, text: "Completed" },
-				icon: validationSummary.overall_status === "pass" ? CheckCircleIcon : 
-					  validationSummary.overall_status === "warning" ? AlertTriangleIcon : XCircleIcon,
-				iconClass: validationSummary.overall_status === "pass" ? "text-green-500" :
-						   validationSummary.overall_status === "warning" ? "text-yellow-500" : "text-red-500",
-				cardClass: validationSummary.overall_status === "pass" ? "border-green-200 bg-green-50/50" :
-						   validationSummary.overall_status === "warning" ? "border-yellow-200 bg-yellow-50/50" : "border-red-200 bg-red-50/50",
+				icon: status === "pass" ? CheckCircleIcon : 
+					  status === "warning" ? AlertTriangleIcon : XCircleIcon,
+				iconClass: status === "pass" ? "text-green-500" :
+						   status === "warning" ? "text-yellow-500" : "text-red-500",
+				cardClass: status === "pass" ? "border-green-200 bg-green-50/50" :
+						   status === "warning" ? "border-yellow-200 bg-yellow-50/50" : "border-red-200 bg-red-50/50",
 			};
 		}
 		
@@ -90,13 +94,9 @@
 	// Find the target file for this schema validation
 	const targetFile = $derived.by(() => {
 		const schemaValidation = availableSchemas.find(s => s.id === id);
-		if (!schemaValidation?.dependencies?.[0]) return filename;
-		const dependency = schemaValidation.dependencies[0];
-		if (dependency.type === 'uploaded') {
-			const fileReq = activeFileRequirements.find(req => req.id === dependency.sourceId);
-			return fileReq?.defaultFilename || filename;
-		}
-		return filename;
+		if (!schemaValidation?.targetFileId) return filename;
+		const fileReq = activeFileRequirements.find(req => req.id === schemaValidation.targetFileId);
+		return fileReq?.defaultFilename || filename;
 	});
 </script>
 

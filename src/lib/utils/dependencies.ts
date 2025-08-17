@@ -96,35 +96,35 @@ export function checkSchemaDependencies(schemaId: string): DependencyStatus {
   if (!schema) {
     return { allMet: false, dependencies: [] };
   }
-  if (!schema.dependencies || schema.dependencies.length === 0) {
+
+  // New schema structure uses targetFileId directly
+  if (!schema.targetFileId) {
     return { allMet: true, dependencies: [] };
   }
 
   const dependencies: DependencyInfo[] = [];
 
-  for (const dependency of schema.dependencies) {
-    if (dependency.type === 'uploaded') {
-      const requirement: FileRequirement | undefined = activeFileRequirements.find(r => r.id === dependency.sourceId);
-      if (requirement) {
-        const uploadState = getUploadStateStrict(requirement.id);
-        dependencies.push({
-          id: requirement.id,
-          type: 'uploaded',
-          filename: requirement.defaultFilename,
-          title: requirement.title,
-          description: requirement.description,
-          isAvailable: uploadState === 'completed'
-        });
-      } else {
-        dependencies.push({
-          id: dependency.sourceId,
-          type: 'uploaded',
-          filename: dependency.sourceId,
-          title: `Missing requirement: ${dependency.sourceId}`,
-          isAvailable: false
-        });
-      }
-    }
+  // Check if the target file is available
+  const requirement: FileRequirement | undefined = activeFileRequirements.find(r => r.id === schema.targetFileId);
+  if (requirement) {
+    const uploadState = getUploadStateStrict(requirement.id);
+    dependencies.push({
+      id: requirement.id,
+      type: 'uploaded',
+      filename: requirement.defaultFilename,
+      title: requirement.title,
+      description: requirement.description,
+      isAvailable: uploadState === 'completed'
+    });
+  } else {
+    // Target file requirement not found
+    dependencies.push({
+      id: schema.targetFileId,
+      type: 'uploaded',
+      filename: schema.targetFileId,
+      title: `Missing file requirement: ${schema.targetFileId}`,
+      isAvailable: false
+    });
   }
 
   const allMet = dependencies.every(dep => dep.isAvailable);

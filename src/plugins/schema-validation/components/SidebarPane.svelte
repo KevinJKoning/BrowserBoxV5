@@ -24,8 +24,9 @@
       schemas = schemas.filter(schema => 
         schema.title.toLowerCase().includes(query) ||
         schema.description.toLowerCase().includes(query) ||
-        schema.filename.toLowerCase().includes(query) ||
-        (schema.category && schema.category.toLowerCase().includes(query))
+        (schema.validationType === 'python' && schema.filename.toLowerCase().includes(query)) ||
+        (schema.category && schema.category.toLowerCase().includes(query)) ||
+        (schema.tags && schema.tags.some(tag => tag.toLowerCase().includes(query)))
       );
     }
     
@@ -124,16 +125,15 @@
       {:else}
         {#each filteredSchemas as schema (schema.id)}
           {@const execution = getExecution(schema.id)}
-          {@const validationResults = getValidationResults(schema.id)}
           <SchemaCard
             id={schema.id}
             title={schema.title}
             description={schema.description}
-            filename={schema.filename}
+            filename={schema.validationType === 'python' ? schema.filename : undefined}
             status={getExecutionStatus(schema.id)}
             executionTime={execution?.executionTime}
             lastRun={execution?.lastRun}
-            validationSummary={validationResults?.summary}
+            validationSummary={execution?.jsResult?.summary}
             isSelected={isSchemaSelected(schema.id)}
             onValidate={() => handleSchemaValidate(schema.id)}
             onPreview={() => handleSchemaPreview(schema.id)}
