@@ -92,48 +92,6 @@
         },
         "description": "Dependencies required for this script to run"
       },
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "timeout": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 300,
-            "default": 30,
-            "description": "Maximum execution time in seconds"
-          },
-          "memory": {
-            "type": "number",
-            "minimum": 64,
-            "maximum": 2048,
-            "default": 256,
-            "description": "Memory limit in MB"
-          }
-        },
-        "additionalProperties": false
-      },
-      "outputs": {
-        "type": "object",
-        "properties": {
-          "produces": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": ["table", "chart", "report", "data", "model"]
-            },
-            "description": "Types of output this script generates"
-          },
-          "formats": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": ["html", "json", "csv", "png", "pdf"]
-            },
-            "description": "Output file formats"
-          }
-        },
-        "additionalProperties": false
-      },
       "tags": {
         "type": "array",
         "items": {
@@ -148,11 +106,6 @@
         "type": "string",
         "pattern": "^(fast|medium|slow)$",
         "description": "Expected runtime category for user planning"
-      },
-      "complexity": {
-        "type": "string",
-        "pattern": "^(beginner|intermediate|advanced)$",
-        "description": "Complexity level for user guidance"
       }
     },
     "additionalProperties": false
@@ -172,17 +125,8 @@
             "description": "Primary sales transaction data"
           }
         ],
-        "parameters": {
-          "timeout": 60,
-          "memory": 512
-        },
-        "outputs": {
-          "produces": ["table", "chart"],
-          "formats": ["html", "json"]
-        },
         "tags": ["sales", "summary", "statistics"],
-        "estimatedRuntime": "fast",
-        "complexity": "beginner"
+        "estimatedRuntime": "fast"
       },
       {
         "id": "advanced-forecasting",
@@ -197,17 +141,8 @@
             "description": "Requires cleaned and summarized data"
           }
         ],
-        "parameters": {
-          "timeout": 180,
-          "memory": 1024
-        },
-        "outputs": {
-          "produces": ["model", "chart", "report"],
-          "formats": ["html", "json", "png"]
-        },
         "tags": ["forecasting", "time-series", "modeling", "advanced"],
-        "estimatedRuntime": "slow",
-        "complexity": "advanced"
+        "estimatedRuntime": "slow"
       }
     ]
   ]
