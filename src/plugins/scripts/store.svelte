@@ -1,12 +1,12 @@
 <script module lang="ts">
   import { pythonExecutor } from '@worker/executor';
-  import { scripts, type Script, type ScriptExecution } from '@config/script-config.js';
+  import type { Script, ScriptExecution } from '@config/types.js';
   import { select, clearOtherSelections, getSelection } from '@core/state/workspace.svelte';
   import { activeFileRequirements, files as uploadedFiles } from '@plugins/required-files/store.svelte';
   import { addResult } from '@plugins/results/store.svelte';
   import { registerSelectionResolver } from '@utils/breadcrumbs.ts';
 
-  export const availableScripts = $state<Script[]>([...scripts]);
+  export const availableScripts = $state<Script[]>([]);
   export const executions = $state<Record<string, ScriptExecution>>({});
   // Note: Don't pre-initialize executions - they should be created on-demand when scripts run
   // This ensures proper dependency checking and prevents showing "Ready" for scripts with unmet dependencies

@@ -13,9 +13,7 @@
 import { availableScripts } from "../../plugins/scripts/store.svelte";
 import { availableSchemas } from "../../plugins/schema-validation/store.svelte";
 import { activeFileRequirements, getUploadStateStrict } from "../../plugins/required-files/store.svelte";
-import type { Script } from "@config/script-config.js";
-import type { SchemaValidation } from "@config/schema-config.js";
-import type { FileRequirement } from "@config/file-config.js";
+import type { Script, SchemaValidation, FileRequirement } from "@config/types.js";
 
 // Interface for dependency information
 export interface DependencyInfo {

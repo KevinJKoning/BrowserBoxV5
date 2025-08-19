@@ -1,10 +1,66 @@
 /**
- * Schema validation configuration using two-path approach:
- * 1. JavaScript validation for simple files (CSV, JSON, basic Parquet)
- * 2. Python validation for complex files (GeoPackage, advanced business logic)
+ * Configuration types for the BrowserBox application
+ * These types are used across the application for configuration management
  */
 
-// JavaScript validation interfaces
+// File requirement interfaces
+export interface FileRequirement {
+  id: string;
+  title: string;
+  description: string;
+  defaultFilename: string;
+  required: boolean;
+  acceptedTypes?: string[];
+  maxSize?: number; // in MB
+}
+
+export interface UploadedFile {
+  id: string;
+  filename: string;
+  originalName: string;
+  size: string;
+  uploadedAt: string;
+  status: "waiting" | "uploading" | "completed" | "error";
+  file?: File; // Store the actual File object for preview
+  wasRenamed?: boolean; // Flag to show if file was renamed to match expected name
+}
+
+// Script configuration interfaces
+export interface ScriptDependency {
+  /** Source type - either an uploaded file requirement or a result file */
+  type: 'uploaded' | 'result';
+  /** ID of the file requirement or result ID */
+  sourceId: string;
+}
+
+export interface Script {
+  id: string;
+  title: string;
+  description: string;
+  filename: string;
+  content: string;
+  category?: string;
+  /** Files that should be copied into pyodide filesystem before execution */
+  dependencies?: ScriptDependency[];
+}
+
+export interface ScriptExecution {
+  id: string;
+  scriptId: string;
+  status: "ready" | "running" | "completed" | "error";
+  executionTime?: string;
+  lastRun?: string;
+  output?: string;
+  error?: string;
+  metrics?: {
+    outputLines?: number;
+    errorCount?: number;
+    memoryUsage?: string;
+    [key: string]: unknown;
+  };
+}
+
+// Schema validation interfaces
 export interface JavaScriptValidationRules {
   /** Column names that must be present in the data */
   requiredColumns?: string[];
@@ -36,7 +92,6 @@ export interface JavaScriptValidation {
   validationRules: JavaScriptValidationRules;
 }
 
-// Python validation interfaces
 export interface PythonValidation {
   id: string;
   title: string;
@@ -49,6 +104,8 @@ export interface PythonValidation {
   filename: string;
   /** Expected HTML report filename */
   outputHtml: string;
+  /** Python script content (loaded dynamically) */
+  content?: string;
 }
 
 // Union type for all schema validations
@@ -91,50 +148,3 @@ export interface SchemaValidationExecution {
   htmlGenerated?: boolean;
   htmlPath?: string;
 }
-
-// Static schema validations (will be replaced by runtime loading)
-export const schemaValidations: SchemaValidation[] = [
-  // Example JavaScript validation
-  {
-    id: 'sample-data-js-validation',
-    title: 'Sample Data Basic Validation',
-    description: 'Basic JavaScript validation for sample CSV data structure and content',
-    validationType: 'javascript',
-    targetFileId: 'identity',
-    category: 'validation',
-    tags: ['sample', 'csv', 'basic'],
-    validationRules: {
-      requiredColumns: ['id', 'name'],
-      columnTypes: {
-        id: 'number',
-        name: 'string'
-      },
-      constraints: {
-        id: {
-          min: 1,
-          notNull: true
-        },
-        name: {
-          notNull: true,
-          pattern: '^[A-Za-z\\s]+$'
-        }
-      },
-      rowCount: {
-        min: 1,
-        max: 100000
-      }
-    }
-  },
-  // Example Python validation  
-  {
-    id: 'random-data-python-validation',
-    title: 'Random Data Advanced Validation',
-    description: 'Advanced Python validation for random data with statistical analysis',
-    validationType: 'python',
-    targetFileId: 'random_data',
-    category: 'quality',
-    tags: ['random', 'parquet', 'advanced'],
-    filename: 'random_data_validation.py',
-    outputHtml: 'random_data_report.html'
-  }
-];

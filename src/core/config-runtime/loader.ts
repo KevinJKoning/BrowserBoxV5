@@ -7,9 +7,7 @@
  * TODO: Implement runtime package loading system for External Config Loading phase
  */
 
-import type { FileRequirement } from '@config/file-config.js';
-import type { SchemaValidation } from '@config/schema-config.js';
-import type { Script } from '@config/script-config.js';
+import type { FileRequirement, SchemaValidation, Script } from '@config/types.js';
 import JSZip from 'jszip';
 
 // Enhanced interfaces for runtime config with ZIP support
@@ -186,6 +184,29 @@ export class RuntimeConfigLoader implements ConfigLoader {
     return configPackage;
   }
 
+  /**
+   * Load embedded default configuration ZIP file
+   */
+  async loadEmbeddedDefaultConfig(): Promise<ConfigPackage> {
+    try {
+      // Fetch the embedded default config ZIP file
+      const response = await fetch('/default-config.zip');
+      if (!response.ok) {
+        throw new Error(`Failed to fetch default config: ${response.status} ${response.statusText}`);
+      }
+      
+      const zipBlob = await response.blob();
+      const zipFile = new File([zipBlob], 'default-config.zip', { type: 'application/zip' });
+      
+      // Use existing ZIP loading logic - no code duplication!
+      const configPackage = await this.loadAndApplyPackage(zipFile);
+      
+      return configPackage;
+    } catch (error) {
+      throw new Error(`Failed to load embedded default configuration: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
   // Private methods for parsing package contents
   private async parseFileRequirements(zip: JSZip): Promise<FileRequirement[]> {
     const requirementsFile = zip.file('files/requirements.json');
@@ -234,13 +255,25 @@ export class RuntimeConfigLoader implements ConfigLoader {
     const schemas: SchemaValidation[] = [];
     
     for (const schemaMeta of schemaMetadata) {
-      const schemaFile = zip.file(`schemas/${schemaMeta.filename}`);
-      if (schemaFile) {
-        const schemaContent = await schemaFile.async('text');
-        schemas.push({
-          ...schemaMeta,
-          content: schemaContent
-        });
+      if (schemaMeta.validationType === 'javascript') {
+        // JavaScript validation - rules are in metadata, no separate file needed
+        schemas.push(schemaMeta);
+      } else if (schemaMeta.validationType === 'python' && schemaMeta.filename) {
+        // Python validation - load script content from file
+        const schemaFile = zip.file(`schemas/${schemaMeta.filename}`);
+        if (schemaFile) {
+          const schemaContent = await schemaFile.async('text');
+          schemas.push({
+            ...schemaMeta,
+            content: schemaContent
+          });
+        } else {
+          console.warn(`Schema file not found: schemas/${schemaMeta.filename}`);
+          // Still add metadata without content
+          schemas.push(schemaMeta);
+        }
+      } else {
+        console.warn(`Unknown schema validation type or missing filename:`, schemaMeta);
       }
     }
     
@@ -252,35 +285,16 @@ export class RuntimeConfigLoader implements ConfigLoader {
 export const configLoader = new RuntimeConfigLoader();
 
 /**
- * Load configuration from legacy static modules
- * This function ensures the existing static config is loaded into the dynamic stores
+ * Load default configuration from embedded ZIP file
+ * Uses the same ZIP loading logic as user-uploaded configs - no code duplication!
  */
-export async function loadLegacyConfig(): Promise<void> {
+export async function loadDefaultConfig(): Promise<void> {
   try {
-    // Dynamic imports to avoid circular dependencies
-    const [fileConfig, schemaConfig, scriptConfig] = await Promise.all([
-      import('@config/file-config.js'),
-      import('@config/schema-config.js'),
-      import('@config/script-config.js')
-    ]);
-
-    // Create legacy config package
-    const legacyPackage: ConfigPackage = {
-      name: 'legacy-config',
-      version: '1.0.0',
-      description: 'Default static configuration loaded at startup',
-      files: fileConfig.fileRequirements,
-      schemas: schemaConfig.schemaValidations,
-      scripts: scriptConfig.scripts,
-      isValid: true
-    };
-
-    // Apply legacy config to stores and register
-    await configLoader.applyPackageToStores(legacyPackage);
-    configLoader.registerPackage(legacyPackage);
-    
-    console.log('Legacy configuration loaded successfully');
+    const defaultPackage = await configLoader.loadEmbeddedDefaultConfig();
+    console.log(`Default configuration loaded successfully: ${defaultPackage.name} v${defaultPackage.version}`);
   } catch (error) {
-    console.error('Failed to load legacy configuration:', error);
+    console.error('Failed to load default configuration:', error);
+    throw new Error('Failed to load default configuration package');
   }
 }
+

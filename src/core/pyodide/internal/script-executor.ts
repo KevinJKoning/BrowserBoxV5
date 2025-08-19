@@ -9,8 +9,7 @@ import {
 	type ScriptOptions,
 	type Script as SimpleScript
 } from './simple-pyodide.js';
-import type { Script } from '@config/script-config.js';
-import { fileRequirements } from '@config/file-config.js';
+import type { Script } from '@config/types.js';
 
 // Re-export the simple interfaces
 export type ScriptExecutionResult = ScriptResult;
@@ -43,12 +42,11 @@ export class ScriptExecutor {
 		};
 
 		// Convert dataFiles to simple format
+		// Note: requirement lookup is handled by the calling code that passes fileData
 		const dataFiles = options.dataFiles?.map(fileData => {
-			const requirement = fileRequirements.find((req: { id: string; defaultFilename?: string }) => req.id === fileData.requirementId);
-			const filename = requirement?.defaultFilename || fileData.file.name;
 			return {
 				file: fileData.file,
-				filename
+				filename: fileData.file.name // Use original filename; requirement mapping is handled upstream
 			};
 		}) || [];
 

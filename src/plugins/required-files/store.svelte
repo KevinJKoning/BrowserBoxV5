@@ -1,15 +1,13 @@
 <script module lang="ts">
-  import { fileRequirements, type FileRequirement, type UploadedFile } from '@config/file-config.js';
+  import type { FileRequirement, UploadedFile } from '@config/types.js';
   import { formatFileSize } from '@utils/formatting.ts';
   import { select, clearOtherSelections } from '@core/state/workspace.svelte';
   import { registerSelectionResolver } from '@utils/breadcrumbs.ts';
 
   // Current active file requirements (can be updated dynamically)
-  export const activeFileRequirements = $state<FileRequirement[]>([...fileRequirements]);
+  export const activeFileRequirements = $state<FileRequirement[]>([]);
   export const files = $state<Record<string, UploadedFile>>({});
-  export const uploadStates = $state<Record<string, 'waiting'|'uploading'|'completed'|'error'>>(
-    Object.fromEntries(fileRequirements.map(r => [r.id, 'waiting' as const]))
-  );
+  export const uploadStates = $state<Record<string, 'waiting'|'uploading'|'completed'|'error'>>({});
 
   export function getUploadedFiles() { return Object.values(files); }
   export function getCompletedUploads() { return getUploadedFiles().filter(f => f.status === 'completed'); }

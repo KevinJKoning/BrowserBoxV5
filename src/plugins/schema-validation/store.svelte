@@ -1,20 +1,19 @@
 <script module lang="ts">
   import { pythonExecutor } from '@worker/executor';
-  import { 
-    schemaValidations, 
-    type SchemaValidation, 
-    type SchemaValidationExecution,
-    type JavaScriptValidation,
-    type PythonValidation,
-    type JavaScriptValidationResult,
-    type JavaScriptValidationError
-  } from '@config/schema-config.js';
+  import type { 
+    SchemaValidation, 
+    SchemaValidationExecution,
+    JavaScriptValidation,
+    PythonValidation,
+    JavaScriptValidationResult,
+    JavaScriptValidationError
+  } from '@config/types.js';
   import { select, clearOtherSelections, getSelection } from '@core/state/workspace.svelte';
   import { activeFileRequirements, files as uploadedFiles } from '@plugins/required-files/store.svelte';
   import { addResult } from '@plugins/results/store.svelte';
   import { registerSelectionResolver } from '@utils/breadcrumbs.ts';
 
-  export const availableSchemas = $state<SchemaValidation[]>([...schemaValidations]);
+  export const availableSchemas = $state<SchemaValidation[]>([]);
   export const executions = $state<Record<string, SchemaValidationExecution>>({});
 
   export function getExecutionsList() { 

@@ -6,7 +6,7 @@
   import AlertCircleIcon from "@lucide/svelte/icons/alert-circle";
   import CodeIcon from "@lucide/svelte/icons/code";
   import FileTextIcon from "@lucide/svelte/icons/file-text";
-  import type { SchemaValidation, SchemaValidationExecution } from "@config/schema-config.js";
+  import type { SchemaValidation, SchemaValidationExecution } from "@config/types.js";
 
   interface Props {
     schema: SchemaValidation;
