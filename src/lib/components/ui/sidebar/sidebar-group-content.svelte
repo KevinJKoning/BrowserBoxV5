@@ -14,7 +14,7 @@
 	bind:this={ref}
 	data-slot="sidebar-group-content"
 	data-sidebar="group-content"
-	class={cn("w-full text-sm overflow-hidden", className)}
+	class={cn("w-full text-sm overflow-visible", className)}
 	{...restProps}
 >
 	{@render children?.()}

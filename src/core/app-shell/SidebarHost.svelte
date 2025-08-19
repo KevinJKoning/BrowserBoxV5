@@ -40,10 +40,10 @@
   class="overflow-hidden [&>[data-sidebar=sidebar]]:flex-row"
 >
   <!-- Icon sidebar -->
-  <Sidebar.Root collapsible="none" class="!w-[calc(var(--sidebar-width-icon)_+_1px)] border-r">
+  <Sidebar.Root collapsible="none" class="!w-[calc(var(--sidebar-width-icon)_+_1px)] border-r overflow-visible">
     <Sidebar.Content>
       <Sidebar.Group>
-        <Sidebar.GroupContent class="px-1.5 md:px-0">
+        <Sidebar.GroupContent class="px-1.5 md:px-0 pb-2">
           <Sidebar.Menu>
             {#each getAllPlugins() as plugin (plugin.id)}
               <Sidebar.MenuItem>
