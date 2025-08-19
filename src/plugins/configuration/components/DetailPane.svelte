@@ -206,13 +206,13 @@
   <div class="bg-muted/50 flex-1 rounded-xl overflow-auto">
     <div class="p-8">
       <h1 class="text-3xl font-bold mb-4">Configuration Management</h1>
-      <p class="text-lg text-muted-foreground mb-6">
+      <p class="text-base text-muted-foreground mb-6">
         Manage configuration packages that define file requirements, analysis scripts, and schema validations.
         The sidebar shows available configuration packages and their status.
       </p>
       <div class="space-y-4">
-        <h2 class="text-xl font-semibold">Features:</h2>
-        <ul class="list-disc list-inside space-y-2 text-muted-foreground">
+        <h2 class="text-lg font-semibold">Features:</h2>
+        <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground">
           <li>Load configuration packages from ZIP files</li>
           <li>Package validation and error reporting</li>
           <li>Real-time configuration status monitoring</li>

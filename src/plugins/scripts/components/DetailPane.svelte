@@ -32,13 +32,13 @@
   <div class="bg-muted/50 flex-1 rounded-xl overflow-auto">
     <div class="p-8">
       <h1 class="text-3xl font-bold mb-4">Python Scripts</h1>
-      <p class="text-lg text-muted-foreground mb-6">
+      <p class="text-base text-muted-foreground mb-6">
         Execute Python scripts with Pyodide for data analysis and processing.
         The sidebar shows available scripts and their execution status.
       </p>
       <div class="space-y-4">
-        <h2 class="text-xl font-semibold">Features:</h2>
-        <ul class="list-disc list-inside space-y-2 text-muted-foreground">
+        <h2 class="text-lg font-semibold">Features:</h2>
+        <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground">
           <li>Python script execution with full scientific stack</li>
           <li>Real-time execution status and output monitoring</li>
           <li>Automatic file generation and result capture</li>

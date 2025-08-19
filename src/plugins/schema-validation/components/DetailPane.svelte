@@ -22,12 +22,12 @@
   <div class="bg-muted/50 flex-1 rounded-xl overflow-auto">
     <div class="p-8">
       <h1 class="text-3xl font-bold mb-4">Schema Validation</h1>
-      <p class="text-lg text-muted-foreground mb-6">
+      <p class="text-base text-muted-foreground mb-6">
         Validate your data using two approaches: fast JavaScript validation for simple files or comprehensive Python validation for complex analysis.
         The sidebar shows available schema validations and their execution status.
       </p>
       <div class="space-y-4">
-        <h2 class="text-xl font-semibold">Validation Types:</h2>
+        <h2 class="text-lg font-semibold">Validation Types:</h2>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border">
             <h3 class="font-medium text-green-900 dark:text-green-100 mb-2">
@@ -46,8 +46,8 @@
             </p>
           </div>
         </div>
-        <h2 class="text-xl font-semibold">Features:</h2>
-        <ul class="list-disc list-inside space-y-2 text-muted-foreground">
+        <h2 class="text-lg font-semibold">Features:</h2>
+        <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground">
           <li>Two-path validation: JavaScript for speed, Python for depth</li>
           <li>Real-time validation results with detailed error reporting</li>
           <li>Interactive HTML reports for Python validations</li>

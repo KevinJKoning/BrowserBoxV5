@@ -39,13 +39,13 @@
   <div class="bg-muted/50 flex-1 rounded-xl overflow-auto">
     <div class="p-8">
       <h1 class="text-3xl font-bold mb-4">File Management</h1>
-      <p class="text-lg text-muted-foreground mb-6">
+      <p class="text-base text-muted-foreground mb-6">
         Upload and manage your data files with real-time preview capabilities. 
         The sidebar shows your file requirements and upload status.
       </p>
       <div class="space-y-4">
-        <h2 class="text-xl font-semibold">Features:</h2>
-        <ul class="list-disc list-inside space-y-2 text-muted-foreground">
+        <h2 class="text-lg font-semibold">Features:</h2>
+        <ul class="list-disc list-inside space-y-2 text-sm text-muted-foreground">
           <li>Upload files with progress tracking</li>
           <li>Real-time parquet file preview with hyparquet</li>
           <li>CSV and GeoPackage file support</li>
