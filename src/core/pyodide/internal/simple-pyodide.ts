@@ -186,7 +186,7 @@ export class SimplePyodideExecutor {
           console.log('Loading Pyodide packages...');
           const packages = [
             'numpy', 'pandas', 'matplotlib', 'scikit-learn',
-            'fastparquet', 'shapely', 'pyproj', 'micropip',
+            'pyarrow', 'shapely', 'pyproj', 'micropip',
             'requests', 'geopandas'
           ];
           await pyodide.loadPackage(packages);
@@ -196,7 +196,7 @@ export class SimplePyodideExecutor {
           // Try loading packages individually
           const packages = [
             'numpy', 'pandas', 'matplotlib', 'scikit-learn',
-            'fastparquet', 'shapely', 'pyproj', 'micropip',
+            'pyarrow', 'shapely', 'pyproj', 'micropip',
             'requests', 'geopandas'
           ];
           for (const pkg of packages) {

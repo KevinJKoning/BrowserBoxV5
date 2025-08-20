@@ -37,7 +37,7 @@ export const pyodideCacheConfig: CacheConfig = {
     'pyproj',
     
     // File handling
-    'fastparquet',
+    'pyarrow',
     
     // Network/utilities
     'requests',

@@ -62,9 +62,9 @@ export const criticalPackageManifest: PackageManifest = {
   },
   
   // File handling
-  'fastparquet': {
-    filename: 'fastparquet-2024.5.0-cp312-cp312-pyodide_2024_0_wasm32.whl',
-    dependencies: ['numpy', 'pandas', 'packaging', 'cramjam']
+  'pyarrow': {
+    filename: 'pyarrow-18.1.0-cp312-cp312-pyodide_2024_0_wasm32.whl',
+    dependencies: ['numpy']
   },
   
   // Network and utilities
