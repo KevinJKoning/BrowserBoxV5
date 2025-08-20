@@ -73,7 +73,7 @@ export default defineConfig(({ command, mode }) => ({
 					{ url: '/assets/fiona-1.9.5-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
 					
 					// File handling
-					{ url: '/assets/fastparquet-2024.5.0-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
+					{ url: '/assets/pyarrow-18.1.0-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
 					
 					// Network and utilities
 					{ url: '/assets/requests-2.31.0-py3-none-any.whl', revision: null },
