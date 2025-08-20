@@ -1,0 +1,43 @@
+[
+  {
+    "id": "sample-data-js-validation",
+    "title": "Sample Data Basic Validation",
+    "description": "Basic JavaScript validation for sample CSV data structure and content",
+    "validationType": "javascript",
+    "targetFileId": "random_data.parquet",
+    "category": "validation",
+    "tags": ["sample", "csv", "basic"],
+    "validationRules": {
+      "requiredColumns": ["id", "name"],
+      "columnTypes": {
+        "id": "number",
+        "name": "string"
+      },
+      "constraints": {
+        "id": {
+          "min": 1,
+          "notNull": true
+        },
+        "name": {
+          "notNull": true,
+          "pattern": "^[A-Za-z\\s]+$"
+        }
+      },
+      "rowCount": {
+        "min": 1,
+        "max": 100000
+      }
+    }
+  },
+  {
+    "id": "random-data-python-validation",
+    "title": "Random Data Advanced Validation",
+    "description": "Advanced Python validation for random data with statistical analysis",
+    "validationType": "python",
+    "targetFileId": "random_data.parquet",
+    "category": "quality",
+    "tags": ["random", "parquet", "advanced"],
+    "filename": "random_data_validation.py",
+    "outputHtml": "random_data_report.html"
+  }
+]
