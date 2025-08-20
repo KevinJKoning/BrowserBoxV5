@@ -49,13 +49,13 @@ export function checkScriptDependencies(scriptId: string): DependencyStatus {
 
   for (const dependency of script.dependencies) {
     if (dependency.type === 'uploaded') {
-      const requirement: FileRequirement | undefined = activeFileRequirements.find(r => r.id === dependency.sourceId);
+      const requirement: FileRequirement | undefined = activeFileRequirements.find(r => r.filename === dependency.sourceId);
       if (requirement) {
-        const uploadState = getUploadStateStrict(requirement.id);
+        const uploadState = getUploadStateStrict(requirement.filename);
         dependencies.push({
-          id: requirement.id,
+          id: requirement.filename,
           type: 'uploaded',
-          filename: requirement.defaultFilename,
+          filename: requirement.filename,
             title: requirement.title,
           description: requirement.description,
           isAvailable: uploadState === 'completed'
@@ -103,13 +103,13 @@ export function checkSchemaDependencies(schemaId: string): DependencyStatus {
   const dependencies: DependencyInfo[] = [];
 
   // Check if the target file is available
-  const requirement: FileRequirement | undefined = activeFileRequirements.find(r => r.id === schema.targetFileId);
+  const requirement: FileRequirement | undefined = activeFileRequirements.find(r => r.filename === schema.targetFileId);
   if (requirement) {
-    const uploadState = getUploadStateStrict(requirement.id);
+    const uploadState = getUploadStateStrict(requirement.filename);
     dependencies.push({
-      id: requirement.id,
+      id: requirement.filename,
       type: 'uploaded',
-      filename: requirement.defaultFilename,
+      filename: requirement.filename,
       title: requirement.title,
       description: requirement.description,
       isAvailable: uploadState === 'completed'

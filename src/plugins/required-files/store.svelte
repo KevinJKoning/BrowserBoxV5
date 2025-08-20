@@ -43,7 +43,7 @@
   export async function loadFilesFromFolder(fileList: File[]) {
     const result = { total: fileList.length, matched: 0, errors: [] as {file:string;error:string}[]};
     for (const f of fileList) {
-      const req = activeFileRequirements.find(r => f.name.toLowerCase() === r.filename.toLowerCase() || isFileTypeAccepted(f.name, r));
+      const req = activeFileRequirements.find(r => f.name.toLowerCase() === r.filename.toLowerCase());
       if (req && !files[req.filename]) { try { await loadFile(req.filename, f); result.matched++; } catch (e) { result.errors.push({ file: f.name, error: e instanceof Error ? e.message : 'Unknown error' }); } }
     }
     return result;

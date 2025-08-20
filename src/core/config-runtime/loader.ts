@@ -90,9 +90,11 @@ export class RuntimeConfigLoader implements ConfigLoader {
       
       // Extract and merge file requirements from all scripts
       configPackage.fileRequirements = this.extractAndMergeFileRequirements(configPackage.scripts);
+      console.log('Extracted file requirements:', configPackage.fileRequirements);
       
       // Parse bundled data files from /data/ directory
       configPackage.bundledDataFiles = await this.parseBundledDataFiles(zip);
+      console.log('Parsed bundled data files:', configPackage.bundledDataFiles);
       
       // Parse schema definitions
       configPackage.schemas = await this.parseSchemaDefinitions(zip);
@@ -160,11 +162,13 @@ export class RuntimeConfigLoader implements ConfigLoader {
 
       // Load file requirements (extracted from scripts)
       if (configPackage.fileRequirements) {
+        console.log('Loading file requirements:', configPackage.fileRequirements);
         fileStore.loadFileRequirements(configPackage.fileRequirements);
       }
 
       // Auto-populate file requirements with bundled data files
       if (configPackage.bundledDataFiles) {
+        console.log('Loading bundled data files:', configPackage.bundledDataFiles.map(f => f.filename));
         await this.loadBundledDataFiles(fileStore, configPackage.bundledDataFiles);
       }
 

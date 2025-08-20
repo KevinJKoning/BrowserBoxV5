@@ -17,7 +17,7 @@
       files = files.filter(file => 
         file.title.toLowerCase().includes(query) ||
         file.description.toLowerCase().includes(query) ||
-        file.defaultFilename.toLowerCase().includes(query)
+        file.filename.toLowerCase().includes(query)
       );
     }
     
@@ -29,8 +29,8 @@
     const input = document.createElement('input');
     input.type = 'file';
     
-    const requirement = getActiveRequirements().find(req => req.id === fileId);
-    input.accept = requirement?.acceptedTypes?.join(',') || '.parquet,.csv,.gpkg';
+    const requirement = getActiveRequirements().find(req => req.filename === fileId);
+    input.accept = requirement?.fileType || '.parquet,.csv,.gpkg';
     
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
@@ -149,22 +149,22 @@
           {/if}
         </div>
       {:else}
-        {#each filteredFiles as fileReq (fileReq.id)}
-          {@const uploadedFile = getFile(fileReq.id)}
-          {@const uploadState = getUploadState(fileReq.id)}
+        {#each filteredFiles as fileReq (fileReq.filename)}
+          {@const uploadedFile = getFile(fileReq.filename)}
+          {@const uploadState = getUploadState(fileReq.filename)}
           <FileCard
-            id={fileReq.id}
+            id={fileReq.filename}
             title={fileReq.title}
             description={fileReq.description}
-            defaultFilename={fileReq.defaultFilename}
+            defaultFilename={fileReq.filename}
             status={uploadState}
             uploadedFilename={uploadedFile?.filename}
             fileSize={uploadedFile?.size}
             uploadedAt={uploadedFile?.uploadedAt}
             wasRenamed={uploadedFile?.wasRenamed}
-            onUpload={() => handleUpload(fileReq.id)}
-            onRemove={() => handleRemove(fileReq.id)}
-            onPreview={() => handlePreview(fileReq.id)}
+            onUpload={() => handleUpload(fileReq.filename)}
+            onRemove={() => handleRemove(fileReq.filename)}
+            onPreview={() => handlePreview(fileReq.filename)}
           />
         {/each}
       {/if}
