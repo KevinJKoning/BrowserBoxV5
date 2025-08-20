@@ -58,11 +58,6 @@
       "maxLength": 50,
       "description": "License identifier (e.g., 'MIT', 'Apache-2.0')"
     },
-    "homepage": {
-      "type": "string",
-      "format": "uri",
-      "description": "URL to package documentation or homepage"
-    },
     "repository": {
       "type": "string",
       "format": "uri", 
@@ -97,14 +92,6 @@
           "type": "number",
           "minimum": 0,
           "description": "Maximum total file size supported (MB)"
-        },
-        "requiredFileTypes": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "pattern": "^\\.[a-z0-9]+$"
-          },
-          "description": "File extensions that must be present for this package to work"
         }
       },
       "additionalProperties": false
@@ -121,7 +108,6 @@
       "updated": "2025-01-20T10:30:00.000Z",
       "keywords": ["sales", "forecasting", "business-intelligence"],
       "license": "MIT",
-      "homepage": "https://docs.company.com/analytics/sales-config",
       "repository": "https://github.com/company/analytics-configs",
       "dependencies": {
         "python": ">=3.8",
@@ -129,8 +115,7 @@
       },
       "configuration": {
         "minFileSize": 1,
-        "maxFileSize": 500,
-        "requiredFileTypes": [".csv", ".parquet"]
+        "maxFileSize": 500
       }
     }
   ]

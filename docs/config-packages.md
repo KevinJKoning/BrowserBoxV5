@@ -7,7 +7,7 @@ Configuration packages are ZIP files that define the analysis workflows, file re
 - [Package Structure](#package-structure)
 - [Creating a Configuration Package](#creating-a-configuration-package)
 - [Package Metadata (package.json)](#package-metadata-packagejson)
-- [File Requirements (files/requirements.json)](#file-requirements-filesrequirementsjson)
+- [Bundled Data Files (data/)](#bundled-data-files-data)
 - [Analysis Scripts (scripts/)](#analysis-scripts-scripts)
 - [Schema Validations (schemas/)](#schema-validations-schemas)
 - [Best Practices](#best-practices)
@@ -162,7 +162,6 @@ The `package.json` file contains essential metadata about your configuration pac
   "updated": "ISO8601",       // Last update timestamp
   "keywords": ["string"],     // Search keywords
   "license": "string",        // License identifier
-  "homepage": "string",       // Documentation URL
   "repository": "string"      // Source repository URL
 }
 ```
@@ -178,8 +177,7 @@ The `package.json` file contains essential metadata about your configuration pac
   "created": "2025-01-01T00:00:00.000Z", 
   "updated": "2025-01-20T10:30:00.000Z",
   "keywords": ["sales", "forecasting", "business-intelligence"],
-  "license": "MIT",
-  "homepage": "https://docs.company.com/analytics/sales-config"
+  "license": "MIT"
 }
 ```
 
@@ -345,7 +343,7 @@ The schema uses a discriminated union based on `validationType`:
   "title": "Customer Data Validation",
   "description": "Validate customer CSV structure and basic data quality",
   "validationType": "javascript",
-  "targetFileId": "customer_data",
+  "targetFileId": "customer_data.csv",
   "category": "validation",
   "tags": ["customer", "csv", "basic"],
   "validationRules": {
@@ -381,7 +379,7 @@ The schema uses a discriminated union based on `validationType`:
   "title": "GeoPackage Spatial Validation",
   "description": "Comprehensive validation of GeoPackage structure and spatial data integrity",
   "validationType": "python",
-  "targetFileId": "spatial_data",
+  "targetFileId": "spatial_data.gpkg",
   "category": "quality",
   "tags": ["geopackage", "spatial", "advanced"],
   "filename": "geopackage_validation.py",
@@ -512,10 +510,10 @@ Configuration packages are validated when loaded. Common validation errors inclu
 A: Check that your package.json has all required fields (name, version, description) and that all referenced files exist.
 
 **Q: Scripts fail to execute**  
-A: Ensure your Python scripts have valid syntax and handle file loading correctly. Check that file requirement IDs match your script's file access code.
+A: Ensure your Python scripts have valid syntax and handle file loading correctly. Check that file requirement filenames match the exact filenames your script tries to access.
 
 **Q: Files not recognized during upload**
-A: Verify that your file requirement `defaultFilename` matches the uploaded file name (case-sensitive) or that the file extension is in `acceptedTypes`.
+A: Verify that your file requirement `filename` matches the uploaded file name exactly (case-sensitive) and that the file extension matches the specified `fileType`.
 
 **Q: Validation scripts don't show results**
 A: Validation scripts must output JSON with the expected schema structure. Check that your validation function prints the results JSON.
