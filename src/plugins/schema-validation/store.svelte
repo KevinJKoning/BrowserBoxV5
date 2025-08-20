@@ -53,8 +53,8 @@
     const startTime = Date.now();
 
     // Get the target file
-    const req = activeFileRequirements.find(r => r.id === schema.targetFileId);
-    const uploaded = req ? uploadedFiles[req.id] : undefined;
+    const req = activeFileRequirements.find(r => r.filename === schema.targetFileId);
+    const uploaded = req ? uploadedFiles[req.filename] : undefined;
     
     if (!req || !uploaded?.file) {
       throw new Error(`Required file '${schema.targetFileId}' not found`);
@@ -76,14 +76,14 @@
 
   async function executePythonValidation(schema: PythonValidation, base: SchemaValidationExecution) {
     // Get the target file
-    const req = activeFileRequirements.find(r => r.id === schema.targetFileId);
-    const uploaded = req ? uploadedFiles[req.id] : undefined;
+    const req = activeFileRequirements.find(r => r.filename === schema.targetFileId);
+    const uploaded = req ? uploadedFiles[req.filename] : undefined;
     
     if (!req || !uploaded?.file) {
       throw new Error(`Required file '${schema.targetFileId}' not found`);
     }
 
-    const dataFiles = [{ file: uploaded.file, filename: req.defaultFilename }];
+    const dataFiles = [{ file: uploaded.file, filename: req.filename }];
 
     // Load Python script content - for now use placeholder
     const pythonContent = `
@@ -93,7 +93,7 @@ import json
 
 def main():
     # Load the data file
-    df = pd.read_parquet('${req.defaultFilename}') if '${req.defaultFilename}'.endswith('.parquet') else pd.read_csv('${req.defaultFilename}')
+    df = pd.read_parquet('${req.filename}') if '${req.filename}'.endswith('.parquet') else pd.read_csv('${req.filename}')
     
     # Generate HTML report
     html_content = f'''
@@ -102,7 +102,7 @@ def main():
     <head><title>Validation Report: ${schema.title}</title></head>
     <body>
         <h1>${schema.title}</h1>
-        <p>Validation completed for file: ${req.defaultFilename}</p>
+        <p>Validation completed for file: ${req.filename}</p>
         <h2>Data Summary</h2>
         <p>Rows: {len(df)}</p>
         <p>Columns: {len(df.columns)}</p>

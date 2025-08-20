@@ -95,8 +95,8 @@
 	const targetFile = $derived.by(() => {
 		const schemaValidation = availableSchemas.find(s => s.id === id);
 		if (!schemaValidation?.targetFileId) return filename;
-		const fileReq = activeFileRequirements.find(req => req.id === schemaValidation.targetFileId);
-		return fileReq?.defaultFilename || filename;
+		const fileReq = activeFileRequirements.find(req => req.filename === schemaValidation.targetFileId);
+		return fileReq?.filename || filename;
 	});
 </script>
 
