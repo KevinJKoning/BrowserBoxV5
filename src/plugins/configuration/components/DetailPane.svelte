@@ -79,7 +79,7 @@
       <!-- Package Stats -->
       {#if selectedPackage}
         {@const stats = getPackageStats(selectedPackage)}
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-3 gap-4">
         <Card>
           <CardContent class="p-4 text-center">
             <FileIcon class="size-8 mx-auto mb-2 text-muted-foreground" />
@@ -101,41 +101,34 @@
             <div class="text-xs text-muted-foreground">Schemas</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent class="p-4 text-center">
-            <PackageIcon class="size-8 mx-auto mb-2 text-muted-foreground" />
-            <div class="text-2xl font-bold">{stats.plugins}</div>
-            <div class="text-xs text-muted-foreground">Plugins</div>
-          </CardContent>
-        </Card>
         </div>
       {/if}
 
       <!-- Package Contents -->
       <div class="space-y-6">
-        {#if selectedPackage.files?.length}
+        {#if selectedPackage.fileRequirements?.length}
           <Card>
             <CardHeader>
               <CardTitle class="flex items-center gap-2">
                 <FileIcon class="size-5" />
-                File Requirements ({selectedPackage.files.length})
+                File Requirements ({selectedPackage.fileRequirements.length})
               </CardTitle>
             </CardHeader>
             <CardContent class="space-y-3">
-              {#each selectedPackage.files as file (file.id)}
+              {#each selectedPackage.fileRequirements as file (file.filename)}
                 <div class="flex items-center justify-between p-3 border rounded-md">
                   <div>
                     <div class="font-medium">{file.title}</div>
-                    <div class="text-sm text-muted-foreground">{file.defaultFilename}</div>
+                    <div class="text-sm text-muted-foreground">{file.filename}</div>
                     <div class="text-xs text-muted-foreground">{file.description}</div>
                   </div>
                   <div class="text-right">
                     <Badge variant={file.required ? "default" : "secondary"}>
                       {file.required ? "Required" : "Optional"}
                     </Badge>
-                    {#if file.acceptedTypes?.length}
+                    {#if file.fileType}
                       <div class="text-xs text-muted-foreground mt-1">
-                        {file.acceptedTypes.join(", ")}
+                        {file.fileType}
                       </div>
                     {/if}
                   </div>

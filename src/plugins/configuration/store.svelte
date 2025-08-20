@@ -74,7 +74,7 @@
 
   export function getPackageStats(pkg: ConfigPackage) {
     return {
-      files: pkg.files?.length || 0,
+      files: pkg.fileRequirements?.length || 0,
       scripts: pkg.scripts?.length || 0,
       schemas: pkg.schemas?.length || 0,
       plugins: pkg.plugins?.length || 0
