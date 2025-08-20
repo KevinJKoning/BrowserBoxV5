@@ -7,7 +7,7 @@
  * TODO: Implement runtime package loading system for External Config Loading phase
  */
 
-import type { FileRequirement, SchemaValidation, Script } from '@config/types.js';
+import type { FileRequirement, SchemaValidation, Script, BundledDataFile } from '@config/types.js';
 import JSZip from 'jszip';
 
 // Enhanced interfaces for runtime config with ZIP support
@@ -21,9 +21,10 @@ export interface ConfigPackageMetadata {
 }
 
 export interface ConfigPackage extends ConfigPackageMetadata {
-  files?: FileRequirement[];
+  fileRequirements?: FileRequirement[]; // Extracted from scripts
   schemas?: SchemaValidation[];
   scripts?: Script[];
+  bundledDataFiles?: BundledDataFile[]; // Files from /data/ directory
   // Package validation status
   isValid?: boolean;
   validationErrors?: string[];
@@ -77,17 +78,21 @@ export class RuntimeConfigLoader implements ConfigLoader {
       // Initialize package with metadata
       const configPackage: ConfigPackage = {
         ...packageMetadata,
-        files: [],
+        fileRequirements: [],
         schemas: [],
         scripts: [],
+        bundledDataFiles: [],
         plugins: []
       };
       
-      // Parse file requirements
-      configPackage.files = await this.parseFileRequirements(zip);
-      
-      // Parse script definitions
+      // Parse script definitions (which now include embedded file requirements)
       configPackage.scripts = await this.parseScriptDefinitions(zip);
+      
+      // Extract and merge file requirements from all scripts
+      configPackage.fileRequirements = this.extractAndMergeFileRequirements(configPackage.scripts);
+      
+      // Parse bundled data files from /data/ directory
+      configPackage.bundledDataFiles = await this.parseBundledDataFiles(zip);
       
       // Parse schema definitions
       configPackage.schemas = await this.parseSchemaDefinitions(zip);
@@ -117,8 +122,8 @@ export class RuntimeConfigLoader implements ConfigLoader {
     if (!pkg.version) errors.push('Package version is required');
     
     // Content validation
-    if (!pkg.files?.length && !pkg.scripts?.length && !pkg.schemas?.length) {
-      warnings.push('Package contains no files, scripts, or schemas');
+    if (!pkg.scripts?.length && !pkg.schemas?.length) {
+      warnings.push('Package contains no scripts or schemas');
     }
     
     return {
@@ -153,9 +158,14 @@ export class RuntimeConfigLoader implements ConfigLoader {
         import('@plugins/schema-validation/store.svelte')
       ]);
 
-      // Load file requirements
-      if (configPackage.files) {
-        fileStore.loadFileRequirements(configPackage.files);
+      // Load file requirements (extracted from scripts)
+      if (configPackage.fileRequirements) {
+        fileStore.loadFileRequirements(configPackage.fileRequirements);
+      }
+
+      // Auto-populate file requirements with bundled data files
+      if (configPackage.bundledDataFiles) {
+        await this.loadBundledDataFiles(fileStore, configPackage.bundledDataFiles);
       }
 
       // Load scripts
@@ -208,14 +218,89 @@ export class RuntimeConfigLoader implements ConfigLoader {
   }
 
   // Private methods for parsing package contents
-  private async parseFileRequirements(zip: JSZip): Promise<FileRequirement[]> {
-    const requirementsFile = zip.file('files/requirements.json');
-    if (!requirementsFile) {
-      return [];
+  
+  /**
+   * Extract and merge file requirements from all scripts
+   */
+  private extractAndMergeFileRequirements(scripts: Script[]): FileRequirement[] {
+    const requirementMap = new Map<string, FileRequirement>();
+    
+    for (const script of scripts) {
+      if (script.fileRequirements) {
+        for (const req of script.fileRequirements) {
+          const existing = requirementMap.get(req.filename);
+          if (existing) {
+            // Merge requirements - take most restrictive settings
+            requirementMap.set(req.filename, {
+              filename: req.filename,
+              title: existing.title, // Keep first title
+              description: existing.description, // Keep first description
+              required: existing.required || req.required, // Most restrictive
+              fileType: existing.fileType, // Keep first file type (they should match)
+              maxSize: existing.maxSize && req.maxSize ? Math.min(existing.maxSize, req.maxSize) : (existing.maxSize || req.maxSize)
+            });
+          } else {
+            requirementMap.set(req.filename, { ...req });
+          }
+        }
+      }
     }
     
-    const content = await requirementsFile.async('text');
-    return JSON.parse(content) as FileRequirement[];
+    return Array.from(requirementMap.values());
+  }
+
+  /**
+   * Parse bundled data files from /data/ directory
+   */
+  private async parseBundledDataFiles(zip: JSZip): Promise<BundledDataFile[]> {
+    const bundledFiles: BundledDataFile[] = [];
+    const dataFolder = zip.folder('data');
+    
+    if (!dataFolder) {
+      return bundledFiles;
+    }
+    
+    // Collect all file promises
+    const filePromises: Promise<void>[] = [];
+    
+    dataFolder.forEach((relativePath, file) => {
+      if (!file.dir && relativePath) {
+        const promise = file.async('uint8array').then((data) => {
+          bundledFiles.push({
+            filename: relativePath,
+            data,
+            size: data.length
+          });
+        }).catch((error) => {
+          console.warn(`Failed to read bundled data file: ${relativePath}`, error);
+        });
+        filePromises.push(promise);
+      }
+    });
+    
+    // Wait for all files to be processed
+    await Promise.all(filePromises);
+    
+    return bundledFiles;
+  }
+
+  /**
+   * Load bundled data files into the file store using existing file matching logic
+   */
+  private async loadBundledDataFiles(fileStore: any, bundledFiles: BundledDataFile[]): Promise<void> {
+    // Convert bundled data files to File objects
+    const fileObjects: File[] = [];
+    
+    for (const bundledFile of bundledFiles) {
+      const blob = new Blob([bundledFile.data]);
+      const file = new File([blob], bundledFile.filename);
+      fileObjects.push(file);
+    }
+    
+    // Use existing file matching logic to populate requirements
+    if (fileObjects.length > 0) {
+      await fileStore.loadFilesFromFolder(fileObjects);
+    }
   }
 
   private async parseScriptDefinitions(zip: JSZip): Promise<Script[]> {

@@ -5,24 +5,30 @@
 
 // File requirement interfaces
 export interface FileRequirement {
-  id: string;
+  filename: string; // The exact filename required (serves as ID)
   title: string;
   description: string;
-  defaultFilename: string;
   required: boolean;
-  acceptedTypes?: string[];
+  fileType: string; // Single required file extension (e.g., ".csv", ".parquet")
   maxSize?: number; // in MB
 }
 
 export interface UploadedFile {
   id: string;
-  filename: string;
+  filename: string; // This will match the FileRequirement.filename
   originalName: string;
   size: string;
   uploadedAt: string;
   status: "waiting" | "uploading" | "completed" | "error";
   file?: File; // Store the actual File object for preview
   wasRenamed?: boolean; // Flag to show if file was renamed to match expected name
+}
+
+// Bundled data file from configuration package
+export interface BundledDataFile {
+  filename: string;
+  data: Uint8Array;
+  size: number;
 }
 
 // Script configuration interfaces
@@ -40,6 +46,8 @@ export interface Script {
   filename: string;
   content: string;
   category?: string;
+  /** File requirements that this script needs (embedded in script metadata) */
+  fileRequirements?: FileRequirement[];
   /** Files that should be copied into pyodide filesystem before execution */
   dependencies?: ScriptDependency[];
 }

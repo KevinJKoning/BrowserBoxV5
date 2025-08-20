@@ -42,6 +42,48 @@
         "enum": ["analysis", "visualization", "processing", "reporting", "modeling", "cleaning"],
         "description": "Script category for organization and filtering"
       },
+      "fileRequirements": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["filename", "title", "description", "required", "fileType"],
+          "properties": {
+            "filename": {
+              "type": "string",
+              "pattern": "^[^<>:\"/\\\\|?*]+\\.[a-z0-9]+$",
+              "description": "Exact filename required (used as ID)"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "description": "Human-readable name shown in UI"
+            },
+            "description": {
+              "type": "string",
+              "minLength": 10,
+              "maxLength": 500,
+              "description": "Detailed explanation of file purpose"
+            },
+            "required": {
+              "type": "boolean",
+              "description": "Whether this file is mandatory"
+            },
+            "fileType": {
+              "type": "string",
+              "pattern": "^\\.[a-z0-9]+$",
+              "description": "Required file extension (e.g., '.csv', '.parquet')"
+            },
+            "maxSize": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Maximum file size in MB"
+            }
+          },
+          "additionalProperties": false
+        },
+        "description": "File requirements embedded in this script"
+      },
       "dependencies": {
         "type": "array",
         "items": {
@@ -54,7 +96,7 @@
             },
             "sourceId": {
               "type": "string",
-              "description": "ID of the required dependency"
+              "description": "Filename (for uploaded dependencies) or ID (for other types)"
             },
             "description": {
               "type": "string",
@@ -70,7 +112,7 @@
             "required": ["sourceId"],
             "properties": {
               "sourceId": {
-                "description": "File requirement ID that this script depends on"
+                "description": "Filename that this script depends on (e.g., 'data.csv')"
               }
             }
           },
@@ -118,10 +160,20 @@
         "description": "Generate comprehensive summary statistics and trends for sales data including revenue, customer counts, and product performance.",
         "filename": "sales_summary.py",
         "category": "analysis",
+        "fileRequirements": [
+          {
+            "filename": "sales_data.csv",
+            "title": "Sales Transaction Data",
+            "description": "Monthly sales transactions with customer, product, and revenue information",
+            "required": true,
+            "fileType": ".csv",
+            "maxSize": 100
+          }
+        ],
         "dependencies": [
           {
             "type": "uploaded",
-            "sourceId": "sales_data",
+            "sourceId": "sales_data.csv",
             "description": "Primary sales transaction data"
           }
         ],

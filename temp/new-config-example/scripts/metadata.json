@@ -1,0 +1,60 @@
+[
+  {
+    "id": "sales-analysis",
+    "title": "Sales Data Analysis",
+    "description": "Analyze sales data to generate revenue insights, customer behavior patterns, and product performance metrics",
+    "filename": "sales_analysis.py",
+    "category": "analysis",
+    "fileRequirements": [
+      {
+        "filename": "sample_sales.csv",
+        "title": "Sales Transaction Data",
+        "description": "Daily sales transactions including customer, product, quantity, and revenue information",
+        "required": true,
+        "fileType": ".csv",
+        "maxSize": 10
+      }
+    ],
+    "dependencies": [
+      {
+        "type": "uploaded",
+        "sourceId": "sample_sales.csv"
+      }
+    ]
+  },
+  {
+    "id": "customer-analysis",
+    "title": "Customer Analysis Report",
+    "description": "Generate comprehensive customer analysis including demographics, purchasing patterns, and segmentation insights",
+    "filename": "customer_analysis.py",
+    "category": "analysis",
+    "fileRequirements": [
+      {
+        "filename": "customer_info.csv",
+        "title": "Customer Information",
+        "description": "Customer demographic and segmentation data including names, emails, ages, and customer segments",
+        "required": true,
+        "fileType": ".csv",
+        "maxSize": 5
+      },
+      {
+        "filename": "sample_sales.csv",
+        "title": "Sales Transaction Data",
+        "description": "Sales data needed to analyze customer purchase behavior",
+        "required": true,
+        "fileType": ".csv",
+        "maxSize": 10
+      }
+    ],
+    "dependencies": [
+      {
+        "type": "uploaded",
+        "sourceId": "customer_info.csv"
+      },
+      {
+        "type": "uploaded",
+        "sourceId": "sample_sales.csv"
+      }
+    ]
+  }
+]

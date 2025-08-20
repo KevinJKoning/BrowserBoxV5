@@ -43,10 +43,10 @@
       const dataFiles = (script.dependencies || [])
         .filter(d => d.type === 'uploaded')
         .map(d => {
-          const req = activeFileRequirements.find(r => r.id === d.sourceId);
-          const uploaded = req ? uploadedFiles[req.id] : undefined;
-          if (req && uploaded?.file) {
-            return { file: uploaded.file, filename: req.defaultFilename };
+          // sourceId is now the filename directly
+          const uploaded = uploadedFiles[d.sourceId];
+          if (uploaded?.file) {
+            return { file: uploaded.file, filename: d.sourceId };
           }
           return null; // missing dependency; silently skip (status UI will reflect waiting earlier)
         })

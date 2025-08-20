@@ -22,10 +22,11 @@ Every configuration package must be a ZIP file with the following structure:
 ```
 my-config-package.zip
 ├── package.json                    # Required: Package metadata
-├── files/                          # Optional: File requirements
-│   └── requirements.json           # File upload requirements
+├── data/                           # Optional: Pre-bundled data files
+│   ├── sales_data.csv              # Auto-populate file requirements
+│   └── customer_data.parquet       # Exact filename matching
 ├── scripts/                        # Optional: Analysis scripts
-│   ├── metadata.json               # Script definitions
+│   ├── metadata.json               # Script definitions with embedded file requirements
 │   ├── data_analysis.py            # Python script files
 │   └── visualization.py
 └── schemas/                        # Optional: Data validations  
@@ -40,8 +41,8 @@ my-config-package.zip
 
 ### Optional Directories
 
-- **`files/`** - Defines what files users need to upload
-- **`scripts/`** - Python analysis scripts that can be executed
+- **`data/`** - Pre-bundled data files that automatically populate file requirements
+- **`scripts/`** - Python analysis scripts with embedded file requirements
 - **`schemas/`** - Data validation and quality check scripts
 
 ## Creating a Configuration Package
@@ -51,7 +52,7 @@ my-config-package.zip
 ```bash
 mkdir my-config
 cd my-config
-mkdir files scripts schemas
+mkdir data scripts schemas
 ```
 
 ### Step 2: Create Package Metadata
@@ -69,27 +70,21 @@ Create `package.json` with your package information:
 }
 ```
 
-### Step 3: Define File Requirements (Optional)
+### Step 3: Add Bundled Data Files (Optional)
 
-Create `files/requirements.json` to specify what files users should upload:
+Place pre-bundled data files in the `data/` directory that will automatically populate file requirements:
 
-```json
-[
-  {
-    "id": "main_dataset",
-    "title": "Main Dataset", 
-    "description": "Primary data file for analysis",
-    "defaultFilename": "data.csv",
-    "required": true,
-    "acceptedTypes": [".csv", ".parquet"],
-    "maxSize": 50
-  }
-]
+```bash
+# Example bundled data files
+cp ~/sales_data.csv data/
+cp ~/customer_data.parquet data/
 ```
+
+These files will automatically satisfy any script file requirements with matching filenames.
 
 ### Step 4: Add Analysis Scripts (Optional)
 
-Create `scripts/metadata.json` and corresponding Python files:
+Create `scripts/metadata.json` with embedded file requirements and corresponding Python files:
 
 ```json
 [
@@ -99,7 +94,22 @@ Create `scripts/metadata.json` and corresponding Python files:
     "description": "Perform basic statistical analysis on the dataset", 
     "filename": "basic_analysis.py",
     "category": "analysis",
-    "dependencies": []
+    "fileRequirements": [
+      {
+        "filename": "sales_data.csv",
+        "title": "Sales Data",
+        "description": "Monthly sales transactions with customer and product information",
+        "required": true,
+        "fileType": ".csv",
+        "maxSize": 50
+      }
+    ],
+    "dependencies": [
+      {
+        "type": "uploaded",
+        "sourceId": "sales_data.csv"
+      }
+    ]
   }
 ]
 ```
@@ -114,9 +124,11 @@ Create `schemas/metadata.json` and corresponding Python files:
     "id": "data-quality",
     "title": "Data Quality Check",
     "description": "Validate data quality and completeness",
+    "validationType": "python",
+    "targetFileId": "sales_data.csv",
     "filename": "quality_check.py", 
-    "category": "validation",
-    "dependencies": []
+    "outputHtml": "quality_report.html",
+    "category": "validation"
   }
 ]
 ```
@@ -171,71 +183,33 @@ The `package.json` file contains essential metadata about your configuration pac
 }
 ```
 
-## File Requirements (files/requirements.json)
+## Bundled Data Files (data/)
 
-File requirements define what data files users need to upload to use your configuration.
+The `data/` directory contains pre-bundled data files that automatically populate file requirements when the package loads. This enables creating self-contained analysis packages that work immediately without requiring user uploads.
 
-### Structure
+### File Matching
 
-```json
-[
-  {
-    "id": "unique_identifier",
-    "title": "Display Name",
-    "description": "Detailed description of the file purpose",
-    "defaultFilename": "expected_filename.ext",
-    "required": true,
-    "acceptedTypes": [".csv", ".parquet", ".xlsx"],
-    "maxSize": 100
-  }
-]
-```
+Files in the `data/` directory are matched to script file requirements by exact filename:
 
-### Field Definitions
+- Script requires `sales_data.csv` → looks for `data/sales_data.csv`
+- Script requires `customer_data.parquet` → looks for `data/customer_data.parquet`
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `id` | string | Yes | Unique identifier for this file requirement |
-| `title` | string | Yes | Human-readable name shown in UI |
-| `description` | string | Yes | Detailed explanation of file purpose |
-| `defaultFilename` | string | Yes | Expected filename (used for matching) |
-| `required` | boolean | Yes | Whether this file is mandatory |
-| `acceptedTypes` | string[] | No | Allowed file extensions (e.g., [".csv", ".xlsx"]) |
-| `maxSize` | number | No | Maximum file size in MB |
+### Supported File Types
 
-### File Type Support
-
-BrowserBox supports these file types for analysis:
+BrowserBox supports these file types for bundled data:
 
 - **Data**: `.csv`, `.parquet`, `.xlsx`, `.json`
 - **Geospatial**: `.gpkg`, `.geojson`, `.shp` (with supporting files)
 - **Documents**: `.pdf`, `.txt`, `.md`
 - **Images**: `.jpg`, `.jpeg`, `.png`, `.gif`
 
-### Example
+### User Override
 
-```json
-[
-  {
-    "id": "sales_data",
-    "title": "Sales Transaction Data",
-    "description": "Monthly sales transactions with customer, product, and revenue information. Should contain columns: date, customer_id, product_id, quantity, revenue.",
-    "defaultFilename": "sales_transactions.csv",
-    "required": true,
-    "acceptedTypes": [".csv", ".parquet"],
-    "maxSize": 200
-  },
-  {
-    "id": "customer_data", 
-    "title": "Customer Demographics",
-    "description": "Customer information including demographics and segmentation data. Optional file for enhanced analysis.",
-    "defaultFilename": "customers.csv",
-    "required": false,
-    "acceptedTypes": [".csv", ".xlsx"],
-    "maxSize": 50
-  }
-]
-```
+Users can still upload different files to replace bundled data:
+
+1. Bundled files automatically populate file requirements on package load
+2. Users see the bundled files as "uploaded" with option to replace
+3. Scripts receive whatever file is currently active (bundled or user-replaced)
 
 ## Analysis Scripts (scripts/)
 
@@ -251,7 +225,22 @@ Analysis scripts are Python files that perform data processing, analysis, and vi
     "description": "What this script does",
     "filename": "script_file.py",
     "category": "analysis|visualization|processing",
-    "dependencies": []
+    "fileRequirements": [
+      {
+        "filename": "data.csv",
+        "title": "Input Data",
+        "description": "Primary dataset for analysis",
+        "required": true,
+        "fileType": ".csv",
+        "maxSize": 100
+      }
+    ],
+    "dependencies": [
+      {
+        "type": "uploaded",
+        "sourceId": "data.csv"
+      }
+    ]
   }
 ]
 ```
@@ -265,7 +254,19 @@ Analysis scripts are Python files that perform data processing, analysis, and vi
 | `description` | string | Yes | What the script accomplishes |
 | `filename` | string | Yes | Python file name in scripts/ directory |
 | `category` | string | No | Script category for organization |
-| `dependencies` | array | No | File dependencies (currently unused) |
+| `fileRequirements` | array | No | Embedded file requirements for this script |
+| `dependencies` | array | No | File dependencies referencing filenames |
+
+### File Requirement Fields
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `filename` | string | Yes | Exact filename required (used as ID) |
+| `title` | string | Yes | Human-readable name shown in UI |
+| `description` | string | Yes | Detailed explanation of file purpose |
+| `required` | boolean | Yes | Whether this file is mandatory |
+| `fileType` | string | Yes | Required file extension (e.g., ".csv", ".parquet") |
+| `maxSize` | number | No | Maximum file size in MB |
 
 ### Python Script Guidelines
 
@@ -290,7 +291,7 @@ def main():
     """Main analysis function"""
     
     # Load the data
-    # Replace 'sales_data' with your file requirement ID
+    # File is available by exact filename as specified in fileRequirements
     df = pd.read_csv('sales_data.csv')  
     
     # Perform analysis
@@ -530,15 +531,15 @@ A: Validation scripts must output JSON with the expected schema structure. Check
 
 ### Minimal Example Package
 
-A basic configuration package with one file requirement and one analysis script:
+A basic configuration package with embedded file requirements and one analysis script:
 
 ```
 minimal-example.zip
 ├── package.json
-├── files/
-│   └── requirements.json
+├── data/                           # Optional: Pre-bundled data
+│   └── data.csv                    # Auto-populates file requirement
 └── scripts/
-    ├── metadata.json
+    ├── metadata.json               # Embedded file requirements
     └── basic_summary.py
 ```
 
@@ -551,20 +552,6 @@ minimal-example.zip
 }
 ```
 
-**files/requirements.json:**
-```json
-[
-  {
-    "id": "data",
-    "title": "Data File",
-    "description": "CSV file with data to analyze",
-    "defaultFilename": "data.csv", 
-    "required": true,
-    "acceptedTypes": [".csv"]
-  }
-]
-```
-
 **scripts/metadata.json:**
 ```json
 [
@@ -573,7 +560,22 @@ minimal-example.zip
     "title": "Data Summary", 
     "description": "Basic statistical summary of the data",
     "filename": "basic_summary.py",
-    "category": "analysis"
+    "category": "analysis",
+    "fileRequirements": [
+      {
+        "filename": "data.csv",
+        "title": "Data File",
+        "description": "CSV file with data to analyze",
+        "required": true,
+        "fileType": ".csv"
+      }
+    ],
+    "dependencies": [
+      {
+        "type": "uploaded",
+        "sourceId": "data.csv"
+      }
+    ]
   }
 ]
 ```
