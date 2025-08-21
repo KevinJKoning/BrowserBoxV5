@@ -47,7 +47,9 @@ export default defineConfig(({ command, mode }) => ({
 		VitePWA({
 			registerType: 'autoUpdate',
 			workbox: {
-				maximumFileSizeToCacheInBytes: 120 * 1024 * 1024, // 120MB for critical Python packages + core files
+				maximumFileSizeToCacheInBytes: 400 * 1024 * 1024, // 120MB for critical Python packages + core files
+				// Exclude auto-detection of these files to prevent duplicates
+				globIgnores: ['**/pyodide*', '**/*.whl'],
 				// Pre-cache critical Python packages for offline use
 				additionalManifestEntries: [
 					// Core Pyodide files
