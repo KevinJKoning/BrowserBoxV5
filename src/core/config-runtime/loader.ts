@@ -241,7 +241,9 @@ export class RuntimeConfigLoader implements ConfigLoader {
               description: existing.description, // Keep first description
               required: existing.required || req.required, // Most restrictive
               fileType: existing.fileType, // Keep first file type (they should match)
-              maxSize: existing.maxSize && req.maxSize ? Math.min(existing.maxSize, req.maxSize) : (existing.maxSize || req.maxSize)
+              maxSize: existing.maxSize && req.maxSize ? Math.min(existing.maxSize, req.maxSize) : (existing.maxSize || req.maxSize),
+              source: existing.source || req.source, // Preserve source information
+              producedBy: existing.producedBy || req.producedBy // Preserve producedBy information
             });
           } else {
             requirementMap.set(req.filename, { ...req });
