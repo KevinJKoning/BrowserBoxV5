@@ -12,13 +12,8 @@
         "description": "Upload data file for Python script testing and data analysis. Supports Parquet format.",
         "required": true,
         "fileType": ".parquet",
-        "maxSize": 10
-      }
-    ],
-    "dependencies": [
-      {
-        "type": "uploaded",
-        "sourceId": "random_data.parquet"
+        "maxSize": 10,
+        "source": "uploaded"
       }
     ]
   },
@@ -35,13 +30,8 @@
         "description": "Upload data file for Python script testing and data analysis. Supports Parquet format.",
         "required": true,
         "fileType": ".parquet",
-        "maxSize": 10
-      }
-    ],
-    "dependencies": [
-      {
-        "type": "uploaded",
-        "sourceId": "random_data.parquet"
+        "maxSize": 10,
+        "source": "uploaded"
       }
     ]
   },
@@ -58,13 +48,8 @@
         "description": "Upload data file for Python script testing and data analysis. Supports Parquet format.",
         "required": true,
         "fileType": ".parquet",
-        "maxSize": 10
-      }
-    ],
-    "dependencies": [
-      {
-        "type": "uploaded",
-        "sourceId": "random_data.parquet"
+        "maxSize": 10,
+        "source": "uploaded"
       }
     ]
   },
@@ -81,13 +66,8 @@
         "description": "Upload data file for Python script testing and data analysis. Supports Parquet format.",
         "required": true,
         "fileType": ".parquet",
-        "maxSize": 10
-      }
-    ],
-    "dependencies": [
-      {
-        "type": "uploaded",
-        "sourceId": "random_data.parquet"
+        "maxSize": 10,
+        "source": "uploaded"
       }
     ]
   },
@@ -104,13 +84,8 @@
         "description": "Upload data file for Python script testing and data analysis. Supports Parquet format.",
         "required": true,
         "fileType": ".parquet",
-        "maxSize": 10
-      }
-    ],
-    "dependencies": [
-      {
-        "type": "uploaded",
-        "sourceId": "random_data.parquet"
+        "maxSize": 10,
+        "source": "uploaded"
       }
     ]
   },
@@ -127,13 +102,8 @@
         "description": "Upload data file for Python script testing and data analysis. Supports Parquet format.",
         "required": true,
         "fileType": ".parquet",
-        "maxSize": 10
-      }
-    ],
-    "dependencies": [
-      {
-        "type": "uploaded",
-        "sourceId": "random_data.parquet"
+        "maxSize": 10,
+        "source": "uploaded"
       }
     ]
   },
@@ -142,15 +112,13 @@
     "title": "Error Handling Test",
     "description": "Test script designed to demonstrate error handling and debugging capabilities in the execution environment.",
     "filename": "error_test.py",
-    "category": "testing",
-    "dependencies": []
+    "category": "testing"
   },
   {
     "id": "matplotlib-demo",
     "title": "Matplotlib Visualization Demo",
     "description": "Demonstrate matplotlib plotting capabilities with sample data generation and various chart types.",
     "filename": "matplotlib_demo.py",
-    "category": "visualization",
-    "dependencies": []
+    "category": "visualization"
   }
 ]

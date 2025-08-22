@@ -12,13 +12,8 @@
         "description": "Daily sales transactions including customer, product, quantity, and revenue information",
         "required": true,
         "fileType": ".csv",
-        "maxSize": 10
-      }
-    ],
-    "dependencies": [
-      {
-        "type": "uploaded",
-        "sourceId": "sample_sales.csv"
+        "maxSize": 10,
+        "source": "uploaded"
       }
     ]
   },
@@ -35,7 +30,8 @@
         "description": "Customer demographic and segmentation data including names, emails, ages, and customer segments",
         "required": true,
         "fileType": ".csv",
-        "maxSize": 5
+        "maxSize": 5,
+        "source": "uploaded"
       },
       {
         "filename": "sample_sales.csv",
@@ -43,17 +39,8 @@
         "description": "Sales data needed to analyze customer purchase behavior",
         "required": true,
         "fileType": ".csv",
-        "maxSize": 10
-      }
-    ],
-    "dependencies": [
-      {
-        "type": "uploaded",
-        "sourceId": "customer_info.csv"
-      },
-      {
-        "type": "uploaded",
-        "sourceId": "sample_sales.csv"
+        "maxSize": 10,
+        "source": "uploaded"
       }
     ]
   }

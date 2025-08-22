@@ -32,7 +32,7 @@ export interface DependencyStatus {
 }
 
 /**
- * Check script dependencies
+ * Check script dependencies based on embedded file requirements
  */
 export function checkScriptDependencies(scriptId: string): DependencyStatus {
   // Find the script in the dynamic store
@@ -41,43 +41,36 @@ export function checkScriptDependencies(scriptId: string): DependencyStatus {
     // Unknown script; treat as having unmet dependencies to avoid false Ready state
     return { allMet: false, dependencies: [] };
   }
-  if (!script.dependencies || script.dependencies.length === 0) {
+  if (!script.fileRequirements || script.fileRequirements.length === 0) {
     return { allMet: true, dependencies: [] };
   }
 
   const dependencies: DependencyInfo[] = [];
 
-  for (const dependency of script.dependencies) {
-    if (dependency.type === 'uploaded') {
-      const requirement: FileRequirement | undefined = activeFileRequirements.find(r => r.filename === dependency.sourceId);
-      if (requirement) {
-        const uploadState = getUploadStateStrict(requirement.filename);
-        dependencies.push({
-          id: requirement.filename,
-          type: 'uploaded',
-          filename: requirement.filename,
-            title: requirement.title,
-          description: requirement.description,
-          isAvailable: uploadState === 'completed'
-        });
-      } else {
-        // Requirement referenced but not present in current config
-        dependencies.push({
-          id: dependency.sourceId,
-          type: 'uploaded',
-          filename: dependency.sourceId,
-          title: `Missing requirement: ${dependency.sourceId}`,
-          isAvailable: false
-        });
-      }
-    } else if (dependency.type === 'result') {
-      // Future: integrate results plugin
+  for (const fileReq of script.fileRequirements) {
+    if (fileReq.source === 'uploaded' || !fileReq.source) {
+      // Handle uploaded files (default behavior)
+      const uploadState = getUploadStateStrict(fileReq.filename);
       dependencies.push({
-        id: dependency.sourceId,
+        id: fileReq.filename,
+        type: 'uploaded',
+        filename: fileReq.filename,
+        title: fileReq.title,
+        description: fileReq.description,
+        isAvailable: uploadState === 'completed'
+      });
+    } else if (fileReq.source === 'script') {
+      // Handle script-generated files
+      // Check if the producing script has been executed
+      // For now, assume script results are available if the producing script exists
+      const producingScript = availableScripts.find(s => s.id === fileReq.producedBy);
+      dependencies.push({
+        id: fileReq.filename,
         type: 'result',
-        filename: dependency.sourceId,
-        title: `Result: ${dependency.sourceId}`,
-        isAvailable: false
+        filename: fileReq.filename,
+        title: fileReq.title,
+        description: fileReq.description,
+        isAvailable: producingScript !== undefined // Future: integrate with results tracking
       });
     }
   }
