@@ -124,6 +124,18 @@ export default defineConfig(({ command, mode }) => ({
 								maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
 							}
 						}
+					},
+					{
+						// Web assets (CSS, images, fonts, etc.)
+						urlPattern: /^.*\/assets\/(.*\.(css|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)).*$/,
+						handler: 'CacheFirst',
+						options: {
+							cacheName: 'web-assets',
+							expiration: {
+								maxEntries: 50,
+								maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+							}
+						}
 					}
 				]
 			},
