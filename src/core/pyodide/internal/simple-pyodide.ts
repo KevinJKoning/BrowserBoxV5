@@ -297,8 +297,11 @@ sys.stderr = _stderr_capture
               // Ignore filesystem errors
             }
 
+            // Filter out common warnings that shouldn't be treated as errors
+            const isActualError = capturedStderr && capturedStderr.trim() && !isWarningOnly(capturedStderr);
+
             // Send results
-            if (capturedStderr && capturedStderr.trim()) {
+            if (isActualError) {
               self.postMessage({
                 type: 'error',
                 data: {
@@ -307,13 +310,40 @@ sys.stderr = _stderr_capture
                 }
               });
             } else {
+              // Include warnings in the output but don't treat as errors
+              const fullOutput = capturedStdout || '';
+              const outputWithWarnings = capturedStderr && capturedStderr.trim() 
+                ? fullOutput + '\\n\\n--- Warnings ---\\n' + capturedStderr
+                : fullOutput;
+              
               self.postMessage({
                 type: 'success',
                 data: {
-                  output: capturedStdout || '',
+                  output: outputWithWarnings,
                   modifiedFiles
                 }
               });
+            }
+
+            function isWarningOnly(stderr) {
+              const warningPatterns = [
+                /matplotlib.*building.*font.*cache/i,
+                /matplotlib.*font.*cache/i,
+                /userwarning/i,
+                /deprecationwarning/i,
+                /futurewarning/i,
+                /pendingdeprecationwarning/i,
+                /runtimewarning.*invalid.*encountered/i,
+                /warning.*pandas.*settingwithcopywarning/i
+              ];
+              
+              const lines = stderr.split('\\n').filter(line => line.trim());
+              return lines.every(line => 
+                warningPatterns.some(pattern => pattern.test(line)) ||
+                line.includes('Warning:') ||
+                line.includes('warning:') ||
+                line.trim().length === 0
+              );
             }
           }
         } catch (error) {
