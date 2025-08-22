@@ -297,8 +297,8 @@ sys.stderr = _stderr_capture
               // Ignore filesystem errors
             }
 
-            // Filter out common warnings that shouldn't be treated as errors
-            const isActualError = capturedStderr && capturedStderr.trim() && !isWarningOnly(capturedStderr);
+            // Assume stderr is warnings unless we detect actual error patterns
+            const isActualError = capturedStderr && capturedStderr.trim() && containsActualError(capturedStderr);
 
             // Send results
             if (isActualError) {
@@ -325,25 +325,49 @@ sys.stderr = _stderr_capture
               });
             }
 
-            function isWarningOnly(stderr) {
-              const warningPatterns = [
-                /matplotlib.*building.*font.*cache/i,
-                /matplotlib.*font.*cache/i,
-                /userwarning/i,
-                /deprecationwarning/i,
-                /futurewarning/i,
-                /pendingdeprecationwarning/i,
-                /runtimewarning.*invalid.*encountered/i,
-                /warning.*pandas.*settingwithcopywarning/i
+            function containsActualError(stderr) {
+              // Look for patterns that indicate actual errors (not warnings)
+              const errorPatterns = [
+                // Stack trace indicators
+                /traceback.*most recent call last/i,
+                /traceback/i,
+                /file ".*", line \\d+/i,
+                /^\\s*file ".*", line \\d+, in /im,
+                
+                // Common Python exceptions
+                /^\\s*\\w*error:/im, // SyntaxError:, TypeError:, ValueError:, etc.
+                /^\\s*exception:/im,
+                /^\\s*attributeerror:/im,
+                /^\\s*nameerror:/im,
+                /^\\s*keyerror:/im,
+                /^\\s*indexerror:/im,
+                /^\\s*importerror:/im,
+                /^\\s*modulenotfounderror:/im,
+                /^\\s*filenotfounderror:/im,
+                /^\\s*permissionerror:/im,
+                /^\\s*zerodivisionerror:/im,
+                /^\\s*syntaxerror:/im,
+                /^\\s*indentationerror:/im,
+                /^\\s*typeerror:/im,
+                /^\\s*valueerror:/im,
+                /^\\s*runtimeerror:/im,
+                /^\\s*keyboardinterrupt/im,
+                /^\\s*memoryerror:/im,
+                /^\\s*oserror:/im,
+                /^\\s*ioerror:/im,
+                
+                // Error context indicators
+                /raised an exception/i,
+                /execution failed/i,
+                /fatal error/i,
+                /critical error/i,
+                /unhandled exception/i,
+                /script error/i,
+                /compilation error/i,
+                /parse error/i
               ];
               
-              const lines = stderr.split('\\n').filter(line => line.trim());
-              return lines.every(line => 
-                warningPatterns.some(pattern => pattern.test(line)) ||
-                line.includes('Warning:') ||
-                line.includes('warning:') ||
-                line.trim().length === 0
-              );
+              return errorPatterns.some(pattern => pattern.test(stderr));
             }
           }
         } catch (error) {
