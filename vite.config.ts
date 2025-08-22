@@ -50,6 +50,17 @@ export default defineConfig(({ command, mode }) => ({
 				maximumFileSizeToCacheInBytes: 400 * 1024 * 1024, // 120MB for critical Python packages + core files
 				// Exclude auto-detection of these files to prevent duplicates
 				globIgnores: ['**/pyodide*', '**/*.whl'],
+				// Ensure consistent URL paths for cross-platform compatibility
+				manifestTransforms: [
+					(manifestEntries) => {
+						// Ensure all asset URLs start with / for absolute paths
+						const manifest = manifestEntries.map(entry => ({
+							...entry,
+							url: entry.url.startsWith('/') ? entry.url : `/${entry.url}`
+						}));
+						return { manifest };
+					}
+				],
 				// Pre-cache critical Python packages for offline use
 				additionalManifestEntries: [
 					// Core Pyodide files
