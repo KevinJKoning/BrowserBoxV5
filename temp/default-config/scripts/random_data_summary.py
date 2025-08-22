@@ -1,9 +1,80 @@
 import pandas as pd
 import numpy as np
 import os
+import sys
+
+def debug_pyodide_filesystem():
+    """Debug function to inspect Pyodide filesystem structure"""
+    print("=== PYODIDE FILESYSTEM DEBUG ===")
+    
+    # Show current working directory
+    print(f"Current working directory: {os.getcwd()}")
+    
+    # Show Python path
+    print(f"Python executable: {sys.executable}")
+    print(f"Python version: {sys.version}")
+    
+    # List root directories
+    print("\nRoot directory contents:")
+    try:
+        for item in sorted(os.listdir('/')):
+            path = os.path.join('/', item)
+            is_dir = os.path.isdir(path)
+            print(f"  {'[DIR]' if is_dir else '[FILE]'} /{item}")
+    except Exception as e:
+        print(f"  Error listing root: {e}")
+    
+    # Check common data paths
+    data_paths = ['/data', './data', 'data', '/tmp', './']
+    
+    for data_path in data_paths:
+        print(f"\nChecking path: {data_path}")
+        try:
+            if os.path.exists(data_path):
+                print(f"  ✓ Path exists")
+                if os.path.isdir(data_path):
+                    files = os.listdir(data_path)
+                    print(f"  Contents ({len(files)} items):")
+                    for f in sorted(files)[:10]:  # Show first 10 files
+                        full_path = os.path.join(data_path, f)
+                        size = os.path.getsize(full_path) if os.path.isfile(full_path) else 0
+                        file_type = '[DIR]' if os.path.isdir(full_path) else f'[FILE {size}B]'
+                        print(f"    {file_type} {f}")
+                    if len(files) > 10:
+                        print(f"    ... and {len(files) - 10} more items")
+            else:
+                print(f"  ✗ Path does not exist")
+        except Exception as e:
+            print(f"  ✗ Error accessing {data_path}: {e}")
+    
+    # Check file access with different path formats
+    test_files = ['random_data.parquet', 'data.csv', 'sample_sales.csv']
+    path_formats = [
+        lambda f: f,           # relative
+        lambda f: f'./{f}',    # explicit relative  
+        lambda f: f'/data/{f}', # absolute /data
+        lambda f: os.path.join('data', f), # os.path.join
+    ]
+    
+    print(f"\nTesting file access patterns:")
+    for test_file in test_files:
+        print(f"\nTesting file: {test_file}")
+        for i, path_func in enumerate(path_formats):
+            path = path_func(test_file)
+            try:
+                exists = os.path.exists(path)
+                readable = os.access(path, os.R_OK) if exists else False
+                size = os.path.getsize(path) if exists else 0
+                print(f"  Format {i+1} ({path}): {'✓' if exists else '✗'} exists, {'✓' if readable else '✗'} readable, {size}B")
+            except Exception as e:
+                print(f"  Format {i+1} ({path}): ✗ Error - {e}")
 
 def summarize_random_data():
     """Generate summary statistics for random_data.parquet."""
+    
+    # Run filesystem debug first
+    debug_pyodide_filesystem()
+    
     file_path = "/data/random_data.parquet"
     
     try:

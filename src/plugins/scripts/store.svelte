@@ -39,14 +39,13 @@
     const base: ScriptExecution = { id: `exec_${scriptId}_${Date.now()}`, scriptId, status: 'running', lastRun: new Date().toISOString() };
     executions[scriptId] = base;
     try {
-      // Gather uploaded dependency files (only 'uploaded' dependencies currently supported)
-      const dataFiles = (script.dependencies || [])
-        .filter(d => d.type === 'uploaded')
-        .map(d => {
-          // sourceId is now the filename directly
-          const uploaded = uploadedFiles[d.sourceId];
+      // Gather uploaded dependency files using new fileRequirements format
+      const dataFiles = (script.fileRequirements || [])
+        .filter(req => req.source === 'uploaded' || !req.source) // default to uploaded if not specified
+        .map(req => {
+          const uploaded = uploadedFiles[req.filename];
           if (uploaded?.file) {
-            return { file: uploaded.file, filename: d.sourceId };
+            return { file: uploaded.file, filename: req.filename };
           }
           return null; // missing dependency; silently skip (status UI will reflect waiting earlier)
         })
