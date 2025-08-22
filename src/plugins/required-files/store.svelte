@@ -43,7 +43,10 @@
   export async function loadFilesFromFolder(fileList: File[]) {
     const result = { total: fileList.length, matched: 0, errors: [] as {file:string;error:string}[]};
     for (const f of fileList) {
-      const req = activeFileRequirements.find(r => f.name.toLowerCase() === r.filename.toLowerCase());
+      const req = activeFileRequirements.find(r => 
+        f.name.toLowerCase() === r.filename.toLowerCase() &&
+        (r.source === 'uploaded' || !r.source) // Only match uploaded files
+      );
       if (req && !files[req.filename]) { try { await loadFile(req.filename, f); result.matched++; } catch (e) { result.errors.push({ file: f.name, error: e instanceof Error ? e.message : 'Unknown error' }); } }
     }
     return result;
@@ -66,9 +69,11 @@
     activeFileRequirements.length = 0;
     activeFileRequirements.push(...newRequirements);
     
-    // Initialize upload states
+    // Initialize upload states only for uploaded files
     for (const req of newRequirements) {
-      uploadStates[req.filename] = 'waiting';
+      if (req.source === 'uploaded' || !req.source) {
+        uploadStates[req.filename] = 'waiting';
+      }
     }
   }
 

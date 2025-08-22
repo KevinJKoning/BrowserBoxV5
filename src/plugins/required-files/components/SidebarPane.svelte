@@ -8,9 +8,10 @@
 
   let searchQuery = $state("");
 
-  // Filter files based on search
+  // Filter files based on search and exclude script-generated files
   const filteredFiles = $derived.by(() => {
-    let files = getActiveRequirements();
+    let files = getActiveRequirements()
+      .filter(file => file.source === 'uploaded' || !file.source); // Only show uploaded files, default to uploaded if not specified
     
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();

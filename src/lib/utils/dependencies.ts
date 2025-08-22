@@ -13,6 +13,7 @@
 import { availableScripts } from "../../plugins/scripts/store.svelte";
 import { availableSchemas } from "../../plugins/schema-validation/store.svelte";
 import { activeFileRequirements, getUploadStateStrict } from "../../plugins/required-files/store.svelte";
+import { getAllResults } from "../../plugins/results/store.svelte";
 import type { Script, SchemaValidation, FileRequirement } from "@config/types.js";
 
 // Interface for dependency information
@@ -61,16 +62,18 @@ export function checkScriptDependencies(scriptId: string): DependencyStatus {
       });
     } else if (fileReq.source === 'script') {
       // Handle script-generated files
-      // Check if the producing script has been executed
-      // For now, assume script results are available if the producing script exists
+      // Check if the result file actually exists in the Results store
+      const allResults = getAllResults();
+      const resultFile = allResults.find(result => result.filename === fileReq.filename);
       const producingScript = availableScripts.find(s => s.id === fileReq.producedBy);
+      
       dependencies.push({
         id: fileReq.filename,
         type: 'result',
         filename: fileReq.filename,
         title: fileReq.title,
         description: fileReq.description,
-        isAvailable: producingScript !== undefined // Future: integrate with results tracking
+        isAvailable: resultFile !== undefined && producingScript !== undefined
       });
     }
   }

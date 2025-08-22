@@ -3,7 +3,7 @@
   import type { Script, ScriptExecution } from '@config/types.js';
   import { select, clearOtherSelections, getSelection } from '@core/state/workspace.svelte';
   import { activeFileRequirements, files as uploadedFiles } from '@plugins/required-files/store.svelte';
-  import { addResult } from '@plugins/results/store.svelte';
+  import { addResult, getAllResults } from '@plugins/results/store.svelte';
   import { registerSelectionResolver } from '@utils/breadcrumbs.ts';
 
   export const availableScripts = $state<Script[]>([]);
@@ -39,17 +39,30 @@
     const base: ScriptExecution = { id: `exec_${scriptId}_${Date.now()}`, scriptId, status: 'running', lastRun: new Date().toISOString() };
     executions[scriptId] = base;
     try {
-      // Gather uploaded dependency files using new fileRequirements format
-      const dataFiles = (script.fileRequirements || [])
-        .filter(req => req.source === 'uploaded' || !req.source) // default to uploaded if not specified
-        .map(req => {
+      // Gather both uploaded and script-generated dependency files using new fileRequirements format
+      const dataFiles: { file: File; filename: string }[] = [];
+      
+      for (const req of script.fileRequirements || []) {
+        if (req.source === 'uploaded' || !req.source) {
+          // Handle uploaded files (default behavior)
           const uploaded = uploadedFiles[req.filename];
           if (uploaded?.file) {
-            return { file: uploaded.file, filename: req.filename };
+            dataFiles.push({ file: uploaded.file, filename: req.filename });
           }
-          return null; // missing dependency; silently skip (status UI will reflect waiting earlier)
-        })
-        .filter(Boolean) as { file: File; filename: string }[];
+        } else if (req.source === 'script') {
+          // Handle script-generated files from Results store
+          const allResults = getAllResults();
+          const resultFile = allResults.find(result => result.filename === req.filename);
+          if (resultFile?.content) {
+            // Convert result content back to File object
+            const blob = resultFile.content instanceof Uint8Array 
+              ? new Blob([resultFile.content])
+              : new Blob([resultFile.content], { type: 'text/plain' });
+            const file = new File([blob], req.filename);
+            dataFiles.push({ file, filename: req.filename });
+          }
+        }
+      }
 
       const result = await pythonExecutor.executeScript(
         { id: script.id, content: script.content, title: script.title },
