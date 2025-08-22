@@ -1,6 +1,0 @@
-customer_id,name,email,age,segment
-C001,John Smith,john@example.com,35,Premium
-C002,Jane Doe,jane@example.com,28,Standard
-C003,Bob Johnson,bob@example.com,42,Premium
-C004,Alice Brown,alice@example.com,31,Standard
-C005,Charlie Wilson,charlie@example.com,38,Premium

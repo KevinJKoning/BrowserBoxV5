@@ -1,7 +1,8 @@
 import pandas as pd
 import numpy as np
 import os
-import fastparquet
+import pyarrow as pa
+import pyarrow.parquet as pq
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
