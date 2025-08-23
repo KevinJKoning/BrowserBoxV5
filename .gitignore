@@ -8,9 +8,7 @@ node_modules
 .wrangler
 /build-inline
 /build
-dist/*
-!dist/default-config.zip
-!dist/serve.py
+dist/
 pyodide_0-27-7/
 
 # If you later choose GitHub Pages "docs/" deployment, remove this line and use docs/
