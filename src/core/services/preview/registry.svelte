@@ -38,5 +38,6 @@
     registerPreview({ extensions:['.parquet','.pq'], component: safe(() => import('./parquet-preview.svelte')), priority:10 });
     registerPreview({ extensions:['.gpkg','.geopackage'], component: safe(() => import('./geopackage-preview.svelte')), priority:10 });
     registerPreview({ extensions:['.html','.htm'], component: safe(() => import('./html-preview.svelte')), priority:10 });
+    registerPreview({ extensions:['.md','.markdown'], component: safe(() => import('./markdown-preview.svelte')), priority:10 });
   }
 </script>

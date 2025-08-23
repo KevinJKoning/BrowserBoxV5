@@ -279,23 +279,33 @@ sys.stderr = _stderr_capture
             // Reset stdout/stderr
             pyodide.runPython('sys.stdout = _original_stdout; sys.stderr = _original_stderr');
 
-            // Collect modified files
+            // Collect modified files recursively under /data
             const modifiedFiles = [];
-            try {
-              const currentFiles = pyodide.FS.readdir('/data');
-              for (const fileName of currentFiles) {
-                if (fileName !== '.' && fileName !== '..' && !initialFiles.has(fileName)) {
-                  const content = pyodide.FS.readFile(\`/data/\${fileName}\`);
-                  modifiedFiles.push({
-                    name: fileName,
-                    data: content,
-                    path: \`/data/\${fileName}\`
-                  });
+            function getAllFiles(dir) {
+              try {
+                const entries = pyodide.FS.readdir(dir);
+                for (const name of entries) {
+                  if (name === '.' || name === '..') continue;
+                  const fullPath = \`\${dir}/\${name}\`;
+                  try {
+                    if (pyodide.FS.isDir(pyodide.FS.stat(fullPath).mode)) {
+                      getAllFiles(fullPath); // Recurse into directory
+                    } else {
+                      // Skip original input files
+                      if (!initialFiles.has(name)) {
+                        const content = pyodide.FS.readFile(fullPath);
+                        modifiedFiles.push({
+                          name: fullPath.replace('/data/', ''),
+                          data: content,
+                          path: fullPath
+                        });
+                      }
+                    }
+                  } catch { /* ignore individual file errors */ }
                 }
-              }
-            } catch (e) {
-              // Ignore filesystem errors
+              } catch { /* ignore directory errors */ }
             }
+            getAllFiles('/data');
 
             // Assume stderr is warnings unless we detect actual error patterns
             const isActualError = capturedStderr && capturedStderr.trim() && containsActualError(capturedStderr);
