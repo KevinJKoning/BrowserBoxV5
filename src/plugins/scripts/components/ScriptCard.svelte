@@ -62,6 +62,10 @@
 			isSelected && "ring-2 ring-blue-500/80 ring-offset-2 shadow-lg drop-shadow-sm"
 		)}
 		onclick={onPreview}
+		data-testid="script-card"
+		data-script-id={id}
+		data-script-status={status}
+		data-automation="script-card"
 		{...restProps}
 	>
 		<!-- Header with status -->
@@ -106,6 +110,9 @@
 				class="flex-1 text-xs h-7"
 				onclick={(e) => { e.stopPropagation(); onRun?.(); }}
 				disabled={effectiveStatus === "running" || effectiveStatus === "waiting"}
+				data-testid="run-script"
+				data-script-id={id}
+				data-automation="run-script"
 			>
 				<PlayIcon class="size-3 mr-1" />
 				{effectiveStatus === "running" ? "Running..." : effectiveStatus === "waiting" ? "Waiting..." : "Run"}
@@ -162,6 +169,9 @@
 				class="flex-1 text-xs h-7"
 				onclick={onRun}
 				disabled={effectiveStatus === "running" || effectiveStatus === "waiting"}
+				data-testid="run-script"
+				data-script-id={id}
+				data-automation="run-script"
 			>
 				<PlayIcon class="size-3 mr-1" />
 				{effectiveStatus === "running" ? "Running..." : effectiveStatus === "waiting" ? "Waiting..." : "Run"}

@@ -87,6 +87,8 @@
   accept=".zip"
   onchange={handleFileUpload}
   class="hidden"
+  data-testid="config-file-input"
+  data-automation="config-file-input"
 />
 
 <Sidebar.Header class="gap-3.5 border-b p-4 min-w-0">
@@ -100,6 +102,8 @@
       class="text-xs h-7"
       onclick={handleQuickUpload}
       disabled={isLoading}
+      data-testid="load-configuration"
+      data-automation="load-configuration"
     >
       <UploadIcon class="size-3 mr-1" />
       Load
@@ -218,6 +222,9 @@
                 class="flex-1 text-xs h-7"
                 onclick={(e) => handlePackageActivate(pkg, e)}
                 disabled={isLoading}
+                data-testid="activate-package"
+                data-package-name={pkg.name}
+                data-automation="activate-package"
               >
                 <CheckIcon class="size-3 mr-1" />
                 Activate

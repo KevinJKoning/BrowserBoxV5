@@ -74,6 +74,10 @@
 {#if onPreview}
 	<button
 		data-result-id={id}
+		data-testid="result-card"
+		data-automation="result-card"
+		data-filename={filename}
+		data-file-type={fileType}
 		class={cn(
 			"flex flex-col gap-3 rounded-lg border p-4 transition-all w-full text-left",
 			"border-border bg-background",
@@ -114,6 +118,9 @@
 					variant="outline"
 					class="flex-1 text-xs h-7"
 					onclick={(e) => { e.stopPropagation(); onDownload?.(); }}
+					data-testid="download-result"
+					data-result-id={id}
+					data-automation="download-result"
 				>
 					<DownloadIcon class="size-3 mr-1" />
 					Download
@@ -162,6 +169,9 @@
 					variant="outline"
 					class="flex-1 text-xs h-7"
 					onclick={onDownload}
+					data-testid="download-result"
+					data-result-id={id}
+					data-automation="download-result"
 				>
 					<DownloadIcon class="size-3 mr-1" />
 					Download

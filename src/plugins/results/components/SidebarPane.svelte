@@ -95,6 +95,8 @@
       class="text-xs h-7"
       onclick={handleDownloadAll}
       disabled={filteredResults.length === 0}
+      data-testid="download-all-results"
+      data-automation="download-all-results"
     >
       <DownloadIcon class="size-3 mr-1" />
       Download All

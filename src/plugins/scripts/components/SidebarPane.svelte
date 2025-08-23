@@ -72,6 +72,8 @@
       class="text-xs h-7"
       onclick={handleRunAll}
       disabled={filteredScripts.length === 0 || filteredScripts.some(script => getExecutionStatus(script.id) === "running")}
+      data-testid="run-all-scripts"
+      data-automation="run-all-scripts"
     >
       <PlayIcon class="size-3 mr-1" />
       Run All
