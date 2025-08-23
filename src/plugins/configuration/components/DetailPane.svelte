@@ -196,7 +196,7 @@
   </div>
 {:else}
   <!-- Configuration Management Main View -->
-  <div class="bg-muted/50 flex-1 rounded-xl overflow-auto">
+  <div class="bg-muted/50 flex-1 rounded-xl overflow-auto border border-border">
     <div class="p-8">
       <h1 class="text-3xl font-bold mb-4">Configuration Management</h1>
       <p class="text-base text-muted-foreground mb-6">

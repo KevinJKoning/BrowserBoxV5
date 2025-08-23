@@ -161,7 +161,7 @@
             onclick={() => handlePackageSelect(pkg)}
             class={cn(
               "flex flex-col gap-3 rounded-lg border p-4 transition-all w-full text-left",
-              "border-muted bg-card hover:bg-muted/50",
+              "border-border bg-card hover:bg-muted/50",
               "cursor-pointer hover:shadow-md hover:scale-[1.02]",
               selected && "ring-2 ring-blue-500/80 ring-offset-2 shadow-lg drop-shadow-sm"
             )}
