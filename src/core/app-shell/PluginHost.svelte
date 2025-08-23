@@ -45,7 +45,7 @@
 </script>
 
 <div class={"flex flex-col min-h-0 h-full overflow-hidden " + (className ?? '')} {...restProps}>
-  <header class="bg-background sticky top-0 flex shrink-0 items-center gap-2 border-b p-4">
+  <header class="bg-background sticky top-0 flex shrink-0 items-center gap-2 border-b border-t p-4">
     <Sidebar.Trigger class="-ml-1" />
     <Separator orientation="vertical" class="mr-2 data-[orientation=vertical]:h-4" />
     <Breadcrumb.Root>

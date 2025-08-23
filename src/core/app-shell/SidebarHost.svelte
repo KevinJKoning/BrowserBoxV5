@@ -40,7 +40,7 @@
   class="overflow-hidden [&>[data-sidebar=sidebar]]:flex-row"
 >
   <!-- Icon sidebar -->
-  <Sidebar.Root collapsible="none" class="!w-[calc(var(--sidebar-width-icon)_+_1px)] border-r overflow-visible">
+  <Sidebar.Root collapsible="none" class="!w-[calc(var(--sidebar-width-icon)_+_1px)] border-r border-t overflow-visible">
     <Sidebar.Content>
       <Sidebar.Group>
         <Sidebar.GroupContent class="px-1.5 md:px-0 pb-2">
@@ -72,7 +72,7 @@
   </Sidebar.Root>
 
   <!-- Content sidebar -->
-  <Sidebar.Root collapsible="none" class="hidden flex-1 md:flex min-w-0 max-w-full overflow-hidden">
+  <Sidebar.Root collapsible="none" class="hidden flex-1 md:flex min-w-0 max-w-full overflow-hidden border-t">
     {#if SidebarComponent}
       <SidebarComponent />
     {:else}
