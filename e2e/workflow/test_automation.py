@@ -459,6 +459,231 @@ class TestErrorHandling:
             result = await automation.wait_for_execution(script_id, timeout=1)  # 1ms timeout
             assert isinstance(result, ExecutionResult)
 
+    async def test_demo_config_visual_quality(self, automation: BrowserBoxAutomation, tmp_path: Path):
+        """Test that demo-config.zip produces visually appealing and professional reports.
+        Validates both functionality and aesthetic quality of generated outputs.
+        """
+        # Resolve demo config path
+        current_dir = Path(__file__).resolve().parent
+        project_root = current_dir.parent.parent
+        candidate_paths = [
+            project_root / 'temp' / 'demo-config.zip',
+            current_dir / 'temp' / 'demo-config.zip'
+        ]
+        demo_zip = next((p for p in candidate_paths if p.exists()), None)
+        if not demo_zip:
+            pytest.skip("demo-config.zip not found; generate it before running visual quality tests")
+
+        # Load configuration and execute complete workflow
+        await automation.load_configuration(demo_zip)
+        workflow_results = await automation.execute_complete_workflow()
+        
+        # Ensure all scripts completed successfully
+        all_results = workflow_results['scripts'] + workflow_results['validations']
+        failed_results = [r for r in all_results if r.status == 'error']
+        assert not failed_results, f"Some scripts failed: {failed_results}"
+        
+        # Get all generated files
+        files = await automation.get_all_results()
+        html_files = [f for f in files if f.filename.endswith('.html')]
+        
+        assert len(html_files) >= 4, f"Expected at least 4 HTML files, got {len(html_files)}"
+        
+        # Visual quality validation using JavaScript evaluation
+        visual_quality_results = []
+        
+        for html_file in html_files:
+            # Create a data URL for the HTML content (simplified approach)
+            try:
+                # Navigate to the Results section to access generated files
+                results_button = await automation.page.query_selector('button:has-text("Results")')
+                if results_button:
+                    await results_button.click()
+                    await automation.page.wait_for_timeout(1000)
+                
+                # Look for download or view links for this specific file
+                file_link = await automation.page.query_selector(f'[href*="{html_file.filename}"], [data-filename="{html_file.filename}"]')
+                
+                if file_link:
+                    # Click to view/open the file
+                    await file_link.click()
+                    await automation.page.wait_for_timeout(2000)
+                    
+                    # Perform visual quality checks on the opened content
+                    quality_checks = await automation.page.evaluate("""
+                        () => {
+                            const results = {
+                                filename: document.title || window.location.pathname.split('/').pop(),
+                                hasModernStyling: false,
+                                hasResponsiveDesign: false,
+                                hasCharts: false,
+                                hasStructuredContent: false,
+                                hasDataTables: false,
+                                hasVisualHierarchy: false,
+                                colorScheme: 'unknown',
+                                hasMetricsCards: false,
+                                hasInsights: false,
+                                errors: []
+                            };
+                            
+                            try {
+                                // Check for modern CSS features (CSS Grid, Flexbox)
+                                const elements = document.querySelectorAll('*');
+                                let hasModernCSS = false;
+                                
+                                elements.forEach(el => {
+                                    const style = window.getComputedStyle(el);
+                                    if (style.display === 'grid' || style.display === 'flex' || 
+                                        style.gridTemplateColumns !== 'none') {
+                                        hasModernCSS = true;
+                                    }
+                                });
+                                results.hasModernStyling = hasModernCSS;
+                                
+                                // Check for responsive design indicators
+                                const styleSheets = Array.from(document.querySelectorAll('style'));
+                                const hasMediaQueries = styleSheets.some(sheet => 
+                                    sheet.textContent && sheet.textContent.includes('@media'));
+                                results.hasResponsiveDesign = hasMediaQueries;
+                                
+                                // Check for charts/visualizations
+                                const images = document.querySelectorAll('img[src*="base64"], img[src*="data:image"]');
+                                results.hasCharts = images.length > 0;
+                                
+                                // Check for structured content
+                                const headers = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+                                const sections = document.querySelectorAll('.section, section, .content');
+                                results.hasStructuredContent = headers.length >= 3 && sections.length >= 1;
+                                
+                                // Check for data tables
+                                const tables = document.querySelectorAll('table');
+                                results.hasDataTables = tables.length > 0;
+                                
+                                // Check for visual hierarchy (cards, containers)
+                                const cards = document.querySelectorAll('.card, .metric-card, .insights-list, .chart-container');
+                                const containers = document.querySelectorAll('.container, .content, .metrics-grid');
+                                results.hasVisualHierarchy = cards.length > 0 && containers.length > 0;
+                                
+                                // Check for metrics cards (dashboard-style layout)
+                                const metricsCards = document.querySelectorAll('.metric-card, .metrics-grid > *');
+                                results.hasMetricsCards = metricsCards.length >= 3;
+                                
+                                // Check for insights or narrative sections
+                                const insightElements = document.querySelectorAll('.insights-list, .insights, [class*="insight"]');
+                                results.hasInsights = insightElements.length > 0;
+                                
+                                // Determine color scheme quality
+                                const headerElements = document.querySelectorAll('.header, header, h1');
+                                if (headerElements.length > 0) {
+                                    const headerStyle = window.getComputedStyle(headerElements[0]);
+                                    const bg = headerStyle.background || headerStyle.backgroundColor;
+                                    if (bg.includes('gradient') || bg.includes('linear-gradient')) {
+                                        results.colorScheme = 'modern-gradient';
+                                    } else if (bg.includes('rgb') || bg.includes('#')) {
+                                        results.colorScheme = 'themed';
+                                    }
+                                }
+                                
+                                // Check for accessibility issues
+                                const missingAlts = document.querySelectorAll('img:not([alt])');
+                                if (missingAlts.length > 0) {
+                                    results.errors.push(`Missing alt attributes on ${missingAlts.length} images`);
+                                }
+                                
+                                // Check for adequate spacing and typography
+                                const body = document.body;
+                                const bodyStyle = window.getComputedStyle(body);
+                                const lineHeight = parseFloat(bodyStyle.lineHeight);
+                                if (lineHeight < 1.3) {
+                                    results.errors.push('Line height too small for readability');
+                                }
+                                
+                            } catch (error) {
+                                results.errors.push(`Analysis error: ${error.message}`);
+                            }
+                            
+                            return results;
+                        }
+                    """)
+                    
+                    visual_quality_results.append({
+                        'filename': html_file.filename,
+                        'checks': quality_checks
+                    })
+                
+            except Exception as e:
+                # If we can't access the file, just record the failure
+                visual_quality_results.append({
+                    'filename': html_file.filename,
+                    'checks': {
+                        'filename': html_file.filename,
+                        'hasModernStyling': False,
+                        'hasResponsiveDesign': False,
+                        'hasCharts': False,
+                        'hasStructuredContent': False,
+                        'hasDataTables': False,
+                        'hasVisualHierarchy': False,
+                        'colorScheme': 'unknown',
+                        'hasMetricsCards': False,
+                        'hasInsights': False,
+                        'errors': [f'Could not access file: {str(e)}']
+                    }
+                })
+        
+        # Validate visual quality standards
+        quality_issues = []
+        professional_count = 0
+        
+        for result in visual_quality_results:
+            checks = result['checks']
+            filename = result['filename']
+            issues = []
+            
+            # Check essential visual quality criteria
+            if not checks['hasModernStyling']:
+                issues.append("Missing modern CSS (Grid/Flexbox)")
+            if not checks['hasCharts']:
+                issues.append("Missing visualizations/charts")
+            if not checks['hasStructuredContent']:
+                issues.append("Missing structured content hierarchy")
+            if not checks['hasVisualHierarchy']:
+                issues.append("Missing visual hierarchy")
+            if not checks['hasMetricsCards']:
+                issues.append("Missing dashboard-style metrics")
+            
+            # Professional styling requirements
+            if checks['colorScheme'] not in ['modern-gradient', 'themed']:
+                issues.append("Not using professional color scheme")
+                
+            if checks['errors']:
+                issues.extend(checks['errors'])
+                
+            if issues:
+                quality_issues.append(f"{filename}: {'; '.join(issues)}")
+            else:
+                professional_count += 1
+        
+        # Assert overall quality standards
+        total_files = len(visual_quality_results)
+        assert total_files >= 3, f"Expected to validate at least 3 files, only found {total_files}"
+        
+        # At least 80% of files should meet professional standards
+        professional_ratio = professional_count / total_files
+        assert professional_ratio >= 0.8, f"Only {professional_count}/{total_files} files meet professional standards. Issues: {quality_issues}"
+        
+        # Specific checks for key reports
+        viz_report = next((r for r in visual_quality_results if 'visualization' in r['filename'].lower()), None)
+        if viz_report:
+            viz_checks = viz_report['checks']
+            assert viz_checks['hasCharts'], "Data visualization report must have charts"
+            assert viz_checks['hasMetricsCards'], "Data visualization report must have metrics dashboard"
+            
+        regression_report = next((r for r in visual_quality_results if 'regression' in r['filename'].lower()), None)
+        if regression_report:
+            reg_checks = regression_report['checks']
+            assert reg_checks['hasCharts'], "Regression report must have charts"
+            assert reg_checks['hasDataTables'], "Regression report must have performance tables"
+
 
 # Pytest configuration
 def pytest_addoption(parser):
