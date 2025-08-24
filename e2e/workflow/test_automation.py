@@ -24,10 +24,11 @@ Usage:
 """
 
 import asyncio
+import os
 import logging
 import tempfile
 from pathlib import Path
-from typing import Generator, Optional
+from typing import Generator, Optional, AsyncGenerator
 import zipfile
 
 import pytest
@@ -36,12 +37,11 @@ import pytest_asyncio
 from browserbox_automation import BrowserBoxAutomation, ScriptInfo, ExecutionResult, ResultFile
 
 
-# Test configuration
-BASE_URL = "http://localhost:5173"
-DEFAULT_TIMEOUT = 30000
+# Test configuration (override with BROWSERBOX_BASE_URL)
+BASE_URL = os.environ.get("BROWSERBOX_BASE_URL", os.environ.get("BROWSERBOX_URL", "http://localhost:8080"))
+DEFAULT_TIMEOUT = int(os.environ.get("BROWSERBOX_INIT_TIMEOUT", "60000"))  # Allow override for large bundle load times
 
-# Configure pytest-asyncio
-pytest_asyncio.fixtures.DEFAULT_SCOPE = "function"
+# Note: Removed deprecated/invalid pytest_asyncio.fixtures.DEFAULT_SCOPE assignment.
 
 
 @pytest.fixture(scope="session")
@@ -58,8 +58,8 @@ def headless(request) -> bool:
     return getattr(request.config.option, 'headless', True)
 
 
-@pytest.fixture
-async def automation(headless: bool) -> Generator[BrowserBoxAutomation, None, None]:
+@pytest_asyncio.fixture
+async def automation(headless: bool) -> AsyncGenerator[BrowserBoxAutomation, None]:
     """Create and initialize BrowserBox automation instance."""
     automation = BrowserBoxAutomation(headless=headless, base_url=BASE_URL)
     await automation.initialize(timeout=DEFAULT_TIMEOUT)
@@ -339,6 +339,85 @@ class TestWorkflowIntegration:
         # Step 7: Download results if available
         if result_files:
             await automation.download_all_results(download_dir)
+
+    async def test_demo_config_workflow(self, automation: BrowserBoxAutomation, tmp_path: Path):
+        """Run the demo-config.zip and assert expected outputs are produced.
+        Requires that the app is running and temp/demo-config.zip exists.
+        """
+        # Resolve potential locations: (a) repo-root/temp/demo-config.zip, (b) current-dir/temp/demo-config.zip
+        current_dir = Path(__file__).resolve().parent
+        # project root = ../../ from this file (e2e/workflow -> e2e -> root)
+        project_root = current_dir.parent.parent
+        candidate_paths = [
+            project_root / 'temp' / 'demo-config.zip',
+            current_dir / 'temp' / 'demo-config.zip'
+        ]
+        demo_zip = next((p for p in candidate_paths if p.exists()), None)
+        if not demo_zip:
+            pytest.skip("demo-config.zip not found in temp/ at project root or local e2e/workflow/temp/; generate it before running this test")
+
+        # Load configuration and execute complete workflow (scripts + schema validations)
+        await automation.load_configuration(demo_zip)
+        workflow_results = await automation.execute_complete_workflow()
+        
+        # Combine all results for error checking
+        all_results = workflow_results['scripts'] + workflow_results['validations']
+        assert isinstance(all_results, list)
+
+        # Gather comprehensive execution diagnostics
+        logs = await automation.get_execution_logs()
+        console_errors = await automation.get_console_errors()
+        page_errors = await automation.get_page_errors()
+        pyodide_errors = await automation.get_pyodide_errors()
+        all_errors = await automation.get_all_errors()
+
+        # Identify failing scripts via explicit status or presence of error field
+        failing = [
+            {
+                'script_id': l.get('script_id'),
+                'title': l.get('title'),
+                'status': l.get('status'),
+                'error': l.get('error'),
+                'output_excerpt': (l.get('output', '') or '')[:400]
+            }
+            for l in logs
+            if l.get('status') == 'error' or l.get('error')
+        ]
+
+        # Check for any errors that indicate script/validation failures
+        has_errors = (
+            failing or 
+            console_errors or 
+            page_errors or 
+            pyodide_errors or
+            any(l.get('status') == 'error' for l in logs) or
+            any(r.status == 'error' for r in all_results)
+        )
+
+        if has_errors:
+            detail = {
+                'failing_scripts': failing,
+                'console_errors': console_errors[:20],  # cap noise
+                'page_errors': page_errors[:10],
+                'pyodide_errors': pyodide_errors[:10],
+                'error_summary': all_errors
+            }
+            assert False, f"Demo config workflow had errors: {detail}"
+
+        # Collect results and verify key artifacts exist
+        files = await automation.get_all_results()
+        names = {r.filename for r in files}
+        expected = {
+            'data_visualization_report.html',
+            'visualization_report.md',
+            'linear_regression_report.html',
+            'linear_regression_summary.md',
+            'decision_tree_report.html',
+            'decision_tree_summary.md',
+            'numeric_schema_report.html'
+        }
+        missing = expected - names
+        assert not missing, f"Missing expected outputs: {sorted(missing)}"
     
     async def test_workflow_without_config(self, automation: BrowserBoxAutomation):
         """Test workflow with existing scripts (no config loading)."""

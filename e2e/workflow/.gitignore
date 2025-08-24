@@ -1,0 +1,6 @@
+.venv/
+.pytest_cache/
+.coverage*
+playwright-report/
+__pycache__/
+*.py[cod]

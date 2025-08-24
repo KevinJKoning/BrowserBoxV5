@@ -45,6 +45,9 @@ playwright install chromium
 # Run complete automation workflow
 python e2e/workflow/workflow_automation.py --config config.zip --output ./results
 
+# Run the demo config (generated under temp/)
+python e2e/workflow/workflow_automation.py --config temp/demo-config.zip --output ./results
+
 # With browser visible for debugging
 python e2e/workflow/workflow_automation.py --config config.zip --output ./results --headless=false
 
@@ -52,7 +55,7 @@ python e2e/workflow/workflow_automation.py --config config.zip --output ./result
 python e2e/workflow/workflow_automation.py \
     --config config.zip \
     --output ./results \
-    --url http://localhost:5173 \
+  --url ${BROWSERBOX_BASE_URL:-http://localhost:8080} \
     --timeout 300
 ```
 
@@ -92,6 +95,9 @@ pytest e2e/workflow/test_automation.py -v --headless=false
 # Run specific test categories
 pytest e2e/workflow/test_automation.py -v -k "test_workflow"
 pytest e2e/workflow/test_automation.py -v -k "test_config"
+
+# Run the demo-config workflow test
+pytest e2e/workflow/test_automation.py -v -k "test_demo_config_workflow"
 
 # Generate coverage report
 pytest e2e/workflow/test_automation.py --cov=e2e/workflow --cov-report=html
@@ -265,7 +271,7 @@ jobs:
       
       - name: Wait for BrowserBox
         run: |
-          timeout 60 bash -c 'until curl -f http://localhost:5173; do sleep 2; done'
+          timeout 60 bash -c 'until curl -f ${BROWSERBOX_BASE_URL:-http://localhost:8080}; do sleep 2; done'
       
       - name: Run automation tests
         run: pytest e2e/workflow/test_automation.py -v
@@ -305,6 +311,97 @@ if __name__ == "__main__":
     asyncio.run(validate_data_pipeline())
 ```
 
+## Python Virtual Environment (.venv)
+
+Use a standard Python virtual environment contained in this folder.
+
+### Create / Update Environment
+```sh
+cd e2e/workflow
+python3 -m venv .venv
+. .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+playwright install chromium
+```
+
+### Local Environment Setup (No Make, No Helper Script)
+
+Minimal, portable steps using only Python and pip.
+
+#### 1. Create virtual environment
+```sh
+cd e2e/workflow
+python3 -m venv .venv
+```
+
+#### 2. Activate it
+macOS / Linux:
+```sh
+. .venv/bin/activate
+```
+Windows (PowerShell):
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+#### 3. Upgrade pip (recommended) & install dependencies
+```sh
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+#### 4. Install Playwright browser binaries (Chromium)
+```sh
+playwright install chromium
+```
+(Add `firefox webkit` for more browsers.)
+
+#### 5. Run tests
+```sh
+pytest -q
+```
+
+#### 6. Coverage (optional)
+```sh
+pytest --cov --cov-report=term-missing
+```
+
+#### 7. Recreate environment (if things get messy)
+```sh
+deactivate 2>/dev/null || true
+rm -rf .venv
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+playwright install chromium
+```
+
+#### 8. Clean test artifacts (keep env)
+```sh
+rm -rf .pytest_cache .coverage* playwright-report
+```
+
+### Notes
+- `.venv/` is git‑ignored; nothing leaks to the repo.
+- To use a specific Python version: `/path/to/python3.12 -m venv .venv` then proceed normally.
+- If `playwright` not found, ensure the environment is activated and dependencies installed.
+- For headful debugging add `--headed` to Playwright commands or pass `--headless=false` if scripted.
+
+### Quick One-Liner (Unix shells)
+```sh
+python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt && playwright install chromium && pytest -q
+```
+
+This keeps the workflow simple and dependency-free beyond Python itself.
+
+### Startup Diagnostics
+If initialization fails, the automation now categorizes common causes (server unreachable, selector mismatch, API not loaded). To log full diagnostics on successful starts as well, set:
+```sh
+export BROWSERBOX_STARTUP_DIAG=1
+```
+Diagnostics include HTTP status, load states reached, selectors tried/found, and API availability.
+
 ## Tips and Best Practices
 
 1. **Use realistic timeouts** - Pyodide initialization can take time on first load
@@ -321,7 +418,8 @@ if __name__ == "__main__":
 
 **App not loading**: Ensure BrowserBox is running on the expected port
 ```bash
-npm run dev  # Should start on http://localhost:5173
+export BROWSERBOX_BASE_URL=http://localhost:8080  # or your port
+npm run dev  # App should be reachable at $BROWSERBOX_BASE_URL
 ```
 
 **Automation API not available**: Wait for full app initialization
@@ -403,3 +501,5 @@ This Python automation system complements the existing `e2e/pyodide-test-runner.
 - [Pyodide Documentation](https://pyodide.org/)
 - [Pytest Documentation](https://docs.pytest.org/)
 - [BrowserBox Configuration Guide](../docs/configuration.md)
+
+---
