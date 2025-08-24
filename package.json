@@ -54,9 +54,13 @@
 	},
 	"dependencies": {
 		"@svelte-put/resize": "^4.0.0",
+		"@types/markdown-it": "^14.1.2",
+		"@vscode/markdown-it-katex": "^1.1.2",
 		"hyparquet": "^1.17.1",
 		"jszip": "^3.10.1",
-		"marked": "^16.2.0",
+		"katex": "^0.16.22",
+		"markdown-it": "^14.1.0",
+		"mermaid": "^11.10.1",
 		"vite-plugin-pwa": "^1.0.2",
 		"vite-plugin-static-copy": "^3.1.1"
 	}

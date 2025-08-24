@@ -1,5 +1,8 @@
 <script lang="ts">
-  import { marked } from 'marked';
+  import MarkdownIt from 'markdown-it';
+  import katexPlugin from '@vscode/markdown-it-katex';
+  import 'katex/dist/katex.min.css';
+  import { tick } from 'svelte';
   import { Card, CardContent, CardHeader, CardTitle } from "../../../lib/components/ui/card/index.js";
   import { Badge } from "../../../lib/components/ui/badge/index.js";
 
@@ -16,16 +19,34 @@
   let html = $state<string>("");
   let loading = $state(true);
   let error = $state<string | null>(null);
+  let proseEl = $state<HTMLDivElement | null>(null);
 
   // Create a map of related file paths to blob URLs for quick lookup
   const objectUrls = new Map<string, string>();
 
-  // Configure marked with good defaults
-  marked.setOptions({
-    breaks: true,         // Line breaks become <br>
-    gfm: true,            // GitHub flavored markdown
-    headerIds: true,      // Generate ids for headings
-    mangle: false         // Do not mangle heading text for ids
+  // Initialize markdown-it with VSCode's exact approach
+  const md = new MarkdownIt({
+    html: true,         // Enable HTML tags in source
+    breaks: true,       // Convert '\n' in paragraphs into <br>
+    linkify: true,      // Autoconvert URL-like text to links
+    typographer: true,  // Enable some language-neutral replacement + quotes beautification
+    highlight: function (str, lang) {
+      // Handle mermaid code blocks specially
+      if (lang && lang.toLowerCase() === 'mermaid') {
+        console.log('🎨 Found Mermaid code block in markdown parsing:', str.substring(0, 50) + '...');
+        // Don't escape HTML for Mermaid - it needs raw diagram syntax
+        return `<div class="mermaid">${str}</div>`;
+      }
+      // Return the code block as-is for other languages
+      return `<pre><code class="language-${lang || ''}">${md.utils.escapeHtml(str)}</code></pre>`;
+    }
+  })
+  // Use VSCode's proven KaTeX plugin with their exact configuration
+  .use(katexPlugin, {
+    throwOnError: false,
+    errorColor: '#cc0000',
+    enableFencedBlocks: true,
+    globalGroup: true
   });
 
   $effect(() => {
@@ -64,56 +85,177 @@
   }
 
   async function renderMarkdown() {
-    const text = await file.text();
-    const baseDir = getBaseDir(filename);
-
-    // Create custom renderer to handle asset URLs
-    const renderer = new marked.Renderer();
+    console.log('🚀 Starting markdown-it rendering...');
     
-    // Override image rendering to resolve local assets
-    renderer.image = function(token) {
-      // Extract values from token object (new marked API)
-      const href = token?.href || token?.src || '';
-      const title = token?.title || '';
-      const text = token?.text || token?.alt || '';
-      
-      const resolvedHref = resolveAssetUrl(String(href), baseDir);
-      const titleAttr = title ? ` title="${escapeHtml(String(title))}"` : '';
-      return `<img src="${resolvedHref}" alt="${escapeHtml(String(text))}"${titleAttr} />`;
-    };
+    try {
+      const text = await file.text();
+      const baseDir = getBaseDir(filename);
 
-    // Override link rendering to resolve local links
-    renderer.link = function(token) {
-      // Extract values from token object (new marked API)
-      const href = token?.href || '';
-      const title = token?.title || '';
-      const text = token?.text || '';
-      
-      const resolvedHref = resolveLinkUrl(String(href), baseDir);
-      const titleAttr = title ? ` title="${escapeHtml(String(title))}"` : '';
-      return `<a href="${resolvedHref}" target="_blank" rel="noopener noreferrer"${titleAttr}>${String(text)}</a>`;
-    };
+      // Override the default image renderer to handle local assets
+      const defaultImageRender = md.renderer.rules.image || function(tokens, idx, options, env, renderer) {
+        return renderer.renderToken(tokens, idx, options);
+      };
 
-    // Render markdown with custom renderer
-    html = marked(text, { renderer });
-    loading = false;
+      md.renderer.rules.image = function(tokens, idx, options, env, renderer) {
+        const token = tokens[idx];
+        const srcIndex = token.attrIndex('src');
+        if (srcIndex >= 0) {
+          const src = token.attrGet('src') || '';
+          const resolvedSrc = resolveAssetUrl(src, baseDir);
+          token.attrSet('src', resolvedSrc);
+        }
+        return defaultImageRender(tokens, idx, options, env, renderer);
+      };
+
+      // Override link renderer
+      const defaultLinkRender = md.renderer.rules.link_open || function(tokens, idx, options, env, renderer) {
+        return renderer.renderToken(tokens, idx, options);
+      };
+
+      md.renderer.rules.link_open = function(tokens, idx, options, env, renderer) {
+        const token = tokens[idx];
+        const hrefIndex = token.attrIndex('href');
+        if (hrefIndex >= 0) {
+          const href = token.attrGet('href') || '';
+          const resolvedHref = resolveLinkUrl(href, baseDir);
+          token.attrSet('href', resolvedHref);
+          
+          // Add target="_blank" for external links
+          if (!href.startsWith('#') && !objectUrls.has(href)) {
+            token.attrSet('target', '_blank');
+            token.attrSet('rel', 'noopener noreferrer');
+          }
+        }
+        return defaultLinkRender(tokens, idx, options, env, renderer);
+      };
+
+      // Render the markdown
+      html = md.render(text);
+      console.log('✅ Markdown-it rendering completed');
+      
+      // Debug: Check if Mermaid divs are in the rendered HTML
+      if (html.includes('class="mermaid"')) {
+        console.log('✅ Found mermaid divs in rendered HTML');
+        const mermaidMatches = html.match(/<div class="mermaid"[^>]*>(.*?)<\/div>/gs);
+        if (mermaidMatches) {
+          console.log(`📊 Found ${mermaidMatches.length} mermaid div(s) in HTML`);
+          mermaidMatches.forEach((match, i) => {
+            console.log(`Mermaid ${i + 1}:`, match.substring(0, 100) + '...');
+          });
+        }
+      } else {
+        console.log('❌ No mermaid divs found in rendered HTML');
+        // Check if we have any mermaid code blocks instead
+        if (html.includes('language-mermaid')) {
+          console.log('🔍 Found language-mermaid code blocks instead of divs');
+        }
+      }
+
+      loading = false;
+      console.log('🎉 Markdown rendering completed successfully');
+      
+      // Process Mermaid after DOM is ready - use proper Svelte lifecycle
+      await tick(); // Ensure DOM is flushed
+      await processMermaidDiagrams();
+      
+    } catch (e) {
+      console.error('❌ Markdown rendering failed:', e);
+      throw e;
+    }
   }
 
-  function escapeHtml(text: string): string {
-    return text.replace(/[&<>"']/g, (c) => ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    }[c] as string));
+  async function processMermaidDiagrams() {
+    // Defensive guard - wait for DOM if needed
+    if (!proseEl) {
+      await tick();
+    }
+    if (!proseEl) {
+      console.log('❌ proseEl is null - DOM not ready yet');
+      return;
+    }
+    
+    console.log('✅ proseEl found, starting Mermaid processing');
+    
+    // Debug: Check what's in the DOM
+    console.log('🔍 DOM structure before Mermaid processing:', proseEl.innerHTML.substring(0, 200) + '...');
+    
+    const mermaidDivs = Array.from(proseEl.querySelectorAll('.mermaid')) as HTMLElement[];
+    console.log(`🐠 Found ${mermaidDivs.length} Mermaid diagrams to process`);
+    
+    // Debug: Show what divs we found
+    mermaidDivs.forEach((div, i) => {
+      console.log(`📊 Mermaid div ${i + 1} content:`, div.textContent?.substring(0, 100) + '...');
+      console.log(`📊 Mermaid div ${i + 1} innerHTML:`, div.innerHTML.substring(0, 100) + '...');
+    });
+    
+    if (mermaidDivs.length === 0) {
+      console.log('❌ No Mermaid divs found. Checking for code blocks that might not have been processed...');
+      const codeBlocks = proseEl.querySelectorAll('pre code');
+      console.log(`Found ${codeBlocks.length} code blocks in total`);
+      codeBlocks.forEach((block, i) => {
+        const className = (block as HTMLElement).className || '';
+        console.log(`Code block ${i + 1} class: "${className}", content: "${(block as HTMLElement).textContent?.substring(0, 50)}..."`);
+      });
+      return;
+    }
+
+    try {
+      const mermaid = (await import('mermaid')).default;
+      
+      await mermaid.initialize({ 
+        startOnLoad: false,
+        theme: 'default',
+        securityLevel: 'loose',
+        fontFamily: 'inherit'
+      });
+      
+      console.log('✅ Mermaid initialized');
+
+      if (mermaidDivs.length > 0) {
+        try {
+          // Use Mermaid's built-in DOM runner for better reliability
+          await mermaid.run({ querySelector: '.mermaid' });
+          console.log(`✅ All ${mermaidDivs.length} Mermaid diagrams rendered successfully`);
+          
+          // Add rendered class to all processed divs
+          mermaidDivs.forEach(div => div.classList.add('mermaid-rendered'));
+        } catch (e) {
+          console.error('❌ Mermaid batch processing failed, falling back to individual rendering:', e);
+          
+          // Fallback to individual processing
+          for (let i = 0; i < mermaidDivs.length; i++) {
+            const div = mermaidDivs[i];
+            const code = div.textContent?.trim();
+            
+            if (!code) {
+              console.log(`Skipping empty Mermaid diagram ${i + 1}`);
+              continue;
+            }
+            
+            console.log(`Processing Mermaid diagram ${i + 1}:`, code.substring(0, 30) + '...');
+            
+            try {
+              const id = `mermaid-${Date.now()}-${i}`;
+              const { svg } = await mermaid.render(id, code);
+              div.innerHTML = svg;
+              div.classList.add('mermaid-rendered');
+              console.log(`✅ Mermaid diagram ${i + 1} rendered successfully`);
+            } catch (e) {
+              console.error(`❌ Failed to render Mermaid diagram ${i + 1}:`, e);
+              console.error('Diagram content:', code);
+              div.innerHTML = `<div class="mermaid-error">Failed to render diagram: ${e.message || 'Unknown error'}</div>`;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('❌ Mermaid initialization failed:', e);
+    }
   }
 
   function resolveAssetUrl(src: string, baseDir: string): string {
-    // Ensure src is a string and not null/undefined
     const srcStr = String(src || '');
     if (!srcStr) return '';
-    
     
     // Leave absolute/data URLs untouched
     if (/^(https?:)?\/\//i.test(srcStr) || /^data:/i.test(srcStr)) {
@@ -125,17 +267,14 @@
     if (localUrl) {
       return localUrl;
     }
-    // Fallback to original src if no related file mapping exists
     return srcStr;
   }
 
   function resolveLinkUrl(href: string, baseDir: string): string {
-    // Ensure href is a string and not null/undefined
     const hrefStr = String(href || '');
     if (!hrefStr) return '';
     
     if (/^(https?:)?\/\//i.test(hrefStr) || /^data:/i.test(hrefStr) || hrefStr.startsWith('#')) return hrefStr;
-    // Try to resolve to a related file, otherwise leave as-is
     return resolveAssetUrl(hrefStr, baseDir);
   }
 
@@ -188,7 +327,7 @@
         </div>
       </div>
     {:else}
-      <div class="prose max-w-none p-6">
+      <div class="prose max-w-none p-6" bind:this={proseEl}>
         {@html html}
       </div>
     {/if}
@@ -345,4 +484,31 @@
   /* Misc */
   :global(.prose sub),
   :global(.prose sup) { line-height: 0; }
+
+  /* KaTeX tweaks */
+  :global(.prose .katex-display) {
+    margin: 1em 0;
+  }
+
+  /* Mermaid styling */
+  :global(.prose .mermaid) {
+    text-align: center;
+    margin: 1em 0;
+  }
+  
+  :global(.prose .mermaid svg) {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  :global(.prose .mermaid-error) {
+    color: var(--destructive);
+    background: var(--muted);
+    padding: 0.5em;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+    text-align: left;
+    border: 1px solid var(--border);
+  }
 </style>
