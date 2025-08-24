@@ -29,17 +29,7 @@
     html: true,         // Enable HTML tags in source
     breaks: true,       // Convert '\n' in paragraphs into <br>
     linkify: true,      // Autoconvert URL-like text to links
-    typographer: true,  // Enable some language-neutral replacement + quotes beautification
-    highlight: function (str, lang) {
-      // Handle mermaid code blocks specially
-      if (lang && lang.toLowerCase() === 'mermaid') {
-        console.log('🎨 Found Mermaid code block in markdown parsing:', str.substring(0, 50) + '...');
-        // Don't escape HTML for Mermaid - it needs raw diagram syntax
-        return `<div class="mermaid">${str}</div>`;
-      }
-      // Return the code block as-is for other languages
-      return `<pre><code class="language-${lang || ''}">${md.utils.escapeHtml(str)}</code></pre>`;
-    }
+    typographer: true   // Enable some language-neutral replacement + quotes beautification
   })
   // Use VSCode's proven KaTeX plugin with their exact configuration
   .use(katexPlugin, {
@@ -48,6 +38,20 @@
     enableFencedBlocks: true,
     globalGroup: true
   });
+
+  // Override fence renderer to handle Mermaid properly (avoid <pre> wrapper)
+  const origFence = md.renderer.rules.fence || ((tokens, idx, options, env, renderer) => {
+    return renderer.renderToken(tokens, idx, options);
+  });
+
+  md.renderer.rules.fence = (tokens, idx, options, env, self) => {
+    const token = tokens[idx];
+    const info = (token.info || '').trim().toLowerCase();
+    if (info === 'mermaid') {
+      return `<div class="mermaid">${token.content}</div>`;
+    }
+    return origFence(tokens, idx, options, env, self);
+  };
 
   $effect(() => {
     // Reset state when inputs change
@@ -85,7 +89,6 @@
   }
 
   async function renderMarkdown() {
-    console.log('🚀 Starting markdown-it rendering...');
     
     try {
       const text = await file.text();
@@ -131,35 +134,13 @@
 
       // Render the markdown
       html = md.render(text);
-      console.log('✅ Markdown-it rendering completed');
-      
-      // Debug: Check if Mermaid divs are in the rendered HTML
-      if (html.includes('class="mermaid"')) {
-        console.log('✅ Found mermaid divs in rendered HTML');
-        const mermaidMatches = html.match(/<div class="mermaid"[^>]*>(.*?)<\/div>/gs);
-        if (mermaidMatches) {
-          console.log(`📊 Found ${mermaidMatches.length} mermaid div(s) in HTML`);
-          mermaidMatches.forEach((match, i) => {
-            console.log(`Mermaid ${i + 1}:`, match.substring(0, 100) + '...');
-          });
-        }
-      } else {
-        console.log('❌ No mermaid divs found in rendered HTML');
-        // Check if we have any mermaid code blocks instead
-        if (html.includes('language-mermaid')) {
-          console.log('🔍 Found language-mermaid code blocks instead of divs');
-        }
-      }
-
       loading = false;
-      console.log('🎉 Markdown rendering completed successfully');
       
       // Process Mermaid after DOM is ready - use proper Svelte lifecycle
       await tick(); // Ensure DOM is flushed
       await processMermaidDiagrams();
       
     } catch (e) {
-      console.error('❌ Markdown rendering failed:', e);
       throw e;
     }
   }
@@ -170,32 +151,12 @@
       await tick();
     }
     if (!proseEl) {
-      console.log('❌ proseEl is null - DOM not ready yet');
       return;
     }
     
-    console.log('✅ proseEl found, starting Mermaid processing');
-    
-    // Debug: Check what's in the DOM
-    console.log('🔍 DOM structure before Mermaid processing:', proseEl.innerHTML.substring(0, 200) + '...');
-    
     const mermaidDivs = Array.from(proseEl.querySelectorAll('.mermaid')) as HTMLElement[];
-    console.log(`🐠 Found ${mermaidDivs.length} Mermaid diagrams to process`);
-    
-    // Debug: Show what divs we found
-    mermaidDivs.forEach((div, i) => {
-      console.log(`📊 Mermaid div ${i + 1} content:`, div.textContent?.substring(0, 100) + '...');
-      console.log(`📊 Mermaid div ${i + 1} innerHTML:`, div.innerHTML.substring(0, 100) + '...');
-    });
     
     if (mermaidDivs.length === 0) {
-      console.log('❌ No Mermaid divs found. Checking for code blocks that might not have been processed...');
-      const codeBlocks = proseEl.querySelectorAll('pre code');
-      console.log(`Found ${codeBlocks.length} code blocks in total`);
-      codeBlocks.forEach((block, i) => {
-        const className = (block as HTMLElement).className || '';
-        console.log(`Code block ${i + 1} class: "${className}", content: "${(block as HTMLElement).textContent?.substring(0, 50)}..."`);
-      });
       return;
     }
 
@@ -208,48 +169,27 @@
         securityLevel: 'loose',
         fontFamily: 'inherit'
       });
-      
-      console.log('✅ Mermaid initialized');
 
-      if (mermaidDivs.length > 0) {
+      // Process each diagram individually for better control
+      for (let i = 0; i < mermaidDivs.length; i++) {
+        const div = mermaidDivs[i];
+        const code = div.textContent?.trim();
+        
+        if (!code) {
+          continue;
+        }
+        
         try {
-          // Use Mermaid's built-in DOM runner for better reliability
-          await mermaid.run({ querySelector: '.mermaid' });
-          console.log(`✅ All ${mermaidDivs.length} Mermaid diagrams rendered successfully`);
-          
-          // Add rendered class to all processed divs
-          mermaidDivs.forEach(div => div.classList.add('mermaid-rendered'));
+          const id = `mermaid-${Date.now()}-${i}`;
+          const { svg } = await mermaid.render(id, code);
+          div.innerHTML = svg;
+          div.classList.add('mermaid-rendered');
         } catch (e) {
-          console.error('❌ Mermaid batch processing failed, falling back to individual rendering:', e);
-          
-          // Fallback to individual processing
-          for (let i = 0; i < mermaidDivs.length; i++) {
-            const div = mermaidDivs[i];
-            const code = div.textContent?.trim();
-            
-            if (!code) {
-              console.log(`Skipping empty Mermaid diagram ${i + 1}`);
-              continue;
-            }
-            
-            console.log(`Processing Mermaid diagram ${i + 1}:`, code.substring(0, 30) + '...');
-            
-            try {
-              const id = `mermaid-${Date.now()}-${i}`;
-              const { svg } = await mermaid.render(id, code);
-              div.innerHTML = svg;
-              div.classList.add('mermaid-rendered');
-              console.log(`✅ Mermaid diagram ${i + 1} rendered successfully`);
-            } catch (e) {
-              console.error(`❌ Failed to render Mermaid diagram ${i + 1}:`, e);
-              console.error('Diagram content:', code);
-              div.innerHTML = `<div class="mermaid-error">Failed to render diagram: ${e.message || 'Unknown error'}</div>`;
-            }
-          }
+          div.innerHTML = `<div class="mermaid-error">Failed to render diagram: ${e.message || 'Unknown error'}</div>`;
         }
       }
     } catch (e) {
-      console.error('❌ Mermaid initialization failed:', e);
+      // Silently fail if Mermaid can't be loaded
     }
   }
 
@@ -327,7 +267,7 @@
         </div>
       </div>
     {:else}
-      <div class="prose max-w-none p-6" bind:this={proseEl}>
+      <div class="prose max-w-none p-6 mx-auto" style="max-width: 800px;" bind:this={proseEl}>
         {@html html}
       </div>
     {/if}
@@ -499,6 +439,8 @@
   :global(.prose .mermaid svg) {
     max-width: 100%;
     height: auto;
+    display: block;
+    margin: 0 auto;
   }
   
   :global(.prose .mermaid-error) {
