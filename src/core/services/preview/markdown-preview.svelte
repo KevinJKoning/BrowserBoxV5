@@ -199,7 +199,8 @@
   :global(.prose) {
     /* Readable defaults without typography plugin */
     line-height: 1.7;
-    font-family: "Segoe UI Variable Display", "Segoe UI", "Century Gothic", "Franklin Gothic Medium", Verdana, sans-serif;
+    /* Inherit the application's base font */
+    font-family: inherit;
     font-size: 0.95rem;
     color: inherit;
   }
