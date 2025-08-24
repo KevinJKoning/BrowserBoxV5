@@ -55,18 +55,18 @@ importance_df = pd.DataFrame({
     'importance': feature_importance
 }).sort_values('importance', ascending=False)
 
-# Create comprehensive visualization
-fig = plt.figure(figsize=(18, 14))
-fig.suptitle('Decision Tree Classification Analysis', fontsize=22, fontweight='bold', y=0.95)
+# Create Figure 1: Decision Tree Structure and Feature Importance (side-by-side)
+fig1 = plt.figure(figsize=(14, 6))
+fig1.suptitle('Decision Tree Structure and Feature Analysis', fontsize=16, fontweight='bold', y=0.95)
 
-# 1. Decision Tree Visualization (top left, larger)
-ax1 = plt.subplot(3, 4, (1, 2))
+# Decision Tree Visualization (left side)
+ax1 = plt.subplot(1, 2, 1)
 plot_tree(clf, feature_names=feature_names, class_names=[f'Class {i}' for i in clf.classes_], 
           filled=True, rounded=True, fontsize=8, max_depth=2)  # Limit depth for readability
 ax1.set_title('Decision Tree Structure', fontweight='bold', fontsize=14)
 
-# 2. Feature Importance (top right)
-ax2 = plt.subplot(3, 4, (3, 4))
+# Feature Importance (right side)
+ax2 = plt.subplot(1, 2, 2)
 colors = plt.cm.Set2(np.linspace(0, 1, len(importance_df)))
 bars = ax2.barh(importance_df['feature'], importance_df['importance'], color=colors)
 ax2.set_xlabel('Importance Score', fontweight='bold')
@@ -78,8 +78,15 @@ for i, bar in enumerate(bars):
     ax2.text(width + 0.001, bar.get_y() + bar.get_height()/2, 
              f'{width:.3f}', ha='left', va='center', fontweight='bold')
 
-# 3. Confusion Matrix (middle left)
-ax3 = plt.subplot(3, 4, 5)
+plt.tight_layout()
+tree_img = fig_to_base64(fig1)
+
+# Create Figure 2: Performance Metrics (side-by-side)
+fig2 = plt.figure(figsize=(12, 5))
+fig2.suptitle('Model Performance Assessment', fontsize=16, fontweight='bold', y=0.95)
+
+# Confusion Matrix (left)
+ax3 = plt.subplot(1, 2, 1)
 im = ax3.imshow(conf_matrix, cmap='Blues', aspect='auto')
 ax3.set_xticks(range(len(clf.classes_)))
 ax3.set_yticks(range(len(clf.classes_)))
@@ -95,8 +102,8 @@ ax3.set_xlabel('Predicted Label', fontweight='bold')
 ax3.set_ylabel('True Label', fontweight='bold')
 ax3.set_title('Confusion Matrix', fontweight='bold', fontsize=12)
 
-# 4. Classification metrics bar chart (middle center)
-ax4 = plt.subplot(3, 4, 6)
+# Classification metrics bar chart (right)
+ax4 = plt.subplot(1, 2, 2)
 metrics_names = ['Precision', 'Recall', 'F1-Score']
 macro_metrics = [report['macro avg'][m] for m in ['precision', 'recall', 'f1-score']]
 colors_metrics = ['#FF6B6B', '#4ECDC4', '#45B7D1']
@@ -111,8 +118,15 @@ for bar, metric in zip(bars, macro_metrics):
     ax4.text(bar.get_x() + bar.get_width()/2., height + 0.01,
              f'{metric:.3f}', ha='center', va='bottom', fontweight='bold')
 
-# 5. Cross-validation scores (middle right)
-ax5 = plt.subplot(3, 4, 7)
+plt.tight_layout()
+performance_img = fig_to_base64(fig2)
+
+# Create Figure 3: Cross-validation and Feature Distributions
+fig3 = plt.figure(figsize=(12, 5))
+fig3.suptitle('Model Validation and Feature Analysis', fontsize=16, fontweight='bold', y=0.95)
+
+# Cross-validation scores (left)
+ax5 = plt.subplot(1, 2, 1)
 cv_x = range(1, len(cv_scores) + 1)
 ax5.bar(cv_x, cv_scores, alpha=0.7, color='gold', edgecolor='black')
 ax5.axhline(cv_mean, color='red', linestyle='--', alpha=0.8, label=f'Mean: {cv_mean:.3f}')
@@ -122,28 +136,8 @@ ax5.set_title('Cross-Validation Results', fontweight='bold', fontsize=12)
 ax5.legend()
 ax5.grid(True, alpha=0.3)
 
-# 6. Class distribution (middle far right)
-ax6 = plt.subplot(3, 4, 8)
-class_counts = np.bincount(y)
-ax6.pie(class_counts, labels=[f'Class {i}' for i in range(len(class_counts))], 
-        autopct='%1.1f%%', colors=colors_metrics[:len(class_counts)])
-ax6.set_title('Class Distribution', fontweight='bold', fontsize=12)
-
-# 7-9. Feature distributions by class (bottom row)
-numeric_features = ['x1', 'x2']
-for i, feature in enumerate(numeric_features):
-    ax = plt.subplot(3, 4, 9 + i)
-    for class_label in clf.classes_:
-        subset = df[df['label'] == class_label]
-        ax.hist(subset[feature], alpha=0.6, label=f'Class {class_label}', bins=20)
-    ax.set_xlabel(f'{feature.upper()}', fontweight='bold')
-    ax.set_ylabel('Frequency', fontweight='bold')
-    ax.set_title(f'{feature.upper()} Distribution by Class', fontweight='bold', fontsize=11)
-    ax.legend()
-    ax.grid(True)
-
-# 10. Tree depth analysis (bottom right)
-ax10 = plt.subplot(3, 4, 11)
+# Tree depth analysis (right)
+ax6 = plt.subplot(1, 2, 2)
 depths = range(1, 8)
 depth_scores = []
 for depth in depths:
@@ -151,17 +145,17 @@ for depth in depths:
     scores = cross_val_score(temp_clf, X, y, cv=3, scoring='accuracy')
     depth_scores.append(scores.mean())
 
-ax10.plot(depths, depth_scores, marker='o', linewidth=2, markersize=8, color='purple')
-ax10.axvline(4, color='red', linestyle='--', alpha=0.7, label='Current Depth')
-ax10.set_xlabel('Tree Depth', fontweight='bold')
-ax10.set_ylabel('CV Accuracy', fontweight='bold')
-ax10.set_title('Optimal Depth Analysis', fontweight='bold', fontsize=11)
-ax10.legend()
-ax10.grid(True, alpha=0.3)
+ax6.plot(depths, depth_scores, marker='o', linewidth=2, markersize=8, color='purple')
+ax6.axvline(4, color='red', linestyle='--', alpha=0.7, label='Current Depth')
+ax6.set_xlabel('Tree Depth', fontweight='bold')
+ax6.set_ylabel('CV Accuracy', fontweight='bold')
+ax6.set_title('Optimal Depth Analysis', fontweight='bold', fontsize=12)
+ax6.legend()
+ax6.grid(True, alpha=0.3)
 
 plt.tight_layout()
-plt.subplots_adjust(top=0.91)
-composite_img = fig_to_base64(fig)
+validation_img = fig_to_base64(fig3)
+
 
 # Generate insights
 insights = []
@@ -211,6 +205,9 @@ html = f"""
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Decision Tree Classification Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
     <style>
         * {{
             margin: 0;
@@ -252,6 +249,41 @@ html = f"""
         .header .subtitle {{
             font-size: 1.2em;
             opacity: 0.9;
+        }}
+        
+        .intro-section {{
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border-left: 4px solid #2ecc71;
+        }}
+        
+        .math-section {{
+            background: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }}
+        
+        .math-section h3 {{
+            color: #2c3e50;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #2ecc71;
+            padding-bottom: 8px;
+        }}
+        
+        .figure-title {{
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 25px 0 15px 0;
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #2ecc71;
         }}
         
         .content {{
@@ -328,9 +360,11 @@ html = f"""
         }}
         
         .insights-list li:before {{
-            content: "🌳";
+            content: "•";
             position: absolute;
             left: 0;
+            color: #2ecc71;
+            font-weight: bold;
         }}
         
         .chart-container {{
@@ -406,11 +440,32 @@ html = f"""
 <body>
     <div class="container">
         <div class="header">
-            <h1>🌳 Decision Tree Classification</h1>
+            <h1>Decision Tree Classification</h1>
             <div class="subtitle">Machine Learning Model Analysis & Performance</div>
         </div>
         
         <div class="content">
+            <div class="intro-section">
+                <h2>Introduction</h2>
+                <p>This report presents a comprehensive analysis of a Decision Tree classification model applied to synthetic multi-class data. Decision trees are interpretable machine learning models that make predictions by learning simple decision rules inferred from data features. The analysis includes model performance evaluation, feature importance assessment, and cross-validation results to ensure robust model validation.</p>
+                <p>The dataset contains both numerical and categorical features, making it an excellent case study for demonstrating decision tree capabilities in handling mixed data types. Our model achieves strong classification performance while maintaining interpretability through its tree structure visualization.</p>
+            </div>
+            
+            <div class="math-section">
+                <h3>Mathematical Foundation</h3>
+                <p>Decision trees use recursive binary splitting to partition the feature space. At each internal node, the algorithm selects the feature and threshold that best separates the classes according to an impurity measure.</p>
+                
+                <h4>Gini Impurity</h4>
+                <p>The Gini impurity for a node is calculated as: $$\text{{Gini}} = 1 - \sum_{{i=1}}^{{c}} p_i^2$$</p>
+                <p>where $p_i$ is the proportion of samples belonging to class $i$ out of $c$ total classes.</p>
+                
+                <h4>Information Gain</h4>
+                <p>The information gain from splitting on feature $f$ with threshold $t$ is: $$\text{{Gain}}(f,t) = \text{{Gini}}_{{parent}} - \sum_{{child}} \frac{{n_{{child}}}}{{n_{{parent}}}} \text{{Gini}}_{{child}}$$</p>
+                
+                <h4>Prediction Rule</h4>
+                <p>For a sample $x$, the prediction is: $$\hat{{y}} = \arg\max_{{c}} \frac{{1}}{{|L|}} \sum_{{x_i \in L}} \mathbf{{1}}(y_i = c)$$</p>
+                <p>where $L$ is the set of training samples in the leaf node containing $x$.</p>
+            </div>
             <div class="metrics-grid">
                 <div class="metric-card">
                     <span class="metric-number">{accuracy:.3f}</span>
@@ -435,26 +490,40 @@ html = f"""
             </div>
             
             <div class="insights-list">
-                <h3>🔍 Key Insights</h3>
+                <h3>Key Insights</h3>
                 <ul>
                     {''.join(f'<li>{insight}</li>' for insight in insights)}
                 </ul>
             </div>
             
             <div class="section">
-                <h2>📈 Comprehensive Classification Dashboard</h2>
+                <h2>Classification Analysis Visualizations</h2>
+                
+                <div class="figure-title">Figure 1: Decision Tree Structure and Feature Analysis</div>
                 <div class="chart-container">
-                    <img src="data:image/png;base64,{composite_img}" alt="Decision Tree Classification Dashboard" />
+                    <img src="data:image/png;base64,{tree_img}" alt="Decision Tree Structure and Feature Importance" />
+                </div>
+                
+                <div class="figure-title">Figure 2: Model Performance Assessment</div>
+                <div class="chart-container">
+                    <img src="data:image/png;base64,{performance_img}" alt="Confusion Matrix and Performance Metrics" />
+                </div>
+                
+                <div class="figure-title">Figure 3: Model Validation and Feature Analysis</div>
+                <div class="chart-container">
+                    <img src="data:image/png;base64,{validation_img}" alt="Cross-validation and Depth Analysis" />
                 </div>
             </div>
             
             <div class="section">
-                <h2>📊 Classification Report</h2>
+                <h2>Classification Report</h2>
+                <div class="figure-title">Table 1: Detailed Classification Metrics by Class</div>
                 {report_table}
             </div>
             
             <div class="section">
-                <h2>🎯 Feature Importance</h2>
+                <h2>Feature Importance</h2>
+                <div class="figure-title">Table 2: Feature Importance Ranking</div>
                 {importance_table}
             </div>
         </div>
@@ -463,6 +532,17 @@ html = f"""
             Generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')} | Decision Tree Classification Report
         </div>
     </div>
+    
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {{
+            renderMathInElement(document.body, {{
+                delimiters: [
+                    {{left: "$$", right: "$$", display: true}},
+                    {{left: "$", right: "$", display: false}}
+                ]
+            }});
+        }});
+    </script>
 </body>
 </html>
 """
@@ -472,15 +552,81 @@ with open('decision_tree_report.html','w',encoding='utf-8') as f:
 
 # Enhanced Markdown report
 os.makedirs('assets', exist_ok=True)
-with open('assets/tree_importances.png','wb') as f:
-    f.write(base64.b64decode(composite_img))
+with open('assets/tree_structure.png','wb') as f:
+    f.write(base64.b64decode(tree_img))
+with open('assets/tree_performance.png','wb') as f:
+    f.write(base64.b64decode(performance_img))
+with open('assets/tree_validation.png','wb') as f:
+    f.write(base64.b64decode(validation_img))
 
 md = [
-    '# 🌳 Decision Tree Classification Report',
+    '# Decision Tree Classification Report',
     '',
     f'**Generated on:** {datetime.now().strftime("%B %d, %Y at %I:%M %p")}',
     '',
-    '## 🎯 Model Performance',
+    '## Introduction',
+    '',
+    'This report presents a comprehensive analysis of a Decision Tree classification model applied to synthetic multi-class data. Decision trees are interpretable machine learning models that make predictions by learning simple decision rules inferred from data features. The analysis includes model performance evaluation, feature importance assessment, and cross-validation results to ensure robust model validation.',
+    '',
+    'The dataset contains both numerical and categorical features, making it an excellent case study for demonstrating decision tree capabilities in handling mixed data types. Our model achieves strong classification performance while maintaining interpretability through its tree structure visualization.',
+    '',
+    '## Decision Tree Classification Workflow',
+    '',
+    '```mermaid',
+    'flowchart TD',
+    '    A[Load Dataset] --> B[Feature Preprocessing]',
+    '    B --> C[Tree Construction]',
+    '    C --> D[Node Splitting]',
+    '    D --> E[Impurity Calculation]',
+    '    E --> F[Best Split Selection]',
+    '    F --> G[Recursive Partitioning]',
+    '    G --> H[Tree Pruning]',
+    '    H --> I[Model Validation]',
+    '    I --> J[Feature Importance]',
+    '    J --> K[Performance Assessment]',
+    '    K --> L[Report Generation]',
+    '    ',
+    '    B --> B1[One-Hot Encoding]',
+    '    C --> C1[Root Node Creation]',
+    '    E --> E1[Gini Index]',
+    '    E --> E2[Information Gain]',
+    '    I --> I1[Cross-Validation]',
+    '    K --> K1[Confusion Matrix]',
+    '    K --> K2[Classification Metrics]',
+    '    ',
+    '    style A fill:#e8f5e8',
+    '    style L fill:#e3f2fd',
+    '    style C fill:#fff3e0',
+    '    style K fill:#fce4ec',
+    '```',
+    '',
+    '## Mathematical Foundation',
+    '',
+    'Decision trees use recursive binary splitting to partition the feature space. At each internal node, the algorithm selects the feature and threshold that best separates the classes according to an impurity measure.',
+    '',
+    '### Gini Impurity',
+    '',
+    'The Gini impurity for a node is calculated as:',
+    '',
+    '$$\\text{Gini} = 1 - \\sum_{i=1}^{c} p_i^2$$',
+    '',
+    'where $p_i$ is the proportion of samples belonging to class $i$ out of $c$ total classes.',
+    '',
+    '### Information Gain',
+    '',
+    'The information gain from splitting on feature $f$ with threshold $t$ is:',
+    '',
+    '$$\\text{Gain}(f,t) = \\text{Gini}_{parent} - \\sum_{child} \\frac{n_{child}}{n_{parent}} \\text{Gini}_{child}$$',
+    '',
+    '### Prediction Rule',
+    '',
+    'For a sample $x$, the prediction is:',
+    '',
+    '$$\\hat{y} = \\arg\\max_{c} \\frac{1}{|L|} \\sum_{x_i \\in L} \\mathbf{1}(y_i = c)$$',
+    '',
+    'where $L$ is the set of training samples in the leaf node containing $x$.',
+    '',
+    '## Model Performance',
     '',
     '| Metric | Score | Interpretation |',
     '|--------|-------|----------------|',
@@ -490,11 +636,11 @@ md = [
     f'| **F1-Score (Macro)** | {report["macro avg"]["f1-score"]:.3f} | Balanced precision-recall metric |',
     f'| **Cross-Validation** | {cv_mean:.3f} ± {cv_std:.3f} | Model stability assessment |',
     '',
-    '## 🔍 Key Insights',
+    '## Key Insights',
     '',
     ''.join(f'- {insight}\n' for insight in insights),
     '',
-    '## 🎯 Feature Importance Ranking',
+    '## Feature Importance Ranking',
     '',
     '| Rank | Feature | Importance Score | Impact |',
     '|------|---------|------------------|--------|',
@@ -506,19 +652,25 @@ for i, (_, row) in enumerate(importance_df.iterrows()):
 
 md.extend([
     '',
-    '## 📈 Comprehensive Classification Dashboard',
+    '## Classification Analysis Visualizations',
     '',
-    'The analysis dashboard includes:',
-    '- **Decision Tree Structure**: Visual representation of the learning rules',
-    '- **Feature Importance**: Ranking of variables by predictive power',
-    '- **Confusion Matrix**: Classification accuracy breakdown by class',
-    '- **Performance Metrics**: Precision, recall, and F1-score visualization',
-    '- **Cross-Validation**: Model stability across different data splits',
-    '- **Class Distribution**: Balance analysis of target classes',
-    '- **Feature Distributions**: How features vary across different classes',
-    '- **Optimal Depth**: Analysis of tree complexity vs performance',
+    '### Figure 1: Decision Tree Structure and Feature Analysis',
     '',
-    f'![Decision Tree Classification Dashboard](data:image/png;base64,{composite_img})',
+    'This visualization shows the decision tree structure (left) and feature importance ranking (right). The tree structure reveals the decision-making process, while feature importance quantifies each variable\'s contribution to classification accuracy.',
+    '',
+    f'![Decision Tree Structure and Feature Analysis](data:image/png;base64,{tree_img})',
+    '',
+    '### Figure 2: Model Performance Assessment',
+    '',
+    'The confusion matrix (left) shows classification accuracy breakdown by class, while the performance metrics (right) display precision, recall, and F1-score values.',
+    '',
+    f'![Model Performance Assessment](data:image/png;base64,{performance_img})',
+    '',
+    '### Figure 3: Model Validation and Feature Analysis',
+    '',
+    'Cross-validation results (left) demonstrate model stability across different data splits, while the depth analysis (right) shows the relationship between tree complexity and performance.',
+    '',
+    f'![Model Validation and Feature Analysis](data:image/png;base64,{validation_img})',
     '',
     '---',
     '*This report provides comprehensive decision tree analysis including model interpretability, performance metrics, and feature importance assessment.*'
@@ -527,4 +679,4 @@ md.extend([
 with open('decision_tree_summary.md','w',encoding='utf-8') as f:
     f.write('\n'.join(md))
 
-print('✅ Generated professional decision tree classification report with comprehensive analysis and visualizations')
+print('Generated professional decision tree classification report with comprehensive analysis and visualizations')

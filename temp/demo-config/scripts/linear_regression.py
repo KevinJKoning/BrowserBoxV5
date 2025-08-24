@@ -47,96 +47,85 @@ cv_std = cv_scores.std()
 # Calculate residuals and additional diagnostics
 residuals = y - pred
 residuals_std = np.std(residuals)
-leverage = np.diag(X @ np.linalg.pinv(X.T @ X) @ X.T)
 
 # Feature importance (coefficients)
 feature_names = ['x1', 'x2', 'x3']
 coefficients = model.coef_
 intercept = model.intercept_
 
-# Create comprehensive visualization
-fig = plt.figure(figsize=(16, 12))
-fig.suptitle('Linear Regression Analysis Report', fontsize=20, fontweight='bold', y=0.96)
+# Create separate professional visualizations
 
-# 1. Actual vs Predicted scatter plot
-ax1 = plt.subplot(3, 3, 1)
-scatter = ax1.scatter(y, pred, alpha=0.6, c=leverage, cmap='viridis', s=40)
+# Figure 1: Model Performance (2 plots side-by-side)
+fig1 = plt.figure(figsize=(12, 5))
+fig1.suptitle('Model Performance Analysis', fontsize=16, fontweight='bold', y=0.95)
+
+ax1 = plt.subplot(1, 2, 1)
+ax1.scatter(y, pred, alpha=0.6, s=40, color='steelblue')
 ax1.plot([y.min(), y.max()], [y.min(), y.max()], 'r--', lw=2, alpha=0.8)
 ax1.set_xlabel('Actual Values', fontweight='bold')
 ax1.set_ylabel('Predicted Values', fontweight='bold')
-ax1.set_title('Actual vs Predicted', fontweight='bold', fontsize=12)
-ax1.grid(True, alpha=0.3)
-plt.colorbar(scatter, ax=ax1, label='Leverage')
+ax1.set_title('Predicted vs Actual Values', fontweight='bold')
+ax1.grid(True)
+ax1.text(0.05, 0.95, f'R² = {R2:.3f}', transform=ax1.transAxes, 
+         bbox=dict(boxstyle="round,pad=0.3", facecolor="lightblue"), fontweight='bold')
 
-# 2. Residuals vs Fitted
-ax2 = plt.subplot(3, 3, 2)
+ax2 = plt.subplot(1, 2, 2)
 ax2.scatter(pred, residuals, alpha=0.6, color='coral', s=40)
 ax2.axhline(y=0, color='red', linestyle='--', alpha=0.8)
 ax2.set_xlabel('Fitted Values', fontweight='bold')
 ax2.set_ylabel('Residuals', fontweight='bold')
-ax2.set_title('Residuals vs Fitted', fontweight='bold', fontsize=12)
-ax2.grid(True, alpha=0.3)
+ax2.set_title('Residual Analysis', fontweight='bold')
+ax2.grid(True)
 
-# 3. Feature importance (coefficients)
-ax3 = plt.subplot(3, 3, 3)
-colors = ['#FF6B6B', '#4ECDC4', '#45B7D1']
-bars = ax3.bar(feature_names, coefficients, color=colors, alpha=0.8, edgecolor='black')
-ax3.set_ylabel('Coefficient Value', fontweight='bold')
-ax3.set_title('Feature Coefficients', fontweight='bold', fontsize=12)
-ax3.grid(True, alpha=0.3)
+plt.tight_layout()
+plt.subplots_adjust(top=0.85)
+performance_img = fig_to_base64(fig1)
+
+# Figure 2: Feature Analysis
+fig2 = plt.figure(figsize=(10, 6))
+ax = fig2.add_subplot(111)
+colors = ['steelblue', 'darkseagreen', 'coral']
+bars = ax.bar(feature_names, coefficients, color=colors, alpha=0.7, edgecolor='black')
+ax.set_ylabel('Coefficient Value', fontweight='bold')
+ax.set_xlabel('Features', fontweight='bold')
+ax.set_title('Feature Coefficients (Linear Regression)', fontweight='bold', fontsize=14)
+ax.grid(True, axis='y')
+ax.axhline(y=0, color='black', linestyle='-', alpha=0.3)
 # Add value labels on bars
 for bar, coef in zip(bars, coefficients):
     height = bar.get_height()
-    ax3.text(bar.get_x() + bar.get_width()/2., height + (0.01 if height >= 0 else -0.05),
+    ax.text(bar.get_x() + bar.get_width()/2., height + (0.01 if height >= 0 else -0.05),
              f'{coef:.3f}', ha='center', va='bottom' if height >= 0 else 'top', fontweight='bold')
+plt.tight_layout()
+feature_img = fig_to_base64(fig2)
 
-# 4. Residuals histogram
-ax4 = plt.subplot(3, 3, 4)
-ax4.hist(residuals, bins=25, alpha=0.7, color='lightblue', edgecolor='black')
-ax4.axvline(residuals.mean(), color='red', linestyle='--', alpha=0.8, label=f'Mean: {residuals.mean():.3f}')
-ax4.set_xlabel('Residuals', fontweight='bold')
-ax4.set_ylabel('Frequency', fontweight='bold')
-ax4.set_title('Residuals Distribution', fontweight='bold', fontsize=12)
-ax4.legend()
-ax4.grid(True, alpha=0.3)
+# Figure 3: Model Diagnostics (2 plots side-by-side)
+fig3 = plt.figure(figsize=(12, 5))
+fig3.suptitle('Model Diagnostics', fontsize=16, fontweight='bold', y=0.95)
 
-# 5. Q-Q Plot for normality
-ax5 = plt.subplot(3, 3, 5)
-from scipy import stats
-stats.probplot(residuals, dist="norm", plot=ax5)
-ax5.set_title('Q-Q Plot (Normality Test)', fontweight='bold', fontsize=12)
-ax5.grid(True, alpha=0.3)
+ax1 = plt.subplot(1, 2, 1)
+ax1.hist(residuals, bins=20, alpha=0.7, color='lightblue', edgecolor='black')
+ax1.axvline(residuals.mean(), color='red', linestyle='--', alpha=0.8, 
+           label=f'Mean: {residuals.mean():.3f}')
+ax1.set_xlabel('Residuals', fontweight='bold')
+ax1.set_ylabel('Frequency', fontweight='bold')
+ax1.set_title('Residuals Distribution', fontweight='bold')
+ax1.legend()
+ax1.grid(True)
 
-# 6. Cross-validation scores
-ax6 = plt.subplot(3, 3, 6)
+ax2 = plt.subplot(1, 2, 2)
 cv_x = range(1, len(cv_scores) + 1)
-ax6.bar(cv_x, cv_scores, alpha=0.7, color='gold', edgecolor='black')
-ax6.axhline(cv_mean, color='red', linestyle='--', alpha=0.8, label=f'Mean: {cv_mean:.3f}')
-ax6.set_xlabel('CV Fold', fontweight='bold')
-ax6.set_ylabel('R² Score', fontweight='bold')
-ax6.set_title('Cross-Validation Results', fontweight='bold', fontsize=12)
-ax6.legend()
-ax6.grid(True, alpha=0.3)
-
-# 7. Feature vs Target relationships (bottom row)
-for i, feature in enumerate(['x1', 'x2', 'x3']):
-    ax = plt.subplot(3, 3, 7 + i)
-    ax.scatter(df[feature], y, alpha=0.6, s=30, color=colors[i])
-    
-    # Add trend line
-    z = np.polyfit(df[feature], y, 1)
-    p = np.poly1d(z)
-    ax.plot(df[feature].sort_values(), p(df[feature].sort_values()), 
-            color='red', linestyle='--', alpha=0.8, linewidth=2)
-    
-    ax.set_xlabel(f'{feature.upper()}', fontweight='bold')
-    ax.set_ylabel('Target (y)', fontweight='bold')
-    ax.set_title(f'{feature.upper()} vs Target', fontweight='bold', fontsize=11)
-    ax.grid(True)
+ax2.bar(cv_x, cv_scores, alpha=0.7, color='gold', edgecolor='black')
+ax2.axhline(cv_mean, color='red', linestyle='--', alpha=0.8, label=f'Mean: {cv_mean:.3f}')
+ax2.set_xlabel('CV Fold', fontweight='bold')
+ax2.set_ylabel('R² Score', fontweight='bold')
+ax2.set_title('Cross-Validation Results', fontweight='bold')
+ax2.legend()
+ax2.grid(True)
 
 plt.tight_layout()
-plt.subplots_adjust(top=0.92)
-composite_img = fig_to_base64(fig)
+plt.subplots_adjust(top=0.85)
+diagnostics_img = fig_to_base64(fig3)
 
 # Generate model equation for display
 equation_parts = []
@@ -249,6 +238,19 @@ html = f"""
             padding: 40px;
         }}
         
+        .intro, .methods {{
+            background: #f8f9fa;
+            border-left: 4px solid #ff6b6b;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+        }}
+        
+        .methods {{
+            background: #f0f8ff;
+            border-left: 4px solid #4169e1;
+        }}
+        
         .metrics-grid {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -332,9 +334,11 @@ html = f"""
         }}
         
         .insights-list li:before {{
-            content: "📈";
+            content: "→";
             position: absolute;
             left: 0;
+            color: #ff6b6b;
+            font-weight: bold;
         }}
         
         .chart-container {{
@@ -410,11 +414,22 @@ html = f"""
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Linear Regression Analysis</h1>
+            <h1>Linear Regression Analysis</h1>
             <div class="subtitle">Predictive Modeling & Performance Assessment</div>
         </div>
         
         <div class="content">
+            <div class="intro">
+                <h3>Introduction</h3>
+                <p>This report presents a comprehensive linear regression analysis designed to model the relationship between predictor variables and the target outcome. Linear regression serves as a fundamental supervised learning technique for understanding how changes in input features influence the predicted response, providing both predictive capability and interpretable insights into variable importance and relationship strength.</p>
+            </div>
+            
+            <div class="methods">
+                <h3>Mathematical Foundation</h3>
+                <p>Linear regression models the relationship between a dependent variable <em>y</em> and independent variables <em>X</em> through the linear equation: <strong>y = β₀ + β₁x₁ + β₂x₂ + β₃x₃ + ε</strong></p>
+                <p>Where <em>β₀</em> represents the intercept, <em>βᵢ</em> are the feature coefficients, and <em>ε</em> represents the error term. The model parameters are estimated using ordinary least squares (OLS), which minimizes the sum of squared residuals.</p>
+            </div>
+            
             <div class="metrics-grid">
                 <div class="metric-card">
                     <span class="metric-number">{R2:.3f}</span>
@@ -435,33 +450,50 @@ html = f"""
             </div>
             
             <div class="section">
-                <h2>📐 Model Equation</h2>
+                <h2>Model Equation</h2>
                 <div class="equation-box">
                     {model_equation}
                 </div>
             </div>
             
             <div class="insights-list">
-                <h3>🔍 Key Insights</h3>
+                <h3>Key Insights</h3>
                 <ul>
                     {''.join(f'<li>{insight}</li>' for insight in insights)}
                 </ul>
             </div>
             
             <div class="section">
-                <h2>📈 Comprehensive Analysis Dashboard</h2>
+                <h2>Figure 1: Model Performance Analysis</h2>
+                <p>The performance analysis examines the relationship between predicted and actual values alongside residual patterns to assess model adequacy and identify potential violations of linear regression assumptions.</p>
                 <div class="chart-container">
-                    <img src="data:image/png;base64,{composite_img}" alt="Linear Regression Analysis Dashboard" />
+                    <img src="data:image/png;base64,{performance_img}" alt="Model Performance Analysis" />
                 </div>
             </div>
             
             <div class="section">
-                <h2>📋 Performance Metrics</h2>
+                <h2>Figure 2: Feature Importance Analysis</h2>
+                <p>The coefficient plot displays the magnitude and direction of each feature's contribution to the prediction, with larger absolute values indicating greater influence on the target variable.</p>
+                <div class="chart-container">
+                    <img src="data:image/png;base64,{feature_img}" alt="Feature Importance Analysis" />
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Figure 3: Model Diagnostics</h2>
+                <p>Diagnostic plots assess model assumptions including residual normality and cross-validation stability, providing insights into model reliability and generalization capability.</p>
+                <div class="chart-container">
+                    <img src="data:image/png;base64,{diagnostics_img}" alt="Model Diagnostics" />
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Table 1: Performance Metrics</h2>
                 {metrics_table}
             </div>
             
             <div class="section">
-                <h2>🎯 Model Coefficients</h2>
+                <h2>Table 2: Model Coefficients</h2>
                 {coef_table}
             </div>
         </div>
@@ -479,21 +511,68 @@ with open('linear_regression_report.html','w',encoding='utf-8') as f:
 
 # Enhanced Markdown report
 os.makedirs('assets', exist_ok=True)
-with open('assets/linreg.png','wb') as f:
-    f.write(base64.b64decode(composite_img))
+with open('assets/performance.png','wb') as f:
+    f.write(base64.b64decode(performance_img))
+
+with open('assets/features.png','wb') as f:
+    f.write(base64.b64decode(feature_img))
+
+with open('assets/diagnostics.png','wb') as f:
+    f.write(base64.b64decode(diagnostics_img))
 
 md = [
-    '# 📊 Linear Regression Analysis Report',
+    '# Linear Regression Analysis Report',
     '',
     f'**Generated on:** {datetime.now().strftime("%B %d, %Y at %I:%M %p")}',
     '',
-    '## 📐 Model Equation',
+    '## Introduction',
+    '',
+    'This report presents a comprehensive linear regression analysis designed to model the relationship between predictor variables and the target outcome. Linear regression serves as a fundamental supervised learning technique for understanding how changes in input features influence the predicted response, providing both predictive capability and interpretable insights into variable importance and relationship strength.',
+    '',
+    '## Linear Regression Workflow',
+    '',
+    '```mermaid',
+    'flowchart TD',
+    '    A[Load Dataset] --> B[Feature Preparation]',
+    '    B --> C[Train-Test Split]',
+    '    C --> D[Model Training]',
+    '    D --> E[Prediction Generation]',
+    '    E --> F[Performance Evaluation]',
+    '    F --> G[Residual Analysis]',
+    '    G --> H[Coefficient Analysis]',
+    '    H --> I[Cross-Validation]',
+    '    I --> J[Report Generation]',
+    '    ',
+    '    B --> B1[One-Hot Encoding]',
+    '    D --> D1[OLS Estimation]',
+    '    F --> F1[R² Score]',
+    '    F --> F2[MAE/RMSE]',
+    '    G --> G1[Residual Plots]',
+    '    H --> H1[Feature Importance]',
+    '    ',
+    '    style A fill:#e3f2fd',
+    '    style J fill:#e8f5e8',
+    '    style D fill:#fff8e1',
+    '    style F fill:#fce4ec',
+    '```',
+    '',
+    '## Mathematical Foundation',
+    '',
+    'Linear regression models the relationship between a dependent variable *y* and independent variables *X* through the linear equation:',
+    '',
+    '$$y = \\beta_0 + \\beta_1 x_1 + \\beta_2 x_2 + \\beta_3 x_3 + \\epsilon$$',
+    '',
+    'Where *β₀* represents the intercept, *βᵢ* are the feature coefficients, and *ε* represents the error term. The model parameters are estimated using ordinary least squares (OLS), which minimizes the sum of squared residuals:',
+    '',
+    '$$\\min_{\\beta} \\sum_{i=1}^{n} (y_i - \\hat{y}_i)^2 = \\min_{\\beta} \\sum_{i=1}^{n} (y_i - X_i\\beta)^2$$',
+    '',
+    '## Model Equation',
     '',
     f'```',
     f'{model_equation}',
     f'```',
     '',
-    '## 🎯 Performance Metrics',
+    '## Table 1: Performance Metrics',
     '',
     '| Metric | Value | Interpretation |',
     '|--------|-------|----------------|',
@@ -502,11 +581,11 @@ md = [
     f'| **Root Mean Square Error** | {RMSE:.4f} | Penalized prediction error |',
     f'| **Cross-Validation R²** | {cv_mean:.4f} ± {cv_std:.4f} | Model stability |',
     '',
-    '## 🔍 Key Insights',
+    '## Key Insights',
     '',
     ''.join(f'- {insight}\n' for insight in insights),
     '',
-    '## 🎯 Feature Coefficients',
+    '## Table 2: Feature Coefficients',
     '',
     '| Feature | Coefficient | Impact |',
     '|---------|-------------|--------|',
@@ -519,22 +598,29 @@ for feat, coef in zip(feature_names, coefficients):
 
 md.extend([
     '',
-    '## 📈 Comprehensive Analysis Dashboard',
+    '## Figure 1: Model Performance Analysis',
     '',
-    'The analysis dashboard includes:',
-    '- **Actual vs Predicted**: Scatter plot showing model accuracy with leverage coloring',
-    '- **Residuals Analysis**: Distribution and patterns in prediction errors',
-    '- **Feature Importance**: Coefficient magnitudes and directions',
-    '- **Model Diagnostics**: Q-Q plots and cross-validation results',
-    '- **Feature Relationships**: Individual feature correlations with target',
+    'The performance analysis examines the relationship between predicted and actual values alongside residual patterns to assess model adequacy and identify potential violations of linear regression assumptions.',
     '',
-    f'![Linear Regression Analysis Dashboard](data:image/png;base64,{composite_img})',
+    f'![Model Performance Analysis](assets/performance.png)',
+    '',
+    '## Figure 2: Feature Importance Analysis',
+    '',
+    'The coefficient plot displays the magnitude and direction of each feature\'s contribution to the prediction, with larger absolute values indicating greater influence on the target variable.',
+    '',
+    f'![Feature Importance Analysis](assets/features.png)',
+    '',
+    '## Figure 3: Model Diagnostics',
+    '',
+    'Diagnostic plots assess model assumptions including residual normality and cross-validation stability, providing insights into model reliability and generalization capability.',
+    '',
+    f'![Model Diagnostics](assets/diagnostics.png)',
     '',
     '---',
-    '*This report provides comprehensive linear regression analysis including model performance, diagnostic plots, and feature importance assessment.*'
+    '*This report provides comprehensive linear regression analysis including mathematical foundations, model performance assessment, and diagnostic evaluation.*'
 ])
 
 with open('linear_regression_summary.md','w',encoding='utf-8') as f:
     f.write('\n'.join(md))
 
-print('✅ Generated professional linear regression analysis report with comprehensive diagnostics and visualizations')
+print('Generated professional linear regression analysis report with comprehensive diagnostics and mathematical foundations')

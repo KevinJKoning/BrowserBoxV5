@@ -32,20 +32,33 @@ stats_summary = df[num_cols].describe().round(3)
 correlation_matrix = df[num_cols].corr().round(3)
 missing_data = df[num_cols].isnull().sum()
 
-# Create a comprehensive composite visualization
-fig = plt.figure(figsize=(16, 12))
-fig.suptitle('Data Analysis Dashboard', fontsize=20, fontweight='bold', y=0.95)
+# Create separate professional visualizations with better organization
 
-# 1. Distribution plots (top row)
-for i, col in enumerate(num_cols[:3]):
-    ax = plt.subplot(3, 3, i+1)
-    df[col].hist(bins=30, alpha=0.7, color=f'C{i}', edgecolor='black', linewidth=0.5)
-    ax.set_title(f'{col.upper()} Distribution', fontweight='bold', fontsize=12)
-    ax.set_ylabel('Frequency')
-    ax.grid(True)
+# Figure 1: Distribution Analysis (2 plots side-by-side)
+fig1 = plt.figure(figsize=(12, 5))
+fig1.suptitle('Distribution Analysis', fontsize=16, fontweight='bold', y=0.95)
 
-# 2. Correlation heatmap (middle left)
-ax = plt.subplot(3, 3, 4)
+ax1 = plt.subplot(1, 2, 1)
+df[num_cols[0]].hist(bins=30, alpha=0.7, color='steelblue', edgecolor='black', linewidth=0.5)
+ax1.set_title(f'{num_cols[0].upper()} Distribution', fontweight='bold')
+ax1.set_xlabel(num_cols[0].upper())
+ax1.set_ylabel('Frequency')
+ax1.grid(True)
+
+ax2 = plt.subplot(1, 2, 2)
+df[num_cols[1]].hist(bins=30, alpha=0.7, color='darkseagreen', edgecolor='black', linewidth=0.5)
+ax2.set_title(f'{num_cols[1].upper()} Distribution', fontweight='bold')
+ax2.set_xlabel(num_cols[1].upper())
+ax2.set_ylabel('Frequency')
+ax2.grid(True)
+
+plt.tight_layout()
+plt.subplots_adjust(top=0.85)
+distribution_img = fig_to_base64(fig1)
+
+# Figure 2: Correlation Analysis
+fig2 = plt.figure(figsize=(8, 6))
+ax = fig2.add_subplot(111)
 im = ax.imshow(correlation_matrix.values, cmap='RdYlBu_r', aspect='auto', vmin=-1, vmax=1)
 ax.set_xticks(range(len(correlation_matrix.columns)))
 ax.set_yticks(range(len(correlation_matrix.columns)))
@@ -56,37 +69,37 @@ for i in range(len(correlation_matrix.columns)):
     for j in range(len(correlation_matrix.columns)):
         text = ax.text(j, i, f'{correlation_matrix.iloc[i, j]:.2f}',
                       ha="center", va="center", color="black", fontweight='bold')
-plt.colorbar(im, ax=ax, shrink=0.8)
-ax.set_title('Feature Correlations', fontweight='bold', fontsize=12)
+plt.colorbar(im, ax=ax, shrink=0.8, label='Correlation Coefficient')
+ax.set_title('Feature Correlation Matrix', fontweight='bold', fontsize=14)
+plt.tight_layout()
+correlation_img = fig_to_base64(fig2)
 
-# 3. Box plots for outlier detection (middle center)
-ax = plt.subplot(3, 3, 5)
-bp = ax.boxplot([df[col].dropna() for col in num_cols[:3]], 
+# Figure 3: Statistical Summary (Box plots and scatter)
+fig3 = plt.figure(figsize=(12, 5))
+fig3.suptitle('Statistical Summary', fontsize=16, fontweight='bold', y=0.95)
+
+ax1 = plt.subplot(1, 2, 1)
+bp = ax1.boxplot([df[col].dropna() for col in num_cols[:3]], 
                 labels=[col.upper() for col in num_cols[:3]], patch_artist=True)
-for patch, color in zip(bp['boxes'], ['C0', 'C1', 'C2']):
+colors = ['lightcoral', 'lightblue', 'lightgreen']
+for patch, color in zip(bp['boxes'], colors):
     patch.set_facecolor(color)
     patch.set_alpha(0.7)
-ax.set_title('Outlier Detection', fontweight='bold', fontsize=12)
-ax.grid(True, alpha=0.3)
+ax1.set_title('Distribution Summary (Box Plots)', fontweight='bold')
+ax1.set_ylabel('Values')
+ax1.grid(True)
 
-# 4. Scatter plot matrix (bottom row)
 if len(num_cols) >= 2:
-    ax = plt.subplot(3, 3, (7, 9))  # Span last row
-    scatter_colors = df.index % 5  # Create color groups for visual appeal
-    scatter = ax.scatter(df[num_cols[0]], df[num_cols[1]], 
-                        c=scatter_colors, alpha=0.6, s=30, cmap='viridis')
-    ax.set_xlabel(f'{num_cols[0].upper()}', fontweight='bold')
-    ax.set_ylabel(f'{num_cols[1].upper()}', fontweight='bold')
-    ax.set_title(f'{num_cols[0].upper()} vs {num_cols[1].upper()} Relationship', 
-                fontweight='bold', fontsize=12)
-    ax.grid(True)
+    ax2 = plt.subplot(1, 2, 2)
+    ax2.scatter(df[num_cols[0]], df[num_cols[1]], alpha=0.6, s=40, color='navy')
+    ax2.set_xlabel(f'{num_cols[0].upper()}')
+    ax2.set_ylabel(f'{num_cols[1].upper()}')
+    ax2.set_title(f'Feature Relationship: {num_cols[0].upper()} vs {num_cols[1].upper()}', fontweight='bold')
+    ax2.grid(True)
 
 plt.tight_layout()
-plt.subplots_adjust(top=0.9)
-composite_img = fig_to_base64(fig)
-
-# Create summary statistics table
-stats_table = stats_summary.to_html(classes='stats-table', table_id='summary-stats', escape=False)
+plt.subplots_adjust(top=0.85)
+summary_img = fig_to_base64(fig3)
 
 # Generate key insights
 insights = []
@@ -107,7 +120,10 @@ outlier_counts = [len(df[(df[col] < df[col].quantile(0.25) - 1.5 * (df[col].quan
 total_outliers = sum(outlier_counts)
 insights.append(f"Identified {total_outliers} potential outliers across all features")
 
-# Save professional HTML report
+# Create summary statistics table
+stats_table = stats_summary.to_html(classes='stats-table', table_id='summary-stats', escape=False)
+
+# Professional HTML report
 html = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -160,6 +176,14 @@ html = f"""
         
         .content {{
             padding: 40px;
+        }}
+        
+        .intro {{
+            background: #f8f9fa;
+            border-left: 4px solid #4facfe;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 5px;
         }}
         
         .metrics-grid {{
@@ -312,11 +336,16 @@ html = f"""
 <body>
     <div class="container">
         <div class="header">
-            <h1>📊 Data Visualization Report</h1>
+            <h1>Data Visualization Report</h1>
             <div class="subtitle">Comprehensive Analysis Dashboard</div>
         </div>
         
         <div class="content">
+            <div class="intro">
+                <h3>Introduction</h3>
+                <p>This report presents a comprehensive exploratory data analysis of the numerical dataset, focusing on understanding the underlying structure, relationships, and statistical properties of the data. The analysis employs standard descriptive statistics, correlation analysis, and visualization techniques to provide insights into data quality and feature relationships that inform subsequent modeling decisions.</p>
+            </div>
+            
             <div class="metrics-grid">
                 <div class="metric-card">
                     <span class="metric-number">{rows:,}</span>
@@ -337,21 +366,38 @@ html = f"""
             </div>
             
             <div class="insights-list">
-                <h3>🔍 Key Insights</h3>
+                <h3>Key Insights</h3>
                 <ul>
                     {''.join(f'<li>{insight}</li>' for insight in insights)}
                 </ul>
             </div>
             
             <div class="section">
-                <h2>📈 Data Analysis Dashboard</h2>
+                <h2>Distribution Analysis</h2>
+                <p>The distribution plots reveal the underlying probability distributions of key numerical features, highlighting potential skewness, modality, and outliers that may impact modeling approaches.</p>
                 <div class="chart-container">
-                    <img src="data:image/png;base64,{composite_img}" alt="Data Analysis Dashboard" />
+                    <img src="data:image/png;base64,{distribution_img}" alt="Distribution Analysis" />
                 </div>
             </div>
             
             <div class="section">
-                <h2>📋 Statistical Summary</h2>
+                <h2>Correlation Analysis</h2>
+                <p>The correlation matrix quantifies linear relationships between features using Pearson correlation coefficients, ranging from -1 (perfect negative correlation) to +1 (perfect positive correlation). Strong correlations may indicate multicollinearity concerns for predictive modeling.</p>
+                <div class="chart-container">
+                    <img src="data:image/png;base64,{correlation_img}" alt="Correlation Analysis" />
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Statistical Summary</h2>
+                <p>The statistical summary provides quartile-based distribution analysis through box plots and examines bivariate relationships to identify potential patterns or anomalies in the data structure.</p>
+                <div class="chart-container">
+                    <img src="data:image/png;base64,{summary_img}" alt="Statistical Summary" />
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Descriptive Statistics</h2>
                 {stats_table}
             </div>
         </div>
@@ -366,17 +412,49 @@ html = f"""
 with open('data_visualization_report.html','w',encoding='utf-8') as f:
     f.write(html)
 
-# Save enhanced Markdown with professional formatting
+# Enhanced Markdown report
 os.makedirs('assets', exist_ok=True)
 with open('assets/viz.png','wb') as f:
-    f.write(base64.b64decode(composite_img))
+    f.write(base64.b64decode(distribution_img))
+
+with open('assets/correlation.png','wb') as f:
+    f.write(base64.b64decode(correlation_img))
+
+with open('assets/summary.png','wb') as f:
+    f.write(base64.b64decode(summary_img))
 
 md = [
-    '# 📊 Data Visualization Report',
+    '# Data Visualization Report',
     '',
     f'**Generated on:** {datetime.now().strftime("%B %d, %Y at %I:%M %p")}',
     '',
-    '## 📈 Dataset Overview',
+    '## Introduction',
+    '',
+    'This report presents a comprehensive exploratory data analysis of the numerical dataset, focusing on understanding the underlying structure, relationships, and statistical properties of the data. The analysis employs standard descriptive statistics, correlation analysis, and visualization techniques to provide insights into data quality and feature relationships that inform subsequent modeling decisions.',
+    '',
+    '## Data Analysis Workflow',
+    '',
+    '```mermaid',
+    'flowchart TD',
+    '    A[Load Dataset] --> B[Data Quality Check]',
+    '    B --> C[Statistical Summary]',
+    '    C --> D[Distribution Analysis]',
+    '    D --> E[Correlation Analysis]',
+    '    E --> F[Visualization Generation]',
+    '    F --> G[Report Creation]',
+    '    ',
+    '    B --> H[Missing Values Check]',
+    '    C --> I[Descriptive Statistics]',
+    '    D --> J[Histogram Plots]',
+    '    E --> K[Correlation Matrix]',
+    '    F --> L[Scatter Plots]',
+    '    ',
+    '    style A fill:#e1f5fe',
+    '    style G fill:#c8e6c9',
+    '    style F fill:#fff3e0',
+    '```',
+    '',
+    '## Dataset Overview',
     '',
     '| Metric | Value |',
     '|--------|-------|',
@@ -385,32 +463,40 @@ md = [
     f'| **Numeric Features** | {len(num_cols)} |',
     f'| **Missing Values** | {missing_data.sum()} |',
     '',
-    '## 🔍 Key Insights',
+    '## Key Insights',
     '',
     ''.join(f'- {insight}\n' for insight in insights),
     '',
-    '## 📊 Data Analysis Dashboard',
+    '## Figure 1: Distribution Analysis',
     '',
-    'The comprehensive dashboard below shows:',
-    '- **Distribution Analysis**: Histograms revealing data spread patterns',
-    '- **Correlation Matrix**: Heatmap showing feature relationships',
-    '- **Outlier Detection**: Box plots identifying anomalous values',
-    '- **Relationship Analysis**: Scatter plots revealing patterns between key features',
+    'The distribution plots reveal the underlying probability distributions of key numerical features, highlighting potential skewness, modality, and outliers that may impact modeling approaches.',
     '',
-    f'![Data Analysis Dashboard](data:image/png;base64,{composite_img})',
+    f'![Distribution Analysis](assets/viz.png)',
     '',
-    '## 📋 Statistical Summary',
+    '## Figure 2: Correlation Analysis', 
     '',
-    f"| Statistic | {' | '.join(num_cols)} |\n" +
-    f"|-----------|{'----|' * len(num_cols)}\n" +
+    'The correlation matrix quantifies linear relationships between features using Pearson correlation coefficients, ranging from -1 (perfect negative correlation) to +1 (perfect positive correlation). Strong correlations may indicate multicollinearity concerns for predictive modeling.',
+    '',
+    f'![Correlation Analysis](assets/correlation.png)',
+    '',
+    '## Figure 3: Statistical Summary',
+    '',
+    'The statistical summary provides quartile-based distribution analysis through box plots and examines bivariate relationships to identify potential patterns or anomalies in the data structure.',
+    '',
+    f'![Statistical Summary](assets/summary.png)',
+    '',
+    '## Table 1: Descriptive Statistics',
+    '',
+    f"| Statistic | {' | '.join(num_cols)} |",
+    f"|-----------|{'----|' * len(num_cols)}",
     '\n'.join([f"| **{stat.title()}** | {' | '.join([f'{stats_summary.loc[stat, col]:.3f}' for col in num_cols])} |" 
               for stat in ['mean', 'std', 'min', 'max']]),
     '',
     '---',
-    '*This report was generated using advanced data visualization techniques to provide comprehensive insights into the dataset structure and patterns.*'
+    '*This report provides comprehensive exploratory data analysis using standard statistical and visualization techniques to understand dataset structure and inform modeling decisions.*'
 ]
 
 with open('visualization_report.md','w',encoding='utf-8') as f:
     f.write('\n'.join(md))
 
-print('✅ Generated professional data visualization report with enhanced styling and comprehensive analysis')
+print('Generated professional data visualization report with enhanced styling and comprehensive analysis')
