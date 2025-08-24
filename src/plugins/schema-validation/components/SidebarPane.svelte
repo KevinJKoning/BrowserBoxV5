@@ -133,7 +133,7 @@
             status={getExecutionStatus(schema.id)}
             executionTime={execution?.executionTime}
             lastRun={execution?.lastRun}
-            validationSummary={execution?.jsResult?.summary}
+            validationResult={execution?.jsResult}
             isSelected={isSchemaSelected(schema.id)}
             onValidate={() => handleSchemaValidate(schema.id)}
             onPreview={() => handleSchemaPreview(schema.id)}

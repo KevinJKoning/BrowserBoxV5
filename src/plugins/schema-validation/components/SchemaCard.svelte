@@ -28,13 +28,11 @@
 		executionTime?: string;
 		/** Last run date (if completed) */
 		lastRun?: string;
-		/** Validation results summary (from JavaScript validation) */
-		validationSummary?: {
-			totalRows: number;
-			totalColumns: number;
-			validRows: number;
-			errorCount: number;
-			warningCount: number;
+		/** Full JS validation result (errors/warnings) if available */
+		validationResult?: {
+			errors: Array<{ constraint?: string }>;
+			warnings: Array<unknown>;
+			summary?: unknown;
 		};
 		/** Whether schema is selected for preview */
 		isSelected?: boolean;
@@ -52,21 +50,20 @@
 		status = "ready",
 		executionTime,
 		lastRun,
-		validationSummary,
+		validationResult,
 		isSelected = false,
 		onValidate,
 		onPreview,
 		...restProps
 	}: Props = $props();
 
-	// Use shared config but override completed status based on validation results
+	// Use shared config but override completed status based on rule-level results
 	const statusConfig = $derived.by(() => {
 		const baseConfig = { ...schemaStatusConfig };
-		
-		// Override completed status based on validation results
-		if (effectiveStatus === "completed" && validationSummary) {
-			const hasErrors = validationSummary.errorCount > 0;
-			const hasWarnings = validationSummary.warningCount > 0;
+		// Override completed status based on rule-level checks
+		if (effectiveStatus === "completed" && displaySummary) {
+			const hasErrors = displaySummary.failed > 0;
+			const hasWarnings = (Array.isArray(validationResult?.warnings) ? validationResult!.warnings.length : 0) > 0;
 			const status = hasErrors ? "fail" : hasWarnings ? "warning" : "pass";
 			
 			baseConfig.completed = {
@@ -90,6 +87,39 @@
 	// Make config reactive using $derived
 	const config = $derived(statusConfig[effectiveStatus]);
 	const IconComponent = $derived(config.icon);
+
+	// Derive a minimal, consistent display summary showing rule-level checks passed
+	const displaySummary = $derived.by(() => {
+		// Look up the schema rules to count rule categories (rowCount, requiredColumns, columnTypes, constraints)
+		const schemaValidation = availableSchemas.find(s => s.id === id);
+		const rules: any = (schemaValidation && schemaValidation.validationType === 'javascript') ? (schemaValidation as any).validationRules : null;
+		if (!rules) return null;
+		const present: string[] = [];
+		if (rules.rowCount) present.push('rowCount');
+		if (rules.requiredColumns) present.push('requiredColumns');
+		if (rules.columnTypes) present.push('columnTypes');
+		if (rules.constraints) present.push('constraints');
+		const total_checks = present.length;
+		if (total_checks === 0) return null;
+
+		// Determine which rule categories failed using validationResult.errors constraints
+		const failedCats = new Set<string>();
+		if (validationResult?.errors && Array.isArray(validationResult.errors)) {
+			for (const e of validationResult.errors) {
+				const c = (e as any)?.constraint as string | undefined;
+				if (!c) continue;
+				if (c.startsWith('rowCount')) failedCats.add('rowCount');
+				else if (c === 'requiredColumns') failedCats.add('requiredColumns');
+				else if (c === 'columnTypes') failedCats.add('columnTypes');
+				else failedCats.add('constraints');
+			}
+		}
+		const failed = Array.from(failedCats).filter(cat => present.includes(cat)).length;
+		const passed = Math.max(0, total_checks - failed);
+		const warnings = Array.isArray(validationResult?.warnings) ? validationResult!.warnings.length : 0;
+		const overall_status = failed > 0 ? 'fail' : (warnings > 0 ? 'warning' : 'pass');
+		return { total_checks, passed, failed, warnings, overall_status };
+	});
 
 	// Find the target file for this schema validation
 	const targetFile = $derived.by(() => {
@@ -131,18 +161,18 @@
 				<span class="font-medium">Target File:</span>
 				{targetFile}
 			</div>
-			{#if status === "completed" && validationSummary}
+			{#if status === "completed" && displaySummary}
 				<div class="text-xs">
 					<span class="font-medium">Results:</span>
-					<span class={validationSummary.overall_status === "pass" ? "text-green-600" :
-								validationSummary.overall_status === "warning" ? "text-yellow-600" : "text-red-600"}>
-						{validationSummary.passed}/{validationSummary.total_checks} checks passed
+					<span class={displaySummary.overall_status === "pass" ? "text-green-600" :
+								displaySummary.overall_status === "warning" ? "text-yellow-600" : "text-red-600"}>
+						{displaySummary.passed}/{displaySummary.total_checks} checks passed
 					</span>
-					{#if validationSummary.failed > 0}
-						<span class="text-red-600">• {validationSummary.failed} failed</span>
+					{#if displaySummary.failed > 0}
+						<span class="text-red-600">• {displaySummary.failed} failed</span>
 					{/if}
-					{#if validationSummary.warnings > 0}
-						<span class="text-yellow-600">• {validationSummary.warnings} warnings</span>
+					{#if displaySummary.warnings > 0}
+						<span class="text-yellow-600">• {displaySummary.warnings} warnings</span>
 					{/if}
 				</div>
 			{/if}
@@ -202,18 +232,18 @@
 				<span class="font-medium">Target File:</span>
 				{targetFile}
 			</div>
-			{#if status === "completed" && validationSummary}
+			{#if status === "completed" && displaySummary}
 				<div class="text-xs">
 					<span class="font-medium">Results:</span>
-					<span class={validationSummary.overall_status === "pass" ? "text-green-600" :
-								validationSummary.overall_status === "warning" ? "text-yellow-600" : "text-red-600"}>
-						{validationSummary.passed}/{validationSummary.total_checks} checks passed
+					<span class={displaySummary.overall_status === "pass" ? "text-green-600" :
+								displaySummary.overall_status === "warning" ? "text-yellow-600" : "text-red-600"}>
+						{displaySummary.passed}/{displaySummary.total_checks} checks passed
 					</span>
-					{#if validationSummary.failed > 0}
-						<span class="text-red-600">• {validationSummary.failed} failed</span>
+					{#if displaySummary.failed > 0}
+						<span class="text-red-600">• {displaySummary.failed} failed</span>
 					{/if}
-					{#if validationSummary.warnings > 0}
-						<span class="text-yellow-600">• {validationSummary.warnings} warnings</span>
+					{#if displaySummary.warnings > 0}
+						<span class="text-yellow-600">• {displaySummary.warnings} warnings</span>
 					{/if}
 				</div>
 			{/if}
