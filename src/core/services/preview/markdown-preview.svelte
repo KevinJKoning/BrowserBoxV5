@@ -196,75 +196,153 @@
 </Card>
 
 <style>
+  /* VS Code-like Markdown styling (scoped) */
   :global(.prose) {
-    /* Readable defaults without typography plugin */
-    line-height: 1.7;
-    /* Inherit the application's base font */
     font-family: inherit;
-    font-size: 0.95rem;
+    font-size: var(--markdown-font-size, 14px);
+    line-height: var(--markdown-line-height, 22px);
+    word-wrap: break-word;
     color: inherit;
   }
-  :global(.prose > :first-child) { margin-top: 0; }
-  :global(.prose > :last-child) { margin-bottom: 0; }
-
-  /* Headings */
-  :global(.prose h1), :global(.prose h2), :global(.prose h3), :global(.prose h4), :global(.prose h5), :global(.prose h6) {
-    margin: 1em 0 0.5em; font-weight: 600; line-height: 1.25;
+  
+  /* Reset top margins for common blocks */
+  :global(.prose h1),
+  :global(.prose h2),
+  :global(.prose h3),
+  :global(.prose h4),
+  :global(.prose h5),
+  :global(.prose h6),
+  :global(.prose p),
+  :global(.prose ol),
+  :global(.prose ul),
+  :global(.prose pre) {
+    margin-top: 0;
   }
-  :global(.prose h1) { font-size: 1.75rem; letter-spacing: -0.01em; }
-  :global(.prose h2) { font-size: 1.35rem; letter-spacing: -0.005em; padding-bottom: 0.25rem; border-bottom: 1px solid var(--border); }
-  :global(.prose h3) { font-size: 1.15rem; letter-spacing: -0.0025em; }
+  
+  /* Headings */
+  :global(.prose h1),
+  :global(.prose h2),
+  :global(.prose h3),
+  :global(.prose h4),
+  :global(.prose h5),
+  :global(.prose h6) {
+    font-weight: 600;
+    margin-top: 24px;
+    margin-bottom: 16px;
+    line-height: 1.25;
+  }
+  :global(.prose h1) {
+    font-size: 2em;
+    margin-top: 0;
+    padding-bottom: 0.3em;
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+    border-bottom-color: var(--border);
+  }
+  :global(.prose h2) {
+    font-size: 1.5em;
+    padding-bottom: 0.3em;
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+    border-bottom-color: var(--border);
+  }
+  :global(.prose h3) { font-size: 1.25em; }
+  :global(.prose h4) { font-size: 1em; }
+  :global(.prose h5) { font-size: 0.875em; }
+  :global(.prose h6) { font-size: 0.85em; }
 
-  /* Text & lists */
-  :global(.prose p) { margin: 0.75em 0; }
-  :global(.prose ul), :global(.prose ol) { margin: 0.75em 0; padding-left: 1.25rem; }
+  /* Paragraphs and lists */
+  :global(.prose p) { margin-bottom: 16px; }
+  :global(.prose li p) { margin-bottom: 0.7em; }
+  :global(.prose ul),
+  :global(.prose ol) {
+    margin-bottom: 0.7em;
+    padding-left: 1.25rem;
+  }
   :global(.prose li) { margin: 0.25em 0; }
-  :global(.prose input[type="checkbox"]) { accent-color: var(--sidebar-primary); margin-right: 0.4rem; vertical-align: middle; }
+  :global(.prose input[type="checkbox"]) {
+    accent-color: var(--sidebar-primary);
+    margin-right: 0.4rem;
+    vertical-align: middle;
+  }
 
   /* Links */
-  :global(.prose a) { color: var(--sidebar-primary); text-decoration: underline; text-underline-offset: 2px; }
-  :global(.prose a:hover) { opacity: 0.9; }
-
-  /* Images */
-  :global(.prose img) { max-width: 100%; height: auto; border-radius: 0.5rem; border: 1px solid var(--border); }
-
-  /* Code */
-  :global(.prose pre) {
-    background: color-mix(in oklab, currentColor 8%, transparent);
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-    overflow: auto;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    font-size: 0.875rem;
+  :global(.prose a) {
+    color: var(--sidebar-primary);
+    text-decoration: none;
   }
-  :global(.prose pre code) { background: transparent; padding: 0; border-radius: 0; }
-  :global(.prose code) {
-    background: color-mix(in oklab, currentColor 8%, transparent);
-    padding: 0.15rem 0.35rem;
-    border-radius: 0.25rem;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    font-size: 0.9em;
+  :global(.prose a:hover) { text-decoration: underline; }
+  :global(.prose a:focus),
+  :global(.prose input:focus),
+  :global(.prose select:focus),
+  :global(.prose textarea:focus) {
+    outline: 1px solid -webkit-focus-ring-color;
+    outline-offset: -1px;
   }
-  :global(.prose kbd) {
-    display: inline-block; padding: 0 0.35rem; border-radius: 0.375rem;
-    border: 1px solid var(--border); background: var(--muted);
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.85em;
-    box-shadow: inset 0 -1px 0 color-mix(in oklab, currentColor 12%, transparent);
+
+  /* Media */
+  :global(.prose img),
+  :global(.prose video) {
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  /* Horizontal rule */
+  :global(.prose hr) {
+    border: 0;
+    height: 1px;
+    border-bottom: 1px solid var(--border);
+    margin: 1.5rem 0;
   }
 
   /* Blockquotes */
   :global(.prose blockquote) {
-    margin: 1rem 0; padding: 0.75rem 1rem; border-left: 3px solid var(--sidebar-primary);
-    background: color-mix(in oklab, currentColor 8%, transparent); border-radius: 0.5rem;
-    color: var(--muted-foreground);
+    margin: 0;
+    padding: 0 16px 0 10px;
+    border-left-width: 5px;
+    border-left-style: solid;
+    border-left-color: var(--border);
+    border-radius: 2px;
   }
 
-  /* Horizontal rule */
-  :global(.prose hr) { border: none; height: 1px; background: var(--border); margin: 1.5rem 0; }
-
   /* Tables */
-  :global(.prose table) { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.95em; }
-  :global(.prose thead th) { background: color-mix(in oklab, currentColor 6%, transparent); font-weight: 600; }
-  :global(.prose th), :global(.prose td) { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
-  :global(.prose tbody tr:nth-child(even) td) { background: color-mix(in oklab, currentColor 4%, transparent); }
+  :global(.prose table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 0.7em;
+    font-size: 0.95em;
+  }
+  :global(.prose th) {
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  :global(.prose th),
+  :global(.prose td) { padding: 5px 10px; }
+  :global(.prose table > tbody > tr + tr > td) {
+    border-top: 1px solid var(--border);
+  }
+
+  /* Code and preformatted */
+  :global(.prose code) {
+    font-family: var(--vscode-editor-font-family, "SF Mono", Monaco, Menlo, Consolas, "Ubuntu Mono", "Liberation Mono", "DejaVu Sans Mono", "Courier New", monospace);
+    font-size: 1em;
+    line-height: 1.357em;
+  }
+  :global(.prose pre) {
+    background-color: var(--vscode-textCodeBlock-background, color-mix(in oklab, currentColor 8%, transparent));
+    border: 1px solid var(--vscode-widget-border, var(--border));
+    padding: 16px;
+    border-radius: 3px;
+    overflow: auto;
+  }
+  :global(.prose pre code) {
+    display: inline-block;
+    color: var(--vscode-editor-foreground, inherit);
+    tab-size: 4;
+    background: none;
+  }
+
+  /* Misc */
+  :global(.prose sub),
+  :global(.prose sup) { line-height: 0; }
 </style>
