@@ -12,6 +12,7 @@
   import { activeFileRequirements, files as uploadedFiles } from '@plugins/required-files/store.svelte';
   import { addResult } from '@plugins/results/store.svelte';
   import { registerSelectionResolver } from '@utils/breadcrumbs.ts';
+  import { parquetMetadata, parquetRead } from 'hyparquet';
 
   export const availableSchemas = $state<SchemaValidation[]>([]);
   export const executions = $state<Record<string, SchemaValidationExecution>>({});
@@ -171,6 +172,8 @@ if __name__ == "__main__":
         data = await parseCSV(file);
       } else if (file.name.toLowerCase().endsWith('.json')) {
         data = await parseJSON(file);
+      } else if (file.name.toLowerCase().endsWith('.parquet')) {
+        data = await parseParquet(file);
       } else {
         throw new Error(`Unsupported file type for JavaScript validation: ${file.name}`);
       }
@@ -356,6 +359,34 @@ if __name__ == "__main__":
     const text = await file.text();
     const data = JSON.parse(text);
     return Array.isArray(data) ? data : [data];
+  }
+
+  // Minimal parquet → array of row objects using hyparquet
+  async function parseParquet(file: File): Promise<any[]> {
+    const ab = await file.arrayBuffer();
+    // Derive column names from metadata (skip the root struct entry)
+    const meta: any = parquetMetadata(ab) as unknown;
+    const allFields = (meta?.schema ?? []) as Array<{ name: string; repetition_type?: string }>; 
+    const columns = allFields
+      .filter((f) => f.repetition_type !== 'REPEATED' || f.name !== 'list')
+      .map((f) => f.name)
+      .slice(1);
+
+    const rows: unknown[] = await new Promise((resolve, reject) => {
+      try {
+        parquetRead({ file: ab, onComplete: (data: unknown[]) => resolve(data) });
+      } catch (e) {
+        reject(e);
+      }
+    });
+
+    // Map row arrays to objects with column names
+    return (rows as unknown[]).map((row) => {
+      const arr = Array.isArray(row) ? row : [];
+      const obj: Record<string, unknown> = {};
+      for (let i = 0; i < columns.length; i++) obj[columns[i]] = arr[i];
+      return obj;
+    });
   }
 
   function isValidType(value: any, expectedType: string): boolean {
