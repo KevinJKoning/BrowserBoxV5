@@ -22,8 +22,10 @@
 
   // Configure marked with good defaults
   marked.setOptions({
-    breaks: true,        // Line breaks become <br>
-    gfm: true           // GitHub flavored markdown
+    breaks: true,         // Line breaks become <br>
+    gfm: true,            // GitHub flavored markdown
+    headerIds: true,      // Generate ids for headings
+    mangle: false         // Do not mangle heading text for ids
   });
 
   $effect(() => {
@@ -195,14 +197,73 @@
 
 <style>
   :global(.prose) {
-    /* Minimal readable defaults without relying on typography plugin */
-    line-height: 1.6;
+    /* Readable defaults without typography plugin */
+    line-height: 1.7;
+    font-family: "Segoe UI Variable Display", "Segoe UI", "Century Gothic", "Franklin Gothic Medium", Verdana, sans-serif;
+    font-size: 0.95rem;
+    color: inherit;
   }
-  :global(.prose h1), :global(.prose h2), :global(.prose h3), :global(.prose h4), :global(.prose h5), :global(.prose h6) { margin: 1em 0 0.5em; font-weight: 600; }
+  :global(.prose > :first-child) { margin-top: 0; }
+  :global(.prose > :last-child) { margin-bottom: 0; }
+
+  /* Headings */
+  :global(.prose h1), :global(.prose h2), :global(.prose h3), :global(.prose h4), :global(.prose h5), :global(.prose h6) {
+    margin: 1em 0 0.5em; font-weight: 600; line-height: 1.25;
+  }
+  :global(.prose h1) { font-size: 1.75rem; letter-spacing: -0.01em; }
+  :global(.prose h2) { font-size: 1.35rem; letter-spacing: -0.005em; padding-bottom: 0.25rem; border-bottom: 1px solid var(--border); }
+  :global(.prose h3) { font-size: 1.15rem; letter-spacing: -0.0025em; }
+
+  /* Text & lists */
   :global(.prose p) { margin: 0.75em 0; }
-  :global(.prose ul) { margin: 0.75em 0; padding-left: 1.25rem; }
-  :global(.prose img) { max-width: 100%; height: auto; }
-  :global(.prose pre) { background: color-mix(in oklab, currentColor 8%, transparent); padding: 0.75rem; border-radius: 0.5rem; overflow: auto; }
-  :global(.prose code) { background: color-mix(in oklab, currentColor 8%, transparent); padding: 0.15rem 0.35rem; border-radius: 0.25rem; }
-  :global(.prose a) { color: var(--sidebar-primary); }
+  :global(.prose ul), :global(.prose ol) { margin: 0.75em 0; padding-left: 1.25rem; }
+  :global(.prose li) { margin: 0.25em 0; }
+  :global(.prose input[type="checkbox"]) { accent-color: var(--sidebar-primary); margin-right: 0.4rem; vertical-align: middle; }
+
+  /* Links */
+  :global(.prose a) { color: var(--sidebar-primary); text-decoration: underline; text-underline-offset: 2px; }
+  :global(.prose a:hover) { opacity: 0.9; }
+
+  /* Images */
+  :global(.prose img) { max-width: 100%; height: auto; border-radius: 0.5rem; border: 1px solid var(--border); }
+
+  /* Code */
+  :global(.prose pre) {
+    background: color-mix(in oklab, currentColor 8%, transparent);
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    overflow: auto;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.875rem;
+  }
+  :global(.prose pre code) { background: transparent; padding: 0; border-radius: 0; }
+  :global(.prose code) {
+    background: color-mix(in oklab, currentColor 8%, transparent);
+    padding: 0.15rem 0.35rem;
+    border-radius: 0.25rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.9em;
+  }
+  :global(.prose kbd) {
+    display: inline-block; padding: 0 0.35rem; border-radius: 0.375rem;
+    border: 1px solid var(--border); background: var(--muted);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.85em;
+    box-shadow: inset 0 -1px 0 color-mix(in oklab, currentColor 12%, transparent);
+  }
+
+  /* Blockquotes */
+  :global(.prose blockquote) {
+    margin: 1rem 0; padding: 0.75rem 1rem; border-left: 3px solid var(--sidebar-primary);
+    background: color-mix(in oklab, currentColor 8%, transparent); border-radius: 0.5rem;
+    color: var(--muted-foreground);
+  }
+
+  /* Horizontal rule */
+  :global(.prose hr) { border: none; height: 1px; background: var(--border); margin: 1.5rem 0; }
+
+  /* Tables */
+  :global(.prose table) { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.95em; }
+  :global(.prose thead th) { background: color-mix(in oklab, currentColor 6%, transparent); font-weight: 600; }
+  :global(.prose th), :global(.prose td) { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+  :global(.prose tbody tr:nth-child(even) td) { background: color-mix(in oklab, currentColor 4%, transparent); }
 </style>
