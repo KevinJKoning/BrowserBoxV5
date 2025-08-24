@@ -1,0 +1,29 @@
+[
+  {
+    "id": "viz",
+    "title": "Data Visualization",
+    "description": "Visual summary of the numeric dataset",
+    "filename": "data_visualization.py",
+    "fileRequirements": [
+      {"filename": "demo_numeric.parquet", "title": "Numeric Data", "description": "Synthetic numeric dataset", "required": true, "fileType": ".parquet", "source": "uploaded"}
+    ]
+  },
+  {
+    "id": "linreg",
+    "title": "Linear Regression",
+    "description": "Fit and report a linear regression",
+    "filename": "linear_regression.py",
+    "fileRequirements": [
+      {"filename": "demo_numeric.parquet", "title": "Numeric Data", "description": "Synthetic numeric dataset", "required": true, "fileType": ".parquet", "source": "uploaded"}
+    ]
+  },
+  {
+    "id": "tree",
+    "title": "Decision Tree Classification",
+    "description": "Train a decision tree classifier and report feature importances",
+    "filename": "decision_tree.py",
+    "fileRequirements": [
+      {"filename": "demo_mixed.parquet", "title": "Mixed Data", "description": "Synthetic mixed dataset with labels", "required": true, "fileType": ".parquet", "source": "uploaded"}
+    ]
+  }
+]

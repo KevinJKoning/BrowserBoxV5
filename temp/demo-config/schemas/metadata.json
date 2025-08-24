@@ -1,0 +1,22 @@
+[
+  {
+    "id": "numeric-summary",
+    "title": "Numeric Data Summary (Python)",
+    "description": "Generate an HTML summary for the numeric dataset",
+    "validationType": "python",
+    "targetFileId": "demo_numeric.parquet",
+    "filename": "validate_numeric.py",
+    "outputHtml": "numeric_schema_report.html"
+  },
+  {
+    "id": "numeric-js-quick-check",
+    "title": "Numeric Data JS Quick Check",
+    "description": "JavaScript validation for required columns and row count",
+    "validationType": "javascript",
+    "targetFileId": "demo_numeric.parquet",
+    "validationRules": {
+      "requiredColumns": ["x1", "x2", "x3", "y"],
+      "rowCount": { "min": 100 }
+    }
+  }
+]
