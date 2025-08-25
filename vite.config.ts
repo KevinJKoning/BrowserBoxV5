@@ -47,9 +47,16 @@ export default defineConfig(({ command, mode }) => ({
 		VitePWA({
 			registerType: 'autoUpdate',
 			workbox: {
-				maximumFileSizeToCacheInBytes: 400 * 1024 * 1024, // 120MB for critical Python packages + core files
-				// Exclude auto-detection of these files to prevent duplicates
-				globIgnores: ['**/pyodide*', '**/*.whl'],
+				maximumFileSizeToCacheInBytes: 400 * 1024 * 1024, // 400MB for all Python packages + assets
+				// Don't exclude anything - we want to cache all assets for offline use
+				globIgnores: [],
+				// Include all files in assets directory
+				globPatterns: [
+					'**/*.{js,css,html,ico,png,svg,woff,woff2,ttf,eot}',
+					'**/*.{wasm,zip,whl,data,json}', // Pyodide and Python files
+					'manifest.webmanifest',
+					'registerSW.js'
+				],
 				// Ensure consistent URL paths for cross-platform compatibility
 				manifestTransforms: [
 					(manifestEntries) => {
@@ -60,68 +67,6 @@ export default defineConfig(({ command, mode }) => ({
 						}));
 						return { manifest };
 					}
-				],
-				// Pre-cache critical Python packages for offline use
-				additionalManifestEntries: [
-					// Core Pyodide files
-					{ url: '/assets/pyodide.js', revision: null },
-					{ url: '/assets/pyodide.asm.js', revision: null },
-					{ url: '/assets/pyodide.asm.wasm', revision: null },
-					{ url: '/assets/python_stdlib.zip', revision: null },
-					
-					// Critical Python packages - Core data science stack
-					{ url: '/assets/numpy-2.0.2-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
-					{ url: '/assets/pandas-2.2.3-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
-					{ url: '/assets/matplotlib-3.8.4-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
-					{ url: '/assets/scipy-1.14.1-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
-					
-					// Machine learning
-					{ url: '/assets/scikit_learn-1.6.1-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
-					{ url: '/assets/statsmodels-0.14.4-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
-					
-					// Geospatial packages
-					{ url: '/assets/geopandas-1.0.1-py3-none-any.whl', revision: null },
-					{ url: '/assets/shapely-2.0.6-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
-					{ url: '/assets/pyproj-3.6.1-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
-					{ url: '/assets/fiona-1.9.5-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
-					
-					// File handling
-					{ url: '/assets/pyarrow-18.1.0-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
-					
-					// Network and utilities
-					{ url: '/assets/requests-2.31.0-py3-none-any.whl', revision: null },
-					{ url: '/assets/micropip-0.9.0-py3-none-any.whl', revision: null },
-					
-					// Essential dependencies
-					{ url: '/assets/packaging-24.2-py3-none-any.whl', revision: null },
-					{ url: '/assets/python_dateutil-2.9.0.post0-py2.py3-none-any.whl', revision: null },
-					{ url: '/assets/pytz-2024.1-py2.py3-none-any.whl', revision: null },
-					{ url: '/assets/tzdata-2024.1-py2.py3-none-any.whl', revision: null },
-					{ url: '/assets/six-1.16.0-py2.py3-none-any.whl', revision: null },
-					{ url: '/assets/certifi-2024.12.14-py3-none-any.whl', revision: null },
-					{ url: '/assets/charset_normalizer-3.3.2-py3-none-any.whl', revision: null },
-					{ url: '/assets/idna-3.7-py3-none-any.whl', revision: null },
-					{ url: '/assets/urllib3-2.2.3-py3-none-any.whl', revision: null },
-					
-					// Matplotlib dependencies
-					{ url: '/assets/contourpy-1.3.0-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
-					{ url: '/assets/cycler-0.12.1-py3-none-any.whl', revision: null },
-					{ url: '/assets/fonttools-4.51.0-py3-none-any.whl', revision: null },
-					{ url: '/assets/kiwisolver-1.4.5-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
-					{ url: '/assets/pillow-10.2.0-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
-					{ url: '/assets/pyparsing-3.1.2-py3-none-any.whl', revision: null },
-					
-					// Scikit-learn dependencies
-					{ url: '/assets/joblib-1.4.0-py3-none-any.whl', revision: null },
-					{ url: '/assets/threadpoolctl-3.5.0-py3-none-any.whl', revision: null },
-					
-					// Other critical dependencies
-					{ url: '/assets/attrs-23.2.0-py3-none-any.whl', revision: null },
-					{ url: '/assets/click-8.1.7-py3-none-any.whl', revision: null },
-					{ url: '/assets/cligj-0.7.2-py3-none-any.whl', revision: null },
-					{ url: '/assets/munch-4.0.0-py2.py3-none-any.whl', revision: null },
-					{ url: '/assets/cramjam-2.8.3-cp312-cp312-pyodide_2024_0_wasm32.whl', revision: null },
-					{ url: '/assets/patsy-0.5.6-py2.py3-none-any.whl', revision: null }
 				],
 				runtimeCaching: [
 					{
